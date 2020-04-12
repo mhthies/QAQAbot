@@ -32,7 +32,7 @@ def give_help_meesage(chat_id: int) -> List[Message]:
 
 def new_game(chat_id: int, name: str, session: Session) -> List[Message]:
     # TODO prevent new games in single user chats
-    game = model.Game(name=name)
+    game = model.Game(name=name, chat_id=chat_id, is_finished=False, is_started=False, is_synchronous=True)
     session.add(game)
     result = Message(chat_id, f"""New game created. Use /{COMMAND_JOIN} to join the game.""")  # TODO UX: more info
     return [result]
@@ -75,14 +75,14 @@ def join_game(chat_id: int, user_id: int, session: Session) -> List[Message]:
     if game.is_started:
         raise RuntimeError("Too late")  # TODO No Exception
         # TODO allow joining into running games
-    participation = model.Participant
-    user.participations.append(participation)
-    game.participants.append(participation)
+    session.add(model.Participant(user=user, game=game))
     return [Message(chat_id, "ok")]  # TODO UX
 
 
 def start_game(chat_id: int, session: Session) -> List[Message]:
-    game = session.query(model.Game).filter(model.Game.chat_id == chat_id, model.Game.is_finished == False).one_or_none()
+    game = session.query(model.Game)\
+        .filter(model.Game.chat_id == chat_id, model.Game.is_finished == False)\
+        .one_or_none()
     if game is None:
         return [Message(chat_id, f"There is currently no pending game in this Group. "
                                  f"Use /{COMMAND_NEW_GAME} to start one.")]
@@ -90,10 +90,11 @@ def start_game(chat_id: int, session: Session) -> List[Message]:
         return [Message(chat_id, "The game is already running")]  # Create status command, refer to it.
     elif len(game.participants) < 2:
         return [Message(chat_id, "No games with less than two participants permitted")]
-    for user in game.participants:
-        sheet = model.Sheet(current_user=user)
-        session.add(sheet)
-        game.sheets.append(sheet)
+    for participant in game.participants:
+        participant.user.pending_sheets.append(model.Sheet(game=game))
+
+    if game.rounds is None:
+        game.rounds = len(game.participants)
 
     return [Message(chat_id, "ok")] + list(itertools.chain.from_iterable(_next_sheet(p.user) for p in game.participants))
 
@@ -157,8 +158,9 @@ def submit_text(chat_id: int, text: str, session: Session) -> List[Message]:
     entry_type = (model.EntryType.QUESTION
                   if not current_sheet.entries or current_sheet.entries[-1].type == model.EntryType.ANSWER
                   else model.EntryType.ANSWER)
-    new_entry = model.Entry(user_id=user, text=text, type=entry_type)
-    current_sheet.entries.append(new_entry)
+    current_sheet.entries.append(model.Entry(user=user, text=text, type=entry_type))
+    user.current_sheet = None
+    current_sheet.current_user = None
 
     # Check if game is finished
     result.extend(_finish_if_all_answered(current_sheet.game))
@@ -170,31 +172,31 @@ def submit_text(chat_id: int, text: str, session: Session) -> List[Message]:
                 for sheet in current_sheet.game.sheets:
                     _assign_sheet_to_next(sheet)  # TODO optimize loop
                 for p in current_sheet.game.participants:
-                    _next_sheet(p.user)  # TODO optimize loop
+                    result.extend(_next_sheet(p.user))  # TODO optimize loop
 
         else:
             _assign_sheet_to_next(current_sheet)
-            _next_sheet(current_sheet.current_user)
+            result.extend(_next_sheet(current_sheet.current_user))
 
     result.extend(_next_sheet(user))
     return result
 
 
-def _next_sheet(user: model.User) -> List[Message]:
+def _next_sheet(user: model.User) -> List[Message]:  # TODO optimize: take first pending sheet and its last entry along with user
     """ Pick the next sheet and query the user for his next entry, if he has no current sheet but sheets on his pending
     stack."""
     if user.current_sheet is None and user.pending_sheets:
-        next_sheet = user.pending_sheets.pop()
+        next_sheet = user.pending_sheets[0]
         user.current_sheet = next_sheet
-        return [Message(user.chat_id, format_for_next(next_sheet))]
+        return [Message(user.chat_id, format_for_next(next_sheet))]  #
     return []
 
 
 def _assign_sheet_to_next(sheet: model.Sheet):
     """ Assign the given sheet to the next user in the game's participant order """
-    next_mapping = dict(pairwise(p.user_id for p in sheet.game.participants))
-    next_mapping[sheet.game.participants[-1].user_id] = sheet.game.participants[0].user_id
-    sheet.current_user_id = next_mapping[sheet.entries[-1].user_id]  # TODO optimize: get last entry
+    next_mapping = dict(pairwise(p.user for p in sheet.game.participants))
+    next_mapping[sheet.game.participants[-1].user] = sheet.game.participants[0].user
+    sheet.current_user = next_mapping[sheet.entries[-1].user]  # TODO optimize: get last entry
 
 
 T = TypeVar('T')
@@ -246,8 +248,12 @@ def format_result(sheet: model.Sheet) -> str:
     return "\n".join(entry.text for entry in sheet.entries)  # TODO UX: improve
 
 
-def format_for_next(last_entry: model.Entry) -> str:
-    if last_entry.type == model.EntryType.ANSWER:
-        return f"Please ask a question that may be answered with:\n“{last_entry.text}”"
+def format_for_next(sheet: model.Sheet) -> str:
+    if not sheet.entries:
+        return f"Please ask a question to begin a new sheet for game {sheet.game.name}."
     else:
-        return f"Please answer the following question:\n“{last_entry.text}”"
+        last_entry = sheet.entries[-1]
+        if last_entry.type == model.EntryType.ANSWER:
+            return f"Please ask a question that may be answered with:\n“{last_entry.text}”"
+        else:
+            return f"Please answer the following question:\n“{last_entry.text}”"

@@ -37,16 +37,17 @@ class User(Base):
     participations = relationship('Participant', back_populates='user')
     pending_sheets = relationship('Sheet', back_populates='current_user', foreign_keys="Sheet.current_user_id",
                                   collection_class=ordering_list('pending_position'))
-    current_sheet = relationship('Sheet', foreign_keys=current_sheet_id)
+    current_sheet = relationship('Sheet', foreign_keys=current_sheet_id, post_update=True)
 
 
 class Participant(Base):
+    __tablename__ = 'participants'
     game_id = Column(Integer, ForeignKey('games.id'), primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
     game_order = Column(Integer)
 
-    game = relationship('Game', back_populates='participants')
-    user = relationship('User', back_populates='participations')
+    game = relationship('Game', back_populates='participants', lazy='joined')
+    user = relationship('User', back_populates='participations', lazy='joined')
 
 
 class Sheet(Base):
@@ -58,8 +59,8 @@ class Sheet(Base):
     pending_position = Column(Integer)  # sort key for the user's pending sheet stack
 
     game = relationship('Game', back_populates='sheets')
-    entries = relationship('Entry', back_populates='sheet', order_by='Entry.sort_key',
-                           collection_class=ordering_list('sort_key'))
+    entries = relationship('Entry', back_populates='sheet', order_by='Entry.position',
+                           collection_class=ordering_list('position'))
     current_user = relationship('User', back_populates='pending_sheets', foreign_keys=current_user_id)
 
 
