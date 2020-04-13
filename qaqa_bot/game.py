@@ -116,8 +116,6 @@ def leave_game(chat_id: int, user_id: int, session: Session) -> List[Message]:
     if game is None:
         return [Message(chat_id, "There is currently no running or pending game in this Chat.")]
     user = session.query(model.User).filter(model.User.api_id == user_id).one()
-    if game.is_synchronous and game.is_started:
-        return [Message(chat_id, "Leaving a running synchronous game is not permitted.")]  # TODO allow?
 
     # Remove user as participant from game
     participation = session.query(model.Participant).filter(user=user, game=game).one_or_none()
