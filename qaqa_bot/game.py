@@ -1,9 +1,8 @@
-import itertools
-from typing import NamedTuple, List, Optional, TypeVar, Iterable, Tuple
+from typing import NamedTuple, List, Optional
 from sqlalchemy.orm import Session
 import toml
 
-from . import model
+from . import model, util
 
 COMMAND_NEW_GAME = "newgame"
 COMMAND_JOIN = "join"
@@ -66,12 +65,16 @@ def set_synchronous(chat_id: int, state: bool, session: Session) -> List[Message
 
 
 def join_game(chat_id: int, user_id: int, session: Session) -> List[Message]:
-    game = session.query(model.Game).filter(model.Game.chat_id == chat_id, model.Game.is_finished == False).one_or_none()
+    game = session.query(model.Game)\
+        .filter(model.Game.chat_id == chat_id, model.Game.is_finished == False)\
+        .one_or_none()
     if game is None:
-        return [Message(chat_id, f"There is currently no pending game in this Group. Use /{COMMAND_NEW_GAME} to start one.")]
+        return [Message(chat_id, f"There is currently no pending game in this Group. "
+                                 f"Use /{COMMAND_NEW_GAME} to start one.")]
     user = session.query(model.User).filter(model.User.api_id == user_id).one_or_none()
     if user is None:
-        return [Message(chat_id, f"You must start a chat with the bot first. Use the following link: https://t.me/{config['']['botname']}?start")]
+        return [Message(chat_id, f"You must start a chat with the bot first. Use the following link: "
+                                 f"https://t.me/{config['']['botname']}?start")]
     if game.is_started:
         raise RuntimeError("Too late")  # TODO No Exception
         # TODO allow joining into running games
@@ -96,11 +99,17 @@ def start_game(chat_id: int, session: Session) -> List[Message]:
     if game.rounds is None:
         game.rounds = len(game.participants)
 
-    return [Message(chat_id, "ok")] + list(itertools.chain.from_iterable(_next_sheet(p.user) for p in game.participants))
+    result = [Message(chat_id, "ok")]
+    for p in game.participants:
+        result.extend(_next_sheet(p.user))
+
+    return result
 
 
 def leave_game(chat_id: int, user_id: int, session: Session) -> List[Message]:
-    game = session.query(model.Game).filter(model.Game.chat_id == chat_id, model.Game.is_finished == False).one_or_none()
+    game = session.query(model.Game)\
+        .filter(model.Game.chat_id == chat_id, model.Game.is_finished == False)\
+        .one_or_none()
     if game is None:
         return [Message(chat_id, "There is currently no running or pending game in this Chat.")]
     user = session.query(model.User).filter(model.User.api_id == user_id).one()
@@ -188,25 +197,16 @@ def _next_sheet(user: model.User) -> List[Message]:  # TODO optimize: take first
     if user.current_sheet is None and user.pending_sheets:
         next_sheet = user.pending_sheets[0]
         user.current_sheet = next_sheet
-        return [Message(user.chat_id, format_for_next(next_sheet))]  #
+        return [Message(user.chat_id, _format_for_next(next_sheet))]  #
     return []
 
 
 def _assign_sheet_to_next(sheet: model.Sheet):
     """ Assign the given sheet to the next user in the game's participant order """
-    next_mapping = dict(pairwise(p.user for p in sheet.game.participants))
+    next_mapping = dict(util.pairwise(p.user for p in sheet.game.participants))
     next_mapping[sheet.game.participants[-1].user] = sheet.game.participants[0].user
     sheet.pending_position = None
     next_mapping[sheet.entries[-1].user].pending_sheets.append(sheet)  # TODO optimize: get last entry
-
-
-T = TypeVar('T')
-def pairwise(iterable: Iterable[T]) -> Iterable[Tuple[T, T]]:
-    """s -> (s0,s1), (s1,s2), (s2, s3), ...
-    From https://docs.python.org/3/library/itertools.html"""
-    a, b = itertools.tee(iterable)
-    next(b, None)
-    return zip(a, b)
 
 
 def _finish_if_complete(game: model.Game) -> List[Message]:
@@ -239,17 +239,17 @@ def _finalize_game(game: model.Game) -> List[Message]:
 
     # Generate result messages
     for sheet in game.sheets:  # eager loading?
-        messages.append(Message(game.chat_id, format_result(sheet)))
+        messages.append(Message(game.chat_id, _format_result(sheet)))
 
     game.is_finished = True
     return messages
 
 
-def format_result(sheet: model.Sheet) -> str:
+def _format_result(sheet: model.Sheet) -> str:
     return "\n".join(entry.text for entry in sheet.entries)  # TODO UX: improve
 
 
-def format_for_next(sheet: model.Sheet) -> str:
+def _format_for_next(sheet: model.Sheet) -> str:
     if not sheet.entries:
         return f"Please ask a question to begin a new sheet for game {sheet.game.name}."
     else:
