@@ -57,10 +57,8 @@ def set_synchronous(chat_id: int, state: bool, session: Session) -> List[Message
     game = session.query(model.Game).filter(model.Game.chat_id == chat_id).one_or_none()
     if game is None:
         return [Message(chat_id, "No game to configure in this chat")]  # TODO UX
-    if game.chat_id != chat_id:
-        raise RuntimeError("Wrong chat")  # TODO No Exception
     if game.is_started or game.is_finished:
-        raise RuntimeError("Too late")  # TODO No Exception
+        return [Message(chat_id, "Too late")]  # TODO UX
         # TODO allow mode change for running games (requires passing of waiting sheets for sync → unsync)
     game.is_synchronous = state
     return [Message(chat_id, "ok")]  # TODO UX
@@ -78,7 +76,7 @@ def join_game(chat_id: int, user_id: int, session: Session) -> List[Message]:
         return [Message(chat_id, f"You must start a chat with the bot first. Use the following link: "
                                  f"https://t.me/{config['']['botname']}?start")]
     if game.is_started:
-        raise RuntimeError("Too late")  # TODO No Exception
+        return [Message(chat_id, "Too late")]  # TODO No Exception
         # TODO allow joining into running games
     game.participants.append(model.Participant(user=user))
     return [Message(chat_id, "ok")]  # TODO UX
