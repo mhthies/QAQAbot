@@ -1,4 +1,4 @@
-from typing import NamedTuple, List, Optional, Tuple, Iterable
+from typing import NamedTuple, List, Optional, Tuple, Iterable, Dict
 
 from sqlalchemy import func, and_
 from sqlalchemy.orm import Session, joinedload, aliased
@@ -133,11 +133,11 @@ def leave_game(chat_id: int, user_id: int, session: Session) -> List[Message]:
     if user.current_sheet is not None and user.current_sheet.game_id == game.id:
         result.append(Message(user.chat_id, "You left the game. No answer required anymore."))
         result.extend(_next_sheet([user], session))
-    for sheet in list(user.pending_sheets):
-        if sheet.game_id == game.id:
-            sheet.current_user = None
-            _assign_sheet_to_next(sheet)
-            result.extend(_next_sheet([sheet.current_user], session))  # TODO optimize
+    obsolete_sheets = [sheet
+                       for sheet in user.pending_sheets
+                       if sheet.game_id == game.id]
+    _assign_sheet_to_next(obsolete_sheets, game, session)
+    result.extend(_next_sheet([sheet.current_user for sheet in obsolete_sheets], session))
     return result
 
 
@@ -157,7 +157,7 @@ def immediately_stop_game(chat_id: int, session: Session) -> List[Message]:
                                             model.Game.is_finished == False).one_or_none()
     if game is None:
         return [Message(chat_id, "There is currently no running game in this Group.")]
-    return _finalize_game(game)
+    return _finalize_game(game, session)
 
 
 def submit_text(chat_id: int, text: str, session: Session) -> List[Message]:
@@ -179,19 +179,21 @@ def submit_text(chat_id: int, text: str, session: Session) -> List[Message]:
     current_sheet.current_user = None
 
     # Check if game is finished
-    sheet_infos = list(_game_sheet_infos(current_sheet.game, session))
-    result.extend(_finish_if_complete(current_sheet.game, sheet_infos, session))
-    result.extend(_finish_if_stopped_and_all_answered(current_sheet.game, sheet_infos, session))
+    game = current_sheet.game
+    sheet_infos = list(_game_sheet_infos(game, session))
+    result.extend(_finish_if_complete(game, sheet_infos, session))
+    result.extend(_finish_if_stopped_and_all_answered(game, sheet_infos, session))
 
-    if len(current_sheet.entries) < current_sheet.game.rounds:
-        if current_sheet.game.is_synchronous:
-            if all(len(sheet.entries) == len(current_sheet.entries) for sheet in current_sheet.game.sheets):  # TODO optimize with data from above
-                for sheet in current_sheet.game.sheets:
-                    _assign_sheet_to_next(sheet)  # TODO optimize loop
-                result.extend(_next_sheet(list(p.user for p in current_sheet.game.participants), session))
+    if len(current_sheet.entries) < game.rounds:
+        # In a synchronous game: Check if the round is finished and pass sheets on
+        if game.is_synchronous:
+            if all(num_entries == len(current_sheet.entries) for sheet, num_entries, last_entry in sheet_infos):
+                _assign_sheet_to_next(list(game.sheets), game, session)
+                result.extend(_next_sheet(list(p.user for p in game.participants), session))
 
+        # In an asynchronous game: Pass on this sheet
         else:
-            _assign_sheet_to_next(current_sheet)
+            _assign_sheet_to_next([current_sheet], game, session)
             result.extend(_next_sheet([current_sheet.current_user], session))
 
     result.extend(_next_sheet([user], session))
@@ -272,12 +274,28 @@ def _next_sheet(users: List[model.User], session: Session) -> List[Message]:
     return result
 
 
-def _assign_sheet_to_next(sheet: model.Sheet):
-    """ Assign the given sheet to the next user in the game's participant order """
-    next_mapping = dict(util.pairwise(p.user for p in sheet.game.participants))
-    next_mapping[sheet.game.participants[-1].user] = sheet.game.participants[0].user
-    sheet.pending_position = None
-    next_mapping[sheet.entries[-1].user].pending_sheets.append(sheet)  # TODO optimize: get last entry
+def _assign_sheet_to_next(sheets: List[model.Sheet], game: model.Game, session: Session):
+    """ Assign a list of sheets of a single game to the next user according the game's participant order """
+    next_mapping = {p1.user_id: p2.user for p1, p2 in zip(game.participants, game.participants[1:])}
+    next_mapping[game.participants[-1].user_id] = game.participants[0].user
+
+    # Fetch the last entry of all sheets with a single query. It is basically a manual version of SQLAlchemy's
+    # `selectinload`
+    max_pos_subquery = session.query(model.Entry.sheet_id,
+                                     func.max(model.Entry.position).label('max_position')) \
+        .group_by(model.Entry.sheet_id)\
+        .subquery()
+    query = session.query(model.Sheet.id, model.Entry)\
+        .outerjoin(max_pos_subquery)\
+        .outerjoin(model.Entry, and_(model.Entry.sheet_id == model.Sheet.id,
+                                     model.Entry.position == max_pos_subquery.c.max_position))\
+        .filter(model.Sheet.id.in_(sheet.id for sheet in sheets))
+    last_entry_by_sheet_id: Dict[int, model.Entry] = dict(query.all())
+
+    for sheet in sheets:
+        sheet.current_user = None
+        sheet.pending_position = None
+        next_mapping[last_entry_by_sheet_id[sheet.id].user_id].pending_sheets.append(sheet)
 
 
 def _finish_if_complete(game: model.Game, sheet_infos: Iterable[SheetProgressInfo], session: Session) -> List[Message]:
@@ -287,7 +305,8 @@ def _finish_if_complete(game: model.Game, sheet_infos: Iterable[SheetProgressInf
     return []
 
 
-def _finish_if_stopped_and_all_answered(game: model.Game, sheet_infos: Iterable[SheetProgressInfo], session: Session) -> List[Message]:
+def _finish_if_stopped_and_all_answered(game: model.Game, sheet_infos: Iterable[SheetProgressInfo],
+                                        session: Session) -> List[Message]:
     """ Finish the game if it is waiting for finishing and the finishing condition (each page ends with an answer)."""
     if game.is_waiting_for_finish:
         if all(sheet_info.last_entry.type == model.EntryType.ANSWER for sheet_info in sheet_infos):
