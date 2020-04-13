@@ -30,7 +30,7 @@ class FullGameTests(unittest.TestCase):
         # Create new game in "Funny Group" chat (chat_id=21)
         with session_scope(self.Session) as session:
             game.new_game(21, "Funny Group", session)
-        # Let Michael, Jenny and Jannik join
+        # Let Michael, Jenny and Lukas join
         with session_scope(self.Session) as session:
             game.join_game(21, 1, session)
         with session_scope(self.Session) as session:
@@ -75,7 +75,7 @@ class FullGameTests(unittest.TestCase):
         # Create new game in "Funny Group" chat (chat_id=21)
         with session_scope(self.Session) as session:
             game.new_game(21, "Funny Group", session)
-        # Let Michael, Jenny and Jannik join
+        # Let Michael, Jenny and Lukas join
         with session_scope(self.Session) as session:
             game.join_game(21, 1, session)
         with session_scope(self.Session) as session:
@@ -110,7 +110,65 @@ class FullGameTests(unittest.TestCase):
         with session_scope(self.Session) as session:
             msg = game.submit_text(13, "Answer 3", session)
         self.assertMessagesCorrect(msg, {13: re.compile(r"(?s)ask a question.*?Answer 2")})
-        # TODO test stopping game
+
+    def test_parallel_games(self):
+        self._setup_users()
+        # Create new game in "Funny Group" chat (chat_id=21)
+        with session_scope(self.Session) as session:
+            game.new_game(21, "Funny Group", session)
+        # Let Michael, Jenny join
+        with session_scope(self.Session) as session:
+            game.join_game(21, 1, session)
+        with session_scope(self.Session) as session:
+            game.join_game(21, 2, session)
+        # … and another game in the "Serious Group" chat (chat_id=22)
+        with session_scope(self.Session) as session:
+            game.new_game(22, "Serious Group", session)
+        # Lukas joins both games
+        with session_scope(self.Session) as session:
+            game.join_game(22, 3, session)
+        with session_scope(self.Session) as session:
+            game.join_game(21, 3, session)
+        # The first Game ist started (in synchronous mode)
+        with session_scope(self.Session) as session:
+            game.set_rounds(21, 3, session)
+        with session_scope(self.Session) as session:
+            msg = game.start_game(21, session)
+        self.assertMessagesCorrect(msg,
+                                   {21: re.compile("ok"),
+                                    **{i: re.compile("(?s)ask a question.*?Funny Group") for i in (11, 12, 13)}})
+        # Michael writes the first question
+        with session_scope(self.Session) as session:
+            msg = game.submit_text(11, "Question A1", session)
+        self.assertMessagesCorrect(msg, {})
+        # Michael and Jannik join the second game
+        with session_scope(self.Session) as session:
+            game.join_game(22, 4, session)
+        with session_scope(self.Session) as session:
+            game.join_game(22, 1, session)
+        # The second Game ist started (in asynchronous mode)
+        with session_scope(self.Session) as session:
+            game.set_rounds(22, 2, session)
+        with session_scope(self.Session) as session:
+            game.set_synchronous(22, False, session)
+        with session_scope(self.Session) as session:
+            msg = game.start_game(22, session)
+        # Only Michael and Jannik should be asked for a question, Lukas is still working on a question for the first
+        # game
+        self.assertMessagesCorrect(msg,
+                                   {22: re.compile("ok"),
+                                    **{i: re.compile("(?s)ask a question.*?Serious Group") for i in (11, 14)}})
+        # Lukas submits two questions
+        with session_scope(self.Session) as session:
+            msg = game.submit_text(13, "Question A3", session)
+        # The first question waits for the synchronous game …
+        self.assertMessagesCorrect(msg, {13: re.compile(r"(?s)ask a question.*?Serious Group")})
+        with session_scope(self.Session) as session:
+            msg = game.submit_text(13, "Question B3", session)
+        # … the second question is put on Jannik's stack, but he's still working on a question
+        self.assertMessagesCorrect(msg, {})
+
+        # TODO play on, end both games (one immediate, one waiting for answers)
 
     def assertMessagesCorrect(self, messages: List[game.Message], expected: Dict[int, Pattern]) -> None:
         for message in messages:
