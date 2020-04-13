@@ -21,7 +21,7 @@ class Game(Base):
     is_synchronous = Column(Boolean)
     is_showing_result_names = Column(Boolean)
 
-    participants = relationship('Participant', back_populates='game',
+    participants = relationship('Participant', back_populates='game', order_by='Participant.game_order',
                                 collection_class=ordering_list('game_order'))  # TODO Allow randomized games
     sheets = relationship('Sheet', back_populates='game')
 
@@ -36,7 +36,7 @@ class User(Base):
 
     participations = relationship('Participant', back_populates='user')
     pending_sheets = relationship('Sheet', back_populates='current_user', foreign_keys="Sheet.current_user_id",
-                                  collection_class=ordering_list('pending_position'))
+                                  order_by='Sheet.pending_position', collection_class=ordering_list('pending_position'))
     current_sheet = relationship('Sheet', foreign_keys=current_sheet_id, post_update=True)
 
 

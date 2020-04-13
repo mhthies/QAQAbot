@@ -75,7 +75,7 @@ def join_game(chat_id: int, user_id: int, session: Session) -> List[Message]:
     if game.is_started:
         raise RuntimeError("Too late")  # TODO No Exception
         # TODO allow joining into running games
-    session.add(model.Participant(user=user, game=game))
+    game.participants.append(model.Participant(user=user))
     return [Message(chat_id, "ok")]  # TODO UX
 
 
@@ -196,7 +196,8 @@ def _assign_sheet_to_next(sheet: model.Sheet):
     """ Assign the given sheet to the next user in the game's participant order """
     next_mapping = dict(pairwise(p.user for p in sheet.game.participants))
     next_mapping[sheet.game.participants[-1].user] = sheet.game.participants[0].user
-    sheet.current_user = next_mapping[sheet.entries[-1].user]  # TODO optimize: get last entry
+    sheet.pending_position = None
+    next_mapping[sheet.entries[-1].user].pending_sheets.append(sheet)  # TODO optimize: get last entry
 
 
 T = TypeVar('T')
