@@ -94,9 +94,10 @@ def start_game(chat_id: int, session: Session) -> List[Message]:
     elif len(game.participants) < 2:
         return [Message(chat_id, "No games with less than two participants permitted")]
 
-    # Create sheets
+    # Create sheets and start game
     for participant in game.participants:
         participant.user.pending_sheets.append(model.Sheet(game=game))
+    game.is_started = True
 
     # Set number of rounds if unset
     if game.rounds is None:
@@ -140,11 +141,12 @@ def leave_game(chat_id: int, user_id: int, session: Session) -> List[Message]:
 def stop_game(chat_id: int, session: Session) -> List[Message]:
     game = session.query(model.Game).filter(model.Game.chat_id == chat_id,
                                             model.Game.is_started == True,
-                                            model.Game.is_finished == False).one_or_nont()
+                                            model.Game.is_finished == False).one_or_none()
     if game is None:
         return [Message(chat_id, "There is currently no running game in this Group.")]
     game.is_waiting_for_finish = True
-    return _finish_if_stopped_and_all_answered(game, session)
+    sheet_infos = list(_game_sheet_infos(game, session))
+    return _finish_if_stopped_and_all_answered(game, sheet_infos, session)
 
 
 def immediately_stop_game(chat_id: int, session: Session) -> List[Message]:
@@ -180,7 +182,7 @@ def submit_text(chat_id: int, text: str, session: Session) -> List[Message]:
     result.extend(_finish_if_complete(game, sheet_infos, session))
     result.extend(_finish_if_stopped_and_all_answered(game, sheet_infos, session))
 
-    if len(current_sheet.entries) < game.rounds:
+    if not game.is_finished and len(current_sheet.entries) < game.rounds:
         # In a synchronous game: Check if the round is finished and pass sheets on
         if game.is_synchronous:
             if all(num_entries == len(current_sheet.entries) for sheet, num_entries, last_entry in sheet_infos):
@@ -233,6 +235,7 @@ def _next_sheet(users: List[model.User], session: Session) -> List[Message]:
     """ For a list of users, check if they have no current sheet and pick the next sheet from their pending stack."""
     # Extended version of _game_sheet_infos() to efficiently query the users' next sheets, their entry numbers and
     # last entries.
+    # TODO exclude answered sheets of games waiting to be stopped
     min_sheet_pos_subquery = session.query(model.Sheet.current_user_id,
                                            func.min(model.Sheet.pending_position).label('min_position')) \
         .group_by(model.Sheet.current_user_id) \
@@ -305,7 +308,8 @@ def _finish_if_stopped_and_all_answered(game: model.Game, sheet_infos: Iterable[
                                         session: Session) -> List[Message]:
     """ Finish the game if it is waiting for finishing and the finishing condition (each page ends with an answer)."""
     if game.is_waiting_for_finish:
-        if all(sheet_info.last_entry.type == model.EntryType.ANSWER for sheet_info in sheet_infos):
+        if all(sheet_info.last_entry is None or sheet_info.last_entry.type == model.EntryType.ANSWER
+               for sheet_info in sheet_infos):
             return _finalize_game(game, session)
     return []
 
