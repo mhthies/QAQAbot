@@ -141,14 +141,14 @@ class FullGameTests(unittest.TestCase):
         with session_scope(self.Session) as session:
             msg = game.submit_text(11, "Question A1", session)
         self.assertMessagesCorrect(msg, {})
-        # Michael and Jannik join the second game
+        # Jannik and Michael join the second game
         with session_scope(self.Session) as session:
             game.join_game(22, 4, session)
         with session_scope(self.Session) as session:
             game.join_game(22, 1, session)
-        # The second Game ist started (in asynchronous mode)
+        # The second Game is started (in asynchronous mode)
         with session_scope(self.Session) as session:
-            game.set_rounds(22, 2, session)
+            game.set_rounds(22, 3, session)
         with session_scope(self.Session) as session:
             game.set_synchronous(22, False, session)
         with session_scope(self.Session) as session:
@@ -158,6 +158,12 @@ class FullGameTests(unittest.TestCase):
         self.assertMessagesCorrect(msg,
                                    {22: re.compile("ok"),
                                     **{i: re.compile("(?s)ask a question.*?Serious Group") for i in (11, 14)}})
+        # We now have the following Sheets:
+        #   Michael: {G2: }
+        #   Jenny: {G1: }, {G1: "Question A1" (waiting)}
+        #   Lukas: {G1: }, {G2: }
+        #   Jannik: {G2: }
+
         # Lukas submits two questions
         with session_scope(self.Session) as session:
             msg = game.submit_text(13, "Question A3", session)
@@ -167,8 +173,57 @@ class FullGameTests(unittest.TestCase):
             msg = game.submit_text(13, "Question B3", session)
         # … the second question is put on Jannik's stack, but he's still working on a question
         self.assertMessagesCorrect(msg, {})
+        # Michael submits one question. He should not get the question in Game 1
+        with session_scope(self.Session) as session:
+            msg = game.submit_text(11, "Question B1", session)
+        self.assertMessagesCorrect(msg, {13: re.compile(r"(?s)answer.*?Question B1")})
 
-        # TODO play on, end both games (one immediate, one waiting for answers)
+        # We now have the following Sheets:
+        #   Michael: {G1: "Question A3" (waiting)},
+        #   Jenny: {G1: }, {G1: "Question A1" (waiting)}
+        #   Lukas: {G2: "Question B1"}
+        #   Jannik: {G2: }, {G2: "Question B3"},
+        # Now, Jenny questions/answers two sheets, the first one triggers a new round in Game 1:
+        with session_scope(self.Session) as session:
+            msg = game.submit_text(12, "Question A2", session)
+        self.assertMessagesCorrect(msg, {11: re.compile(r"(?s)answer.*?Question A3"),
+                                         12: re.compile(r"(?s)answer.*?Question A1")})
+        with session_scope(self.Session) as session:
+            msg = game.submit_text(12, "Answer A2", session)
+        self.assertMessagesCorrect(msg, {})
+
+        # We now have the following Sheets:
+        #   Michael: {G1: "Question A3"},
+        #   Jenny: --
+        #   Lukas: {G2: "Question B1"}, {G1: "Question A2"}, {G1: "Question A1", "Answer A2" (waiting)}
+        #   Jannik: {G2: }, {G2: "Question B3"},
+        # Now, let's try to stop Game 2 with all sheets answered
+        with session_scope(self.Session) as session:
+            msg = game.stop_game(22, session)
+        self.assertMessagesCorrect(msg, {})
+        with session_scope(self.Session) as session:
+            msg = game.submit_text(14, "Question B4", session)
+        self.assertMessagesCorrect(msg, {14: re.compile(r"(?s)answer.*?Question B3")})
+        with session_scope(self.Session) as session:
+            msg = game.submit_text(14, "Answer B4", session)
+        self.assertMessagesCorrect(msg, {})
+        with session_scope(self.Session) as session:
+            msg = game.submit_text(11, "Answer A1", session)
+        self.assertMessagesCorrect(msg, {11: re.compile(r"(?s)answer.*?Question B4")})
+        with session_scope(self.Session) as session:
+            msg = game.submit_text(11, "Answer B1", session)
+        self.assertMessagesCorrect(msg, {11: re.compile(r"(?s)ask a question.*?Answer B4")})
+        # We now have the following Sheets:
+        #   Michael: {G2: "Question B3", "Answer B4"}
+        #   Jenny: {G1: "Question A3", "Answer A1" (waiting)}
+        #   Lukas: {G2: "Question B1"}, {G1: "Question A2"}, {G1: "Question A1", "Answer A2" (waiting)},
+        #          {G2: "Question B4", "Answer B1"}
+        #   Jannik: --
+        with session_scope(self.Session) as session:
+            msg = game.submit_text(13, "Answer B3", session)
+        self.assertMessagesCorrect(msg, {11: re.compile(r"(?s)No answer required"),
+                                         13: re.compile(r"(?s)No answer required|answer.*Question A2"),
+                                         22: re.compile("(?s)Question B3.*Answer B4|Question B1.*Answer B3|Question B4.*Answer B1")})
 
     def assertMessagesCorrect(self, messages: List[game.Message], expected: Dict[int, Pattern]) -> None:
         for message in messages:
