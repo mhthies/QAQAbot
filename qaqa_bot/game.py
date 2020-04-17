@@ -1,3 +1,4 @@
+import functools
 from typing import NamedTuple, List, Optional, Tuple, Iterable, Dict, Any, Callable
 
 import sqlalchemy
@@ -16,12 +17,38 @@ class Message(NamedTuple):
     text: str
 
 
+def with_session(f):
+    """ A decorator for methods of the GameServer class to handle database sessions in a magical way. """
+    @functools.wraps(f)
+    def wrapper(self: "GameServer", *args, **kwargs):
+        session = self.session_maker()
+        try:
+            f(self, session, *args, **kwargs)
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+    return wrapper
+
+
 class GameServer:
-    def __init__(self, config: Dict[str, Any], send_callback: Callable[[List[Message]], None]):
+    def __init__(self, config: Dict[str, Any],
+                 send_callback: Callable[[List[Message]], None],
+                 database_engine=None):
         self.config = config
         self.send_callback = send_callback
 
-    def register_user(self, chat_id: int, user_id: int, user_name: str, session: Session) -> None:
+        # database_engine may be given (e.g. for testing purposes). Otherwise, we construct one from the configuration
+        if database_engine is None:
+            database_engine = sqlalchemy.create_engine(config['database']['connection'])
+
+        # Create database session maker
+        self.session_maker = sqlalchemy.orm.sessionmaker(bind=database_engine)
+
+    @with_session
+    def register_user(self, session: Session, chat_id: int, user_id: int, user_name: str) -> None:
         existing_user = session.query(model.User).filter(model.User.api_id == user_id).one_or_none()
         if existing_user is not None:
             self.send_callback([Message(chat_id, "already registered")])
@@ -33,14 +60,16 @@ class GameServer:
     def give_help_meesage(self, chat_id: int) -> None:
         self.send_callback([Message(chat_id, "help message not implemented")])
 
-    def new_game(self, chat_id: int, name: str, session: Session) -> List[Message]:
+    @with_session
+    def new_game(self, session: Session, chat_id: int, name: str) -> List[Message]:
         # TODO prevent new games in single user chats
         game = model.Game(name=name, chat_id=chat_id, is_finished=False, is_started=False, is_synchronous=True)
         session.add(game)
         result = Message(chat_id, f"""New game created. Use /{COMMAND_JOIN} to join the game.""")  # TODO UX: more info
         return [result]
 
-    def set_rounds(self, chat_id: int, rounds: int, session: Session) -> None:
+    @with_session
+    def set_rounds(self, session: Session, chat_id: int, rounds: int) -> None:
         game = session.query(model.Game).filter(model.Game.chat_id == chat_id).one_or_none()
         if game is None:
             self.send_callback([Message(chat_id, "No game to configure in this chat")])  # TODO UX: Add hint to COMMAND_NEW_GAME
@@ -56,7 +85,8 @@ class GameServer:
         game.rounds = rounds
         self.send_callback([Message(chat_id, "ok")])  # TODO UX
 
-    def set_synchronous(self, chat_id: int, state: bool, session: Session) -> None:
+    @with_session
+    def set_synchronous(self, session: Session, chat_id: int, state: bool) -> None:
         game = session.query(model.Game).filter(model.Game.chat_id == chat_id).one_or_none()
         if game is None:
             self.send_callback([Message(chat_id, "No game to configure in this chat")])  # TODO UX
@@ -68,7 +98,8 @@ class GameServer:
         game.is_synchronous = state
         self.send_callback([Message(chat_id, "ok")])  # TODO UX
 
-    def join_game(self, chat_id: int, user_id: int, session: Session) -> None:
+    @with_session
+    def join_game(self, session: Session, chat_id: int, user_id: int) -> None:
         game = session.query(model.Game)\
             .filter(model.Game.chat_id == chat_id, model.Game.is_finished == False)\
             .one_or_none()
@@ -88,7 +119,8 @@ class GameServer:
         game.participants.append(model.Participant(user=user))
         self.send_callback([Message(chat_id, "ok")])  # TODO UX
 
-    def start_game(self, chat_id: int, session: Session) -> None:
+    @with_session
+    def start_game(self, session: Session, chat_id: int) -> None:
         game = session.query(model.Game)\
             .filter(model.Game.chat_id == chat_id, model.Game.is_finished == False)\
             .one_or_none()
@@ -117,7 +149,8 @@ class GameServer:
         result.extend(_next_sheet([p.user for p in game.participants], session))
         self.send_callback(result)
 
-    def leave_game(self, chat_id: int, user_id: int, session: Session) -> None:
+    @with_session
+    def leave_game(self, session: Session, chat_id: int, user_id: int) -> None:
         game = session.query(model.Game)\
             .filter(model.Game.chat_id == chat_id, model.Game.is_finished == False)\
             .one_or_none()
@@ -146,7 +179,8 @@ class GameServer:
         result.extend(_next_sheet([sheet.current_user for sheet in obsolete_sheets], session))
         self.send_callback(result)
 
-    def stop_game(self, chat_id: int, session: Session) -> None:
+    @with_session
+    def stop_game(self, session: Session, chat_id: int) -> None:
         game = session.query(model.Game).filter(model.Game.chat_id == chat_id,
                                                 model.Game.is_started == True,
                                                 model.Game.is_finished == False).one_or_none()
@@ -157,7 +191,8 @@ class GameServer:
         sheet_infos = list(_game_sheet_infos(game, session))
         self.send_callback(_finish_if_stopped_and_all_answered(game, sheet_infos, session))
 
-    def immediately_stop_game(self, chat_id: int, session: Session) -> None:
+    @with_session
+    def immediately_stop_game(self, session: Session, chat_id: int) -> None:
         game = session.query(model.Game).filter(model.Game.chat_id == chat_id,
                                                 model.Game.is_started == True,
                                                 model.Game.is_finished == False).one_or_none()
@@ -166,7 +201,8 @@ class GameServer:
             return
         self.send_callback(_finalize_game(game, session))
 
-    def submit_text(self, chat_id: int, text: str, session: Session) -> None:
+    @with_session
+    def submit_text(self, session: Session, chat_id: int, text: str) -> None:
         user = session.query(model.User).filter(model.User.chat_id == chat_id).one_or_none()
         if user is None:
             self.send_callback([Message(chat_id, f"Unexpected message. Please use /{COMMAND_REGISTER} to register with the bot.")])
