@@ -1,5 +1,5 @@
 import functools
-from typing import NamedTuple, List, Optional, Tuple, Iterable, Dict, Any, Callable
+from typing import NamedTuple, List, Optional, Tuple, Iterable, Dict, Any, Callable, MutableMapping
 
 import sqlalchemy
 from sqlalchemy import func, and_
@@ -34,7 +34,7 @@ def with_session(f):
 
 
 class GameServer:
-    def __init__(self, config: Dict[str, Any],
+    def __init__(self, config: MutableMapping[str, Any],
                  send_callback: Callable[[List[Message]], None],
                  database_engine=None):
         self.config = config
@@ -238,6 +238,7 @@ class GameServer:
             # In an asynchronous game: Pass on this sheet
             else:
                 _assign_sheet_to_next([current_sheet], game, session)
+                assert(current_sheet.current_user is not None)
                 result.extend(_next_sheet([current_sheet.current_user], session))
 
         result.extend(_next_sheet([user], session))
@@ -397,6 +398,7 @@ def _format_for_next(sheet_info: SheetProgressInfo) -> str:
     if sheet_info.num_entries == 0:
         return f"Please ask a question to begin a new sheet for game {sheet_info.sheet.game.name}."
     else:
+        assert(sheet_info.last_entry is not None)
         if sheet_info.last_entry.type == model.EntryType.ANSWER:
             return f"Please ask a question that may be answered with:\n“{sheet_info.last_entry.text}”"
         else:
