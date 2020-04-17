@@ -73,11 +73,12 @@ class GameServer:
 
     @with_session
     def set_rounds(self, session: Session, chat_id: int, rounds: int) -> None:
-        game = session.query(model.Game).filter(model.Game.chat_id == chat_id).one_or_none()
+        game = session.query(model.Game).filter(model.Game.chat_id == chat_id,
+                                                model.Game.is_finished == False).one_or_none()
         if game is None:
             self.send_callback([Message(chat_id, "No game to configure in this chat")])  # TODO UX: Add hint to COMMAND_NEW_GAME
             return
-        if game.is_started or game.is_finished:
+        if game.is_started:
             self.send_callback([Message(chat_id, "Game already started")])
             return
             # TODO allow rounds change for running games (unless a sheet has > rounds * entries). In this case, sheets with
@@ -90,11 +91,12 @@ class GameServer:
 
     @with_session
     def set_synchronous(self, session: Session, chat_id: int, state: bool) -> None:
-        game = session.query(model.Game).filter(model.Game.chat_id == chat_id).one_or_none()
+        game = session.query(model.Game).filter(model.Game.chat_id == chat_id,
+                                                model.Game.is_finished == False).one_or_none()
         if game is None:
             self.send_callback([Message(chat_id, "No game to configure in this chat")])  # TODO UX
             return
-        if game.is_started or game.is_finished:
+        if game.is_started:
             self.send_callback([Message(chat_id, "Too late")])  # TODO UX
             return
             # TODO allow mode change for running games (requires passing of waiting sheets for sync → unsync)
