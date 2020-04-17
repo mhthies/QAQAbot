@@ -1,8 +1,8 @@
-from typing import NamedTuple, List, Optional, Tuple, Iterable, Dict
+from typing import NamedTuple, List, Optional, Tuple, Iterable, Dict, Any, Callable
 
+import sqlalchemy
 from sqlalchemy import func, and_
 from sqlalchemy.orm import Session, joinedload, aliased
-import toml
 
 from . import model, util
 
@@ -10,192 +10,185 @@ COMMAND_NEW_GAME = "newgame"
 COMMAND_JOIN = "join"
 COMMAND_REGISTER = "start"
 
-config = toml.load("config.toml")  # TODO
-
 
 class Message(NamedTuple):
     chat_id: int
     text: str
 
 
-def register_user(chat_id: int, user_id: int, user_name: str, session: Session) -> List[Message]:
-    existing_user = session.query(model.User).filter(model.User.api_id == user_id).one_or_none()
-    if existing_user is not None:
-        return [Message(chat_id, "already registered")]
-    user = model.User(api_id=user_id, chat_id=chat_id, name=user_name)
-    session.add(user)
-    return [Message(chat_id, "hi there")]  # TODO UX: return explanation
+class GameServer:
+    def __init__(self, config: Dict[str, Any], send_callback: Callable[[List[Message]], None]):
+        self.config = config
+        self.send_callback = send_callback
 
+    def register_user(self, chat_id: int, user_id: int, user_name: str, session: Session) -> List[Message]:
+        existing_user = session.query(model.User).filter(model.User.api_id == user_id).one_or_none()
+        if existing_user is not None:
+            return [Message(chat_id, "already registered")]
+        user = model.User(api_id=user_id, chat_id=chat_id, name=user_name)
+        session.add(user)
+        return [Message(chat_id, "hi there")]  # TODO UX: return explanation
 
-def give_help_meesage(chat_id: int) -> List[Message]:
-    return [Message(chat_id, "help message not implemented")]  # TODO UX
+    def give_help_meesage(self, chat_id: int) -> List[Message]:
+        return [Message(chat_id, "help message not implemented")]  # TODO UX
 
+    def new_game(self, chat_id: int, name: str, session: Session) -> List[Message]:
+        # TODO prevent new games in single user chats
+        game = model.Game(name=name, chat_id=chat_id, is_finished=False, is_started=False, is_synchronous=True)
+        session.add(game)
+        result = Message(chat_id, f"""New game created. Use /{COMMAND_JOIN} to join the game.""")  # TODO UX: more info
+        return [result]
 
-def new_game(chat_id: int, name: str, session: Session) -> List[Message]:
-    # TODO prevent new games in single user chats
-    game = model.Game(name=name, chat_id=chat_id, is_finished=False, is_started=False, is_synchronous=True)
-    session.add(game)
-    result = Message(chat_id, f"""New game created. Use /{COMMAND_JOIN} to join the game.""")  # TODO UX: more info
-    return [result]
+    def set_rounds(self, chat_id: int, rounds: int, session: Session) -> List[Message]:
+        game = session.query(model.Game).filter(model.Game.chat_id == chat_id).one_or_none()
+        if game is None:
+            return [Message(chat_id, "No game to configure in this chat")]  # TODO UX: Add hint to COMMAND_NEW_GAME
+        if game.is_started or game.is_finished:
+            return [Message(chat_id, "Game already started")]
+            # TODO allow rounds change for running games (unless a sheet has > rounds * entries). In this case, sheets with
+            #  len(entries) = old_rounds may require to be newly assigned
+        if rounds < 1:
+            return [Message(chat_id, "invalid rounds number. Must be >= 1")]
+        game.rounds = rounds
+        return [Message(chat_id, "ok")]  # TODO UX
 
+    def set_synchronous(self, chat_id: int, state: bool, session: Session) -> List[Message]:
+        game = session.query(model.Game).filter(model.Game.chat_id == chat_id).one_or_none()
+        if game is None:
+            return [Message(chat_id, "No game to configure in this chat")]  # TODO UX
+        if game.is_started or game.is_finished:
+            return [Message(chat_id, "Too late")]  # TODO UX
+            # TODO allow mode change for running games (requires passing of waiting sheets for sync → unsync)
+        game.is_synchronous = state
+        return [Message(chat_id, "ok")]  # TODO UX
 
-def set_rounds(chat_id: int, rounds: int, session: Session) -> List[Message]:
-    game = session.query(model.Game).filter(model.Game.chat_id == chat_id).one_or_none()
-    if game is None:
-        return [Message(chat_id, "No game to configure in this chat")]  # TODO UX: Add hint to COMMAND_NEW_GAME
-    if game.is_started or game.is_finished:
-        return [Message(chat_id, "Game already started")]
-        # TODO allow rounds change for running games (unless a sheet has > rounds * entries). In this case, sheets with
-        #  len(entries) = old_rounds may require to be newly assigned
-    if rounds < 1:
-        return [Message(chat_id, "invalid rounds number. Must be >= 1")]
-    game.rounds = rounds
-    return [Message(chat_id, "ok")]  # TODO UX
+    def join_game(self, chat_id: int, user_id: int, session: Session) -> List[Message]:
+        game = session.query(model.Game)\
+            .filter(model.Game.chat_id == chat_id, model.Game.is_finished == False)\
+            .one_or_none()
+        if game is None:
+            return [Message(chat_id, f"There is currently no pending game in this Group. "
+                                     f"Use /{COMMAND_NEW_GAME} to start one.")]
+        user = session.query(model.User).filter(model.User.api_id == user_id).one_or_none()
+        if user is None:
+            return [Message(chat_id, f"You must start a chat with the bot first. Use the following link: "
+                                     f"https://t.me/{self.config['']['botname']}?start")]
+        if game.is_started:
+            return [Message(chat_id, "Too late")]  # TODO No Exception
+            # TODO allow joining into running games
+        game.participants.append(model.Participant(user=user))
+        return [Message(chat_id, "ok")]  # TODO UX
 
+    def start_game(self, chat_id: int, session: Session) -> List[Message]:
+        game = session.query(model.Game)\
+            .filter(model.Game.chat_id == chat_id, model.Game.is_finished == False)\
+            .one_or_none()
+        if game is None:
+            return [Message(chat_id, f"There is currently no pending game in this Group. "
+                                     f"Use /{COMMAND_NEW_GAME} to start one.")]
+        elif game.is_started:
+            return [Message(chat_id, "The game is already running")]  # TODO Create status command, refer to it.
+        elif len(game.participants) < 2:
+            return [Message(chat_id, "No games with less than two participants permitted")]
 
-def set_synchronous(chat_id: int, state: bool, session: Session) -> List[Message]:
-    game = session.query(model.Game).filter(model.Game.chat_id == chat_id).one_or_none()
-    if game is None:
-        return [Message(chat_id, "No game to configure in this chat")]  # TODO UX
-    if game.is_started or game.is_finished:
-        return [Message(chat_id, "Too late")]  # TODO UX
-        # TODO allow mode change for running games (requires passing of waiting sheets for sync → unsync)
-    game.is_synchronous = state
-    return [Message(chat_id, "ok")]  # TODO UX
+        # Create sheets and start game
+        for participant in game.participants:
+            participant.user.pending_sheets.append(model.Sheet(game=game))
+        game.is_started = True
 
+        # Set number of rounds if unset
+        if game.rounds is None:
+            game.rounds = len(game.participants)
 
-def join_game(chat_id: int, user_id: int, session: Session) -> List[Message]:
-    game = session.query(model.Game)\
-        .filter(model.Game.chat_id == chat_id, model.Game.is_finished == False)\
-        .one_or_none()
-    if game is None:
-        return [Message(chat_id, f"There is currently no pending game in this Group. "
-                                 f"Use /{COMMAND_NEW_GAME} to start one.")]
-    user = session.query(model.User).filter(model.User.api_id == user_id).one_or_none()
-    if user is None:
-        return [Message(chat_id, f"You must start a chat with the bot first. Use the following link: "
-                                 f"https://t.me/{config['']['botname']}?start")]
-    if game.is_started:
-        return [Message(chat_id, "Too late")]  # TODO No Exception
-        # TODO allow joining into running games
-    game.participants.append(model.Participant(user=user))
-    return [Message(chat_id, "ok")]  # TODO UX
+        # Give sheets to participants
+        result = [Message(chat_id, "ok")]
+        result.extend(_next_sheet([p.user for p in game.participants], session))
 
+        return result
 
-def start_game(chat_id: int, session: Session) -> List[Message]:
-    game = session.query(model.Game)\
-        .filter(model.Game.chat_id == chat_id, model.Game.is_finished == False)\
-        .one_or_none()
-    if game is None:
-        return [Message(chat_id, f"There is currently no pending game in this Group. "
-                                 f"Use /{COMMAND_NEW_GAME} to start one.")]
-    elif game.is_started:
-        return [Message(chat_id, "The game is already running")]  # TODO Create status command, refer to it.
-    elif len(game.participants) < 2:
-        return [Message(chat_id, "No games with less than two participants permitted")]
+    def leave_game(self, chat_id: int, user_id: int, session: Session) -> List[Message]:
+        game = session.query(model.Game)\
+            .filter(model.Game.chat_id == chat_id, model.Game.is_finished == False)\
+            .one_or_none()
+        if game is None:
+            return [Message(chat_id, "There is currently no running or pending game in this Chat.")]
+        user = session.query(model.User).filter(model.User.api_id == user_id).one()
 
-    # Create sheets and start game
-    for participant in game.participants:
-        participant.user.pending_sheets.append(model.Sheet(game=game))
-    game.is_started = True
+        # Remove user as participant from game
+        participation = session.query(model.Participant).filter(user=user, game=game).one_or_none()
+        if participation is None:
+            return [Message(chat_id, "You didn't participate in this game.")]
+        session.delete(participation)
 
-    # Set number of rounds if unset
-    if game.rounds is None:
-        game.rounds = len(game.participants)
+        result = [Message(chat_id, "ok")]  # TODO
 
-    # Give sheets to participants
-    result = [Message(chat_id, "ok")]
-    result.extend(_next_sheet([p.user for p in game.participants], session))
+        # Pass on pending sheets
+        if user.current_sheet is not None and user.current_sheet.game_id == game.id:
+            result.append(Message(user.chat_id, "You left the game. No answer required anymore."))
+            result.extend(_next_sheet([user], session))
+        obsolete_sheets = [sheet
+                           for sheet in user.pending_sheets
+                           if sheet.game_id == game.id]
+        _assign_sheet_to_next(obsolete_sheets, game, session)
+        result.extend(_next_sheet([sheet.current_user for sheet in obsolete_sheets], session))
+        return result
 
-    return result
+    def stop_game(self, chat_id: int, session: Session) -> List[Message]:
+        game = session.query(model.Game).filter(model.Game.chat_id == chat_id,
+                                                model.Game.is_started == True,
+                                                model.Game.is_finished == False).one_or_none()
+        if game is None:
+            return [Message(chat_id, "There is currently no running game in this Group.")]
+        game.is_waiting_for_finish = True
+        sheet_infos = list(_game_sheet_infos(game, session))
+        return _finish_if_stopped_and_all_answered(game, sheet_infos, session)
 
+    def immediately_stop_game(self, chat_id: int, session: Session) -> List[Message]:
+        game = session.query(model.Game).filter(model.Game.chat_id == chat_id,
+                                                model.Game.is_started == True,
+                                                model.Game.is_finished == False).one_or_none()
+        if game is None:
+            return [Message(chat_id, "There is currently no running game in this Group.")]
+        return _finalize_game(game, session)
 
-def leave_game(chat_id: int, user_id: int, session: Session) -> List[Message]:
-    game = session.query(model.Game)\
-        .filter(model.Game.chat_id == chat_id, model.Game.is_finished == False)\
-        .one_or_none()
-    if game is None:
-        return [Message(chat_id, "There is currently no running or pending game in this Chat.")]
-    user = session.query(model.User).filter(model.User.api_id == user_id).one()
+    def submit_text(self, chat_id: int, text: str, session: Session) -> List[Message]:
+        user = session.query(model.User).filter(model.User.chat_id == chat_id).one_or_none()
+        if user is None:
+            return [Message(chat_id, f"Unexpected message. Please use /{COMMAND_REGISTER} to register with the bot.")]
+        current_sheet = user.current_sheet
+        if current_sheet is None:
+            return [Message(chat_id, "Unexpected message.")]
 
-    # Remove user as participant from game
-    participation = session.query(model.Participant).filter(user=user, game=game).one_or_none()
-    if participation is None:
-        return [Message(chat_id, "You didn't participate in this game.")]
-    session.delete(participation)
+        result = []
 
-    result = [Message(chat_id, "ok")]  # TODO
+        # Create new entry
+        entry_type = (model.EntryType.QUESTION
+                      if not current_sheet.entries or current_sheet.entries[-1].type == model.EntryType.ANSWER
+                      else model.EntryType.ANSWER)
+        current_sheet.entries.append(model.Entry(user=user, text=text, type=entry_type))
+        user.current_sheet = None
+        current_sheet.current_user = None
 
-    # Pass on pending sheets
-    if user.current_sheet is not None and user.current_sheet.game_id == game.id:
-        result.append(Message(user.chat_id, "You left the game. No answer required anymore."))
+        # Check if game is finished
+        game = current_sheet.game
+        sheet_infos = list(_game_sheet_infos(game, session))
+        result.extend(_finish_if_complete(game, sheet_infos, session))
+        result.extend(_finish_if_stopped_and_all_answered(game, sheet_infos, session))
+
+        if not game.is_finished and len(current_sheet.entries) < game.rounds:
+            # In a synchronous game: Check if the round is finished and pass sheets on
+            if game.is_synchronous:
+                if all(num_entries == len(current_sheet.entries) for sheet, num_entries, last_entry in sheet_infos):
+                    _assign_sheet_to_next(list(game.sheets), game, session)
+                    result.extend(_next_sheet(list(p.user for p in game.participants), session))
+
+            # In an asynchronous game: Pass on this sheet
+            else:
+                _assign_sheet_to_next([current_sheet], game, session)
+                result.extend(_next_sheet([current_sheet.current_user], session))
+
         result.extend(_next_sheet([user], session))
-    obsolete_sheets = [sheet
-                       for sheet in user.pending_sheets
-                       if sheet.game_id == game.id]
-    _assign_sheet_to_next(obsolete_sheets, game, session)
-    result.extend(_next_sheet([sheet.current_user for sheet in obsolete_sheets], session))
-    return result
-
-
-def stop_game(chat_id: int, session: Session) -> List[Message]:
-    game = session.query(model.Game).filter(model.Game.chat_id == chat_id,
-                                            model.Game.is_started == True,
-                                            model.Game.is_finished == False).one_or_none()
-    if game is None:
-        return [Message(chat_id, "There is currently no running game in this Group.")]
-    game.is_waiting_for_finish = True
-    sheet_infos = list(_game_sheet_infos(game, session))
-    return _finish_if_stopped_and_all_answered(game, sheet_infos, session)
-
-
-def immediately_stop_game(chat_id: int, session: Session) -> List[Message]:
-    game = session.query(model.Game).filter(model.Game.chat_id == chat_id,
-                                            model.Game.is_started == True,
-                                            model.Game.is_finished == False).one_or_none()
-    if game is None:
-        return [Message(chat_id, "There is currently no running game in this Group.")]
-    return _finalize_game(game, session)
-
-
-def submit_text(chat_id: int, text: str, session: Session) -> List[Message]:
-    user = session.query(model.User).filter(model.User.chat_id == chat_id).one_or_none()
-    if user is None:
-        return [Message(chat_id, f"Unexpected message. Please use /{COMMAND_REGISTER} to register with the bot.")]
-    current_sheet = user.current_sheet
-    if current_sheet is None:
-        return [Message(chat_id, "Unexpected message.")]
-
-    result = []
-
-    # Create new entry
-    entry_type = (model.EntryType.QUESTION
-                  if not current_sheet.entries or current_sheet.entries[-1].type == model.EntryType.ANSWER
-                  else model.EntryType.ANSWER)
-    current_sheet.entries.append(model.Entry(user=user, text=text, type=entry_type))
-    user.current_sheet = None
-    current_sheet.current_user = None
-
-    # Check if game is finished
-    game = current_sheet.game
-    sheet_infos = list(_game_sheet_infos(game, session))
-    result.extend(_finish_if_complete(game, sheet_infos, session))
-    result.extend(_finish_if_stopped_and_all_answered(game, sheet_infos, session))
-
-    if not game.is_finished and len(current_sheet.entries) < game.rounds:
-        # In a synchronous game: Check if the round is finished and pass sheets on
-        if game.is_synchronous:
-            if all(num_entries == len(current_sheet.entries) for sheet, num_entries, last_entry in sheet_infos):
-                _assign_sheet_to_next(list(game.sheets), game, session)
-                result.extend(_next_sheet(list(p.user for p in game.participants), session))
-
-        # In an asynchronous game: Pass on this sheet
-        else:
-            _assign_sheet_to_next([current_sheet], game, session)
-            result.extend(_next_sheet([current_sheet.current_user], session))
-
-    result.extend(_next_sheet([user], session))
-    return result
+        return result
 
 
 class SheetProgressInfo(NamedTuple):

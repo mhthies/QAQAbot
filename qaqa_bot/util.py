@@ -6,10 +6,10 @@ import sqlalchemy.orm
 
 
 @contextmanager
-def session_scope(Session: Type[sqlalchemy.orm.Session]):
+def session_scope(Session: sqlalchemy.orm.sessionmaker):
     """Provide a transactional scope around a series of operations.
     From https://docs.sqlalchemy.org/en/13/orm/session_basics.html"""
-    session = Session()
+    session: sqlalchemy.orm.Session = Session()
     try:
         yield session
         session.commit()
