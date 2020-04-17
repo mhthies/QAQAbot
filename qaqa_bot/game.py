@@ -61,12 +61,15 @@ class GameServer:
         self.send_callback([Message(chat_id, "help message not implemented")])
 
     @with_session
-    def new_game(self, session: Session, chat_id: int, name: str) -> List[Message]:
-        # TODO prevent new games in single user chats
+    def new_game(self, session: Session, chat_id: int, name: str) -> None:
+        running_games = session.query(model.Game).filter(model.Game.chat_id == chat_id,
+                                                         model.Game.is_finished == False).count()
+        if running_games:
+            self.send_callback([Message(chat_id, "Already a running pending game in this chat")])  # TODO UX: Add hint to COMMAND_NEW_GAME
+            return
         game = model.Game(name=name, chat_id=chat_id, is_finished=False, is_started=False, is_synchronous=True)
         session.add(game)
-        result = Message(chat_id, f"""New game created. Use /{COMMAND_JOIN} to join the game.""")  # TODO UX: more info
-        return [result]
+        self.send_callback([Message(chat_id, f"""New game created. Use /{COMMAND_JOIN} to join the game.""")])  # TODO UX: more info
 
     @with_session
     def set_rounds(self, session: Session, chat_id: int, rounds: int) -> None:
