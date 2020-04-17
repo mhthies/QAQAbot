@@ -61,35 +61,37 @@ class FullGameTests(unittest.TestCase):
         # Set rounds
         with session_scope(self.Session) as session:
             self.game_server.set_rounds(21, 2, session)
+        self.message_store.fetch_messages()
         # Start game
         with session_scope(self.Session) as session:
-            msg = self.game_server.start_game(21, session)
-        self.assertMessagesCorrect(msg,
+            self.game_server.start_game(21, session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(),
                                    {21: re.compile("ok"),
                                     **{i: re.compile("ask a question") for i in (11, 12, 13)}})
         # Write questions
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(11, "Question 1", session)
-        self.assertMessagesCorrect(msg, {})
+            self.game_server.submit_text(11, "Question 1", session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(13, "Question 3", session)
-        self.assertMessagesCorrect(msg, {})
+            self.game_server.submit_text(13, "Question 3", session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(12, "Question 2", session)
-        self.assertMessagesCorrect(msg, {11: re.compile(r"(?s)answer.*?Question 3"),
-                                         12: re.compile(r"(?s)answer.*?Question 1"),
-                                         13: re.compile(r"(?s)answer.*?Question 2")})
+            self.game_server.submit_text(12, "Question 2", session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(r"(?s)answer.*?Question 3"),
+                                                                         12: re.compile(r"(?s)answer.*?Question 1"),
+                                                                         13: re.compile(r"(?s)answer.*?Question 2")})
         # Write answers
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(11, "Answer 1", session)
-        self.assertMessagesCorrect(msg, {})
+            self.game_server.submit_text(11, "Answer 1", session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(13, "Answer 3", session)
-        self.assertMessagesCorrect(msg, {})
+            self.game_server.submit_text(13, "Answer 3", session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(12, "Answer 2", session)
+            self.game_server.submit_text(12, "Answer 2", session)
         self.assertMessagesCorrect(
-            msg, {21: re.compile("(?s)Question 3.*Answer 1|Question 1.*Answer 2|Question 2.*Answer 3")})
+            self.message_store.fetch_messages(),
+            {21: re.compile("(?s)Question 3.*Answer 1|Question 1.*Answer 2|Question 2.*Answer 3")})
 
     def test_asynchronous_game(self):
         # Create new game in "Funny Group" chat (chat_id=21)
@@ -107,29 +109,33 @@ class FullGameTests(unittest.TestCase):
             self.game_server.set_rounds(21, 3, session)
         with session_scope(self.Session) as session:
             self.game_server.set_synchronous(21, False, session)
+        self.message_store.fetch_messages()
         # Start game
         with session_scope(self.Session) as session:
-            msg = self.game_server.start_game(21, session)
-        self.assertMessagesCorrect(msg,
+            self.game_server.start_game(21, session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(),
                                    {21: re.compile("ok"),
                                     **{i: re.compile("ask a question") for i in (11, 12, 13)}})
         # Let Michael write question
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(11, "Question 1", session)
-        self.assertMessagesCorrect(msg, {})
+            self.game_server.submit_text(11, "Question 1", session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(12, "Question 2", session)
-        self.assertMessagesCorrect(msg, {12: re.compile(r"(?s)answer.*?Question 1")})
+            self.game_server.submit_text(12, "Question 2", session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(),
+                                   {12: re.compile(r"(?s)answer.*?Question 1")})
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(12, "Answer 2", session)
-        self.assertMessagesCorrect(msg, {})
+            self.game_server.submit_text(12, "Answer 2", session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(13, "Question 3", session)
-        self.assertMessagesCorrect(msg, {11: re.compile(r"(?s)answer.*?Question 3"),
-                                         13: re.compile(r"(?s)answer.*?Question 2")})
+            self.game_server.submit_text(13, "Question 3", session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(),
+                                   {11: re.compile(r"(?s)answer.*?Question 3"),
+                                    13: re.compile(r"(?s)answer.*?Question 2")})
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(13, "Answer 3", session)
-        self.assertMessagesCorrect(msg, {13: re.compile(r"(?s)ask a question.*?Answer 2")})
+            self.game_server.submit_text(13, "Answer 3", session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(),
+                                   {13: re.compile(r"(?s)ask a question.*?Answer 2")})
 
     def test_parallel_games(self):
         # Create new game in "Funny Group" chat (chat_id=21)
@@ -151,15 +157,16 @@ class FullGameTests(unittest.TestCase):
         # The first Game ist started (in synchronous mode)
         with session_scope(self.Session) as session:
             self.game_server.set_rounds(21, 3, session)
+        self.message_store.fetch_messages()
         with session_scope(self.Session) as session:
-            msg = self.game_server.start_game(21, session)
-        self.assertMessagesCorrect(msg,
+            self.game_server.start_game(21, session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(),
                                    {21: re.compile("ok"),
                                     **{i: re.compile("(?s)ask a question.*?Funny Group") for i in (11, 12, 13)}})
         # Michael writes the first question
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(11, "Question A1", session)
-        self.assertMessagesCorrect(msg, {})
+            self.game_server.submit_text(11, "Question A1", session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
         # Jannik and Michael join the second game
         with session_scope(self.Session) as session:
             self.game_server.join_game(22, 4, session)
@@ -170,11 +177,12 @@ class FullGameTests(unittest.TestCase):
             self.game_server.set_rounds(22, 3, session)
         with session_scope(self.Session) as session:
             self.game_server.set_synchronous(22, False, session)
+        self.message_store.fetch_messages()
         with session_scope(self.Session) as session:
-            msg = self.game_server.start_game(22, session)
+            self.game_server.start_game(22, session)
         # Only Michael and Jannik should be asked for a question, Lukas is still working on a question for the first
         # game
-        self.assertMessagesCorrect(msg,
+        self.assertMessagesCorrect(self.message_store.fetch_messages(),
                                    {22: re.compile("ok"),
                                     **{i: re.compile("(?s)ask a question.*?Serious Group") for i in (11, 14)}})
         # We now have the following Sheets:
@@ -185,17 +193,18 @@ class FullGameTests(unittest.TestCase):
 
         # Lukas submits two questions
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(13, "Question A3", session)
+            self.game_server.submit_text(13, "Question A3", session)
         # The first question waits for the synchronous game …
-        self.assertMessagesCorrect(msg, {13: re.compile(r"(?s)ask a question.*?Serious Group")})
+        self.assertMessagesCorrect(self.message_store.fetch_messages(),
+                                   {13: re.compile(r"(?s)ask a question.*?Serious Group")})
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(13, "Question B3", session)
+            self.game_server.submit_text(13, "Question B3", session)
         # … the second question is put on Jannik's stack, but he's still working on a question
-        self.assertMessagesCorrect(msg, {})
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
         # Michael submits one question. He should not get the question in Game 1
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(11, "Question B1", session)
-        self.assertMessagesCorrect(msg, {13: re.compile(r"(?s)answer.*?Question B1")})
+            self.game_server.submit_text(11, "Question B1", session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {13: re.compile(r"(?s)answer.*?Question B1")})
 
         # We now have the following Sheets:
         #   Michael: {G1: "Question A3" (waiting)},
@@ -204,12 +213,12 @@ class FullGameTests(unittest.TestCase):
         #   Jannik: {G2: }, {G2: "Question B3"},
         # Now, Jenny questions/answers two sheets, the first one triggers a new round in Game 1:
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(12, "Question A2", session)
-        self.assertMessagesCorrect(msg, {11: re.compile(r"(?s)answer.*?Question A3"),
-                                         12: re.compile(r"(?s)answer.*?Question A1")})
+            self.game_server.submit_text(12, "Question A2", session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(r"(?s)answer.*?Question A3"),
+                                                                         12: re.compile(r"(?s)answer.*?Question A1")})
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(12, "Answer A2", session)
-        self.assertMessagesCorrect(msg, {})
+            self.game_server.submit_text(12, "Answer A2", session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
 
         # We now have the following Sheets:
         #   Michael: {G1: "Question A3"},
@@ -218,20 +227,20 @@ class FullGameTests(unittest.TestCase):
         #   Jannik: {G2: }, {G2: "Question B3"},
         # Now, let's try to stop Game 2 with all sheets answered
         with session_scope(self.Session) as session:
-            msg = self.game_server.stop_game(22, session)
-        self.assertMessagesCorrect(msg, {})
+            self.game_server.stop_game(22, session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(14, "Question B4", session)
-        self.assertMessagesCorrect(msg, {14: re.compile(r"(?s)answer.*?Question B3")})
+            self.game_server.submit_text(14, "Question B4", session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {14: re.compile(r"(?s)answer.*?Question B3")})
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(14, "Answer B4", session)
-        self.assertMessagesCorrect(msg, {})
+            self.game_server.submit_text(14, "Answer B4", session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(11, "Answer A1", session)
-        self.assertMessagesCorrect(msg, {11: re.compile(r"(?s)answer.*?Question B4")})
+            self.game_server.submit_text(11, "Answer A1", session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(r"(?s)answer.*?Question B4")})
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(11, "Answer B1", session)
-        self.assertMessagesCorrect(msg, {11: re.compile(r"(?s)ask a question.*?Answer B4")})
+            self.game_server.submit_text(11, "Answer B1", session)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(r"(?s)ask a question.*?Answer B4")})
         # We now have the following Sheets:
         #   Michael: {G2: "Question B3", "Answer B4"}
         #   Jenny: {G1: "Question A3", "Answer A1" (waiting)}
@@ -239,10 +248,12 @@ class FullGameTests(unittest.TestCase):
         #          {G2: "Question B4", "Answer B1"}
         #   Jannik: --
         with session_scope(self.Session) as session:
-            msg = self.game_server.submit_text(13, "Answer B3", session)
-        self.assertMessagesCorrect(msg, {11: re.compile(r"(?s)No answer required"),
-                                         13: re.compile(r"(?s)No answer required|answer.*Question A2"),
-                                         22: re.compile("(?s)Question B3.*Answer B4|Question B1.*Answer B3|Question B4.*Answer B1")})
+            self.game_server.submit_text(13, "Answer B3", session)
+        self.assertMessagesCorrect(
+            self.message_store.fetch_messages(),
+            {11: re.compile(r"(?s)No answer required"),
+             13: re.compile(r"(?s)No answer required|answer.*Question A2"),
+             22: re.compile("(?s)Question B3.*Answer B4|Question B1.*Answer B3|Question B4.*Answer B1")})
 
     def assertMessagesCorrect(self, messages: List[game.Message], expected: Dict[int, Pattern]) -> None:
         for message in messages:

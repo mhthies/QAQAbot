@@ -21,16 +21,17 @@ class GameServer:
         self.config = config
         self.send_callback = send_callback
 
-    def register_user(self, chat_id: int, user_id: int, user_name: str, session: Session) -> List[Message]:
+    def register_user(self, chat_id: int, user_id: int, user_name: str, session: Session) -> None:
         existing_user = session.query(model.User).filter(model.User.api_id == user_id).one_or_none()
         if existing_user is not None:
-            return [Message(chat_id, "already registered")]
+            self.send_callback([Message(chat_id, "already registered")])
+            return
         user = model.User(api_id=user_id, chat_id=chat_id, name=user_name)
         session.add(user)
-        return [Message(chat_id, "hi there")]  # TODO UX: return explanation
+        self.send_callback([Message(chat_id, "hi there")])  # TODO UX: return explanation
 
-    def give_help_meesage(self, chat_id: int) -> List[Message]:
-        return [Message(chat_id, "help message not implemented")]  # TODO UX
+    def give_help_meesage(self, chat_id: int) -> None:
+        self.send_callback([Message(chat_id, "help message not implemented")])
 
     def new_game(self, chat_id: int, name: str, session: Session) -> List[Message]:
         # TODO prevent new games in single user chats
@@ -39,57 +40,68 @@ class GameServer:
         result = Message(chat_id, f"""New game created. Use /{COMMAND_JOIN} to join the game.""")  # TODO UX: more info
         return [result]
 
-    def set_rounds(self, chat_id: int, rounds: int, session: Session) -> List[Message]:
+    def set_rounds(self, chat_id: int, rounds: int, session: Session) -> None:
         game = session.query(model.Game).filter(model.Game.chat_id == chat_id).one_or_none()
         if game is None:
-            return [Message(chat_id, "No game to configure in this chat")]  # TODO UX: Add hint to COMMAND_NEW_GAME
+            self.send_callback([Message(chat_id, "No game to configure in this chat")])  # TODO UX: Add hint to COMMAND_NEW_GAME
+            return
         if game.is_started or game.is_finished:
-            return [Message(chat_id, "Game already started")]
+            self.send_callback([Message(chat_id, "Game already started")])
+            return
             # TODO allow rounds change for running games (unless a sheet has > rounds * entries). In this case, sheets with
             #  len(entries) = old_rounds may require to be newly assigned
         if rounds < 1:
-            return [Message(chat_id, "invalid rounds number. Must be >= 1")]
+            self.send_callback([Message(chat_id, "invalid rounds number. Must be >= 1")])
+            return
         game.rounds = rounds
-        return [Message(chat_id, "ok")]  # TODO UX
+        self.send_callback([Message(chat_id, "ok")])  # TODO UX
 
-    def set_synchronous(self, chat_id: int, state: bool, session: Session) -> List[Message]:
+    def set_synchronous(self, chat_id: int, state: bool, session: Session) -> None:
         game = session.query(model.Game).filter(model.Game.chat_id == chat_id).one_or_none()
         if game is None:
-            return [Message(chat_id, "No game to configure in this chat")]  # TODO UX
+            self.send_callback([Message(chat_id, "No game to configure in this chat")])  # TODO UX
+            return
         if game.is_started or game.is_finished:
-            return [Message(chat_id, "Too late")]  # TODO UX
+            self.send_callback([Message(chat_id, "Too late")])  # TODO UX
+            return
             # TODO allow mode change for running games (requires passing of waiting sheets for sync → unsync)
         game.is_synchronous = state
-        return [Message(chat_id, "ok")]  # TODO UX
+        self.send_callback([Message(chat_id, "ok")])  # TODO UX
 
-    def join_game(self, chat_id: int, user_id: int, session: Session) -> List[Message]:
+    def join_game(self, chat_id: int, user_id: int, session: Session) -> None:
         game = session.query(model.Game)\
             .filter(model.Game.chat_id == chat_id, model.Game.is_finished == False)\
             .one_or_none()
         if game is None:
-            return [Message(chat_id, f"There is currently no pending game in this Group. "
-                                     f"Use /{COMMAND_NEW_GAME} to start one.")]
+            self.send_callback([Message(chat_id, f"There is currently no pending game in this Group. "
+                                                 f"Use /{COMMAND_NEW_GAME} to start one.")])
+            return
         user = session.query(model.User).filter(model.User.api_id == user_id).one_or_none()
         if user is None:
-            return [Message(chat_id, f"You must start a chat with the bot first. Use the following link: "
-                                     f"https://t.me/{self.config['']['botname']}?start")]
+            self.send_callback([Message(chat_id, f"You must start a chat with the bot first. Use the following link: "
+                                                 f"https://t.me/{self.config['']['botname']}?start")])
+            return
         if game.is_started:
-            return [Message(chat_id, "Too late")]  # TODO No Exception
+            self.send_callback([Message(chat_id, "Too late")])
+            return
             # TODO allow joining into running games
         game.participants.append(model.Participant(user=user))
-        return [Message(chat_id, "ok")]  # TODO UX
+        self.send_callback([Message(chat_id, "ok")])  # TODO UX
 
-    def start_game(self, chat_id: int, session: Session) -> List[Message]:
+    def start_game(self, chat_id: int, session: Session) -> None:
         game = session.query(model.Game)\
             .filter(model.Game.chat_id == chat_id, model.Game.is_finished == False)\
             .one_or_none()
         if game is None:
-            return [Message(chat_id, f"There is currently no pending game in this Group. "
-                                     f"Use /{COMMAND_NEW_GAME} to start one.")]
+            self.send_callback([Message(chat_id, f"There is currently no pending game in this Group. "
+                                                 f"Use /{COMMAND_NEW_GAME} to start one.")])
+            return
         elif game.is_started:
-            return [Message(chat_id, "The game is already running")]  # TODO Create status command, refer to it.
+            self.send_callback([Message(chat_id, "The game is already running")])  # TODO Create status command, refer to it.
+            return
         elif len(game.participants) < 2:
-            return [Message(chat_id, "No games with less than two participants permitted")]
+            self.send_callback([Message(chat_id, "No games with less than two participants permitted")])
+            return
 
         # Create sheets and start game
         for participant in game.participants:
@@ -103,21 +115,22 @@ class GameServer:
         # Give sheets to participants
         result = [Message(chat_id, "ok")]
         result.extend(_next_sheet([p.user for p in game.participants], session))
+        self.send_callback(result)
 
-        return result
-
-    def leave_game(self, chat_id: int, user_id: int, session: Session) -> List[Message]:
+    def leave_game(self, chat_id: int, user_id: int, session: Session) -> None:
         game = session.query(model.Game)\
             .filter(model.Game.chat_id == chat_id, model.Game.is_finished == False)\
             .one_or_none()
         if game is None:
-            return [Message(chat_id, "There is currently no running or pending game in this Chat.")]
+            self.send_callback([Message(chat_id, "There is currently no running or pending game in this Chat.")])
+            return
         user = session.query(model.User).filter(model.User.api_id == user_id).one()
 
         # Remove user as participant from game
         participation = session.query(model.Participant).filter(user=user, game=game).one_or_none()
         if participation is None:
-            return [Message(chat_id, "You didn't participate in this game.")]
+            self.send_callback([Message(chat_id, "You didn't participate in this game.")])
+            return
         session.delete(participation)
 
         result = [Message(chat_id, "ok")]  # TODO
@@ -131,33 +144,37 @@ class GameServer:
                            if sheet.game_id == game.id]
         _assign_sheet_to_next(obsolete_sheets, game, session)
         result.extend(_next_sheet([sheet.current_user for sheet in obsolete_sheets], session))
-        return result
+        self.send_callback(result)
 
-    def stop_game(self, chat_id: int, session: Session) -> List[Message]:
+    def stop_game(self, chat_id: int, session: Session) -> None:
         game = session.query(model.Game).filter(model.Game.chat_id == chat_id,
                                                 model.Game.is_started == True,
                                                 model.Game.is_finished == False).one_or_none()
         if game is None:
-            return [Message(chat_id, "There is currently no running game in this Group.")]
+            self.send_callback([Message(chat_id, "There is currently no running game in this Group.")])
+            return
         game.is_waiting_for_finish = True
         sheet_infos = list(_game_sheet_infos(game, session))
-        return _finish_if_stopped_and_all_answered(game, sheet_infos, session)
+        self.send_callback(_finish_if_stopped_and_all_answered(game, sheet_infos, session))
 
-    def immediately_stop_game(self, chat_id: int, session: Session) -> List[Message]:
+    def immediately_stop_game(self, chat_id: int, session: Session) -> None:
         game = session.query(model.Game).filter(model.Game.chat_id == chat_id,
                                                 model.Game.is_started == True,
                                                 model.Game.is_finished == False).one_or_none()
         if game is None:
-            return [Message(chat_id, "There is currently no running game in this Group.")]
-        return _finalize_game(game, session)
+            self.send_callback([Message(chat_id, "There is currently no running game in this Group.")])
+            return
+        self.send_callback(_finalize_game(game, session))
 
-    def submit_text(self, chat_id: int, text: str, session: Session) -> List[Message]:
+    def submit_text(self, chat_id: int, text: str, session: Session) -> None:
         user = session.query(model.User).filter(model.User.chat_id == chat_id).one_or_none()
         if user is None:
-            return [Message(chat_id, f"Unexpected message. Please use /{COMMAND_REGISTER} to register with the bot.")]
+            self.send_callback([Message(chat_id, f"Unexpected message. Please use /{COMMAND_REGISTER} to register with the bot.")])
+            return
         current_sheet = user.current_sheet
         if current_sheet is None:
-            return [Message(chat_id, "Unexpected message.")]
+            self.send_callback([Message(chat_id, "Unexpected message.")])
+            return
 
         result = []
 
@@ -188,7 +205,7 @@ class GameServer:
                 result.extend(_next_sheet([current_sheet.current_user], session))
 
         result.extend(_next_sheet([user], session))
-        return result
+        self.send_callback(result)
 
 
 class SheetProgressInfo(NamedTuple):
