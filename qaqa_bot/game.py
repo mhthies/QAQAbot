@@ -1,3 +1,14 @@
+"""
+This module provides the business logic / game state transformation for the QAQAgamebot. It is encapsulated in
+methods of the `GameServer` class, one for each type of user action. In order to be used, a `GameServer` object needs to
+be instantiated with a given bot config and a callback method for sending the messages.
+
+Some of the action methods share code fragments (e.g. for finalizing a game under certain conditions), which have been
+un-inlined into some helper functions at the bottom of the file.
+
+Additionally, this module defines the `Message` tuple for passing Telegram messages the message sending callback
+function and the `@with_session` for magically handling (creating/committing/rolling back) the database sessions.
+"""
 import functools
 from typing import NamedTuple, List, Optional, Iterable, Dict, Any, Callable, MutableMapping
 
@@ -13,12 +24,18 @@ COMMAND_REGISTER = "start"
 
 
 class Message(NamedTuple):
+    """ Representation of an outgoing Telegram message, triggered by some game state change """
     chat_id: int
     text: str
 
 
 def with_session(f):
-    """ A decorator for methods of the GameServer class to handle database sessions in a magical way. """
+    """ A decorator for methods of the GameServer class to handle database sessions in a magical way.
+
+    This decorator wraps the GameServer method to create a SQLAlchemy database session from the GameServer's
+    sessionmaker before entering the original method. The session is passed to the method as second argument, after
+    `self`, before the caller's positional and keyword arguments. The session is committed after the successful
+    execution of the method and rolled back in case of an Exception. """
     @functools.wraps(f)
     def wrapper(self: "GameServer", *args, **kwargs):
         session = self.session_maker()
@@ -34,9 +51,29 @@ def with_session(f):
 
 
 class GameServer:
+    """
+    Container for the game state and business logic to change the game state based on interaction events
+
+    A GameServer object holds an SQLAlchemy sessionmaker to create datbase session for handling incoming events.
+    Additionally it knows the full configuration (required for some of the messages) and handles sending of outgoing
+    messages (which are triggered by incoming events depending on the game state). For this purpose, it is initialized
+    with a callback function to be used for sending messages.
+
+    The available game actions are provided as methods of the GameState object. They should be called by the appropriate
+    handlers of the Telegram Bot frontend.
+    """
     def __init__(self, config: MutableMapping[str, Any],
                  send_callback: Callable[[List[Message]], None],
                  database_engine=None):
+        """
+        Initialize a new
+
+        :param config: The bot configuration, read from the `config.toml` file
+        :param send_callback: A callback function taking a list of `Message` tuples and sending them via the Telegram
+            API. It should raise an exception when sending fails to trigger the database rollback.
+        :param database_engine: (optional) Pre-initialized database engine. If not given, a new database engine is
+            created, using the `database.connection` entry in the config.
+        """
         self.config = config
         self.send_callback = send_callback
 
