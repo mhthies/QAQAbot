@@ -78,6 +78,10 @@ class FullGameTests(unittest.TestCase):
         self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
         self.game_server.submit_text(13, "Answer 3")
         self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
+        self.game_server.get_group_status(21)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(),
+                                   {21: re.compile(r"(?s)game is on.*3 sheets.*waiting for Jenny.*Michael.*"
+                                                   r"Synchronous: yes")})
         self.game_server.submit_text(12, "Answer 2")
         self.assertMessagesCorrect(
             self.message_store.fetch_messages(),

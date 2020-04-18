@@ -10,6 +10,7 @@ Additionally, this module defines the `Message` tuple for passing Telegram messa
 function and the `@with_session` for magically handling (creating/committing/rolling back) the database sessions.
 """
 import functools
+import statistics
 from typing import NamedTuple, List, Optional, Iterable, Dict, Any, Callable, MutableMapping
 
 import sqlalchemy
@@ -374,6 +375,55 @@ class GameServer:
                 message += f"\n\nYou have currently no pending sheets"
 
         self.send_callback([Message(chat_id, message)] + _next_sheet([user], session, repeat=True))
+
+    @with_session
+    def get_group_status(self, session: Session, chat_id: int):
+        """
+        Send infos about the current game state (current running/pending game, players, sheets, entries) to a group.
+
+        Make sure that the chat_id actually belongs to a group chat before calling this method.
+        """
+        current_game: model.Game = session.query(model.Game).filter(model.Game.chat_id == chat_id,
+                                                                    model.Game.is_finished == False).one_or_none()
+        if current_game is None:
+            status = f"There is currently no QAQA-game in this group. Use /{COMMAND_NEW_GAME} to start one."
+        else:
+            players = ("* " + '\n* '.join(p.user.name for p in current_game.participants)
+                       if current_game.participants
+                       else "– none –")
+            configuration = (
+                f"Rounds: {'– number of players –' if current_game.rounds is None else current_game.rounds}\n"
+                f"Synchronous: {'yes' if current_game.is_synchronous else 'no'}")
+            sheet_infos = _game_sheet_infos(current_game, session)
+            sheets_stats = (
+                f" They have {min(si.num_entries for si in sheet_infos)}–"
+                f"{max(si.num_entries for si in sheet_infos)} "
+                f"(Median: {statistics.median(si.num_entries for si in sheet_infos)}) entries yet."
+                if sheet_infos else "")
+            pending_sheets = [si.sheet for si in sheet_infos if si.sheet.current_user_id is not None]
+            # TODO optimization: access to s.current_user.name with eager loading
+            pending_users = (
+                f"We are currently waiting for {','.join(s.current_user.name for s in pending_sheets)}\n\n"
+                if current_game.is_synchronous or len(pending_sheets) <= len(sheets_stats) / 3
+                else "")
+            if current_game.is_started:
+                status = (
+                    f"The game is on!\n\n"
+                    f"{len(sheet_infos)} sheets are in the game.{sheets_stats}\n\n"
+                    f"{pending_users}"
+                    f"Registered players:\n"
+                    f"{players}\n\n"
+                    f"Game configuration:\n{configuration}"
+                    )
+            else:
+                status = (
+                    f"The game has been created and waits to be started.\n"
+                    f"Use /{COMMAND_START_GAME} to start the game.\n\n"
+                    f"Registered players:\n"
+                    f"{players}\n\n"
+                    f"Game configuration:\n{configuration}"
+                    )
+        self.send_callback([Message(chat_id, status)])
 
 
 class SheetProgressInfo(NamedTuple):
