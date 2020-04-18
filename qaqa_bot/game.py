@@ -18,9 +18,17 @@ from sqlalchemy.orm import Session, joinedload
 
 from . import model
 
-COMMAND_NEW_GAME = "newgame"
-COMMAND_JOIN = "join"
+COMMAND_HELP = "help"
+COMMAND_STATUS = "status"
 COMMAND_REGISTER = "start"
+COMMAND_NEW_GAME = "new_game"
+COMMAND_START_GAME = "start_game"
+COMMAND_JOIN_GAME = "join_game"
+COMMAND_STOP_GAME = "stop_game"
+COMMAND_STOP_GAME_IMMEDIATELY = "stop_game_immediately"
+COMMAND_SET_ROUNDS = "set_rounds"
+COMMAND_SET_SYNCHRONOUS = "set_synchronous"
+COMMAND_SET_ASYNCHRONOUS = "set_synchronous"
 
 
 class Message(NamedTuple):
@@ -118,7 +126,7 @@ class GameServer:
             return
         game = model.Game(name=name, chat_id=chat_id, is_finished=False, is_started=False, is_synchronous=True)
         session.add(game)
-        self.send_callback([Message(chat_id, f"""New game created. Use /{COMMAND_JOIN} to join the game.""")])  # TODO UX: more info
+        self.send_callback([Message(chat_id, f"""New game created. Use /{COMMAND_JOIN_GAME} to join the game.""")])  # TODO UX: more info
 
     @with_session
     def set_rounds(self, session: Session, chat_id: int, rounds: int) -> None:
