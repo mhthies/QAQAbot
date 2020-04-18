@@ -164,7 +164,7 @@ class GameServer:
         user = session.query(model.User).filter(model.User.api_id == user_id).one_or_none()
         if user is None:
             self.send_callback([Message(chat_id, f"You must start a chat with the bot first. Use the following link: "
-                                                 f"https://t.me/{self.config['']['botname']}?start")])
+                                                 f"https://t.me/{self.config['bot']['username']}?start")])
             return
         if game.is_started:
             self.send_callback([Message(chat_id, "Too late")])
