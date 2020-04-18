@@ -111,7 +111,8 @@ class GameServer:
         if existing_user is not None:
             existing_user.chat_id = chat_id
             existing_user.name = user_name
-            self.send_callback([Message(chat_id, "hi again")])  # TODO UX
+            self.send_callback([Message(chat_id, "hi again")]  # TODO UX
+                               + _next_sheet([existing_user], session, repeat=True))
         else:
             user = model.User(api_id=user_id, chat_id=chat_id, name=user_name)
             session.add(user)
@@ -374,11 +375,13 @@ def _game_sheet_infos(game: model.Game, session: Session) -> List[SheetProgressI
                 .filter(model.Sheet.game == game)]
 
 
-def _next_sheet(users: Iterable[model.User], session: Session) -> List[Message]:
+def _next_sheet(users: Iterable[model.User], session: Session, repeat: bool = False) -> List[Message]:
     """ Helper function to check for a list of users, if they have no current sheet, pick the next sheet from their
     pending stack and generate messages to them to ask for their next submission.
 
-    :param users: The users to check for pending sheets and send messages to"""
+    :param users: The users to check for pending sheets and send messages to
+    :param repeat: If True, resend the request for submission to all given users, even if they already have a sheet
+        assigned."""
     # TODO exclude answered sheets of games waiting to be stopped
     # The following manually crafted SQL query is basically and extended version of _game_sheet_infos() to efficiently
     # query sheets, their entry numbers and last entries along with each User object.
@@ -395,7 +398,6 @@ def _next_sheet(users: Iterable[model.User], session: Session) -> List[Message]:
         .group_by(model.Entry.sheet_id) \
         .subquery()
     query = session.query(model.User,
-                          model.User.current_sheet != None,
                           model.Sheet,
                           num_subquery.c.num_entries,
                           model.Entry)\
@@ -409,13 +411,14 @@ def _next_sheet(users: Iterable[model.User], session: Session) -> List[Message]:
         .filter(model.User.id.in_(u.id for u in users))
 
     result = []
-    for user, has_current_sheet, next_sheet, next_sheet_num_entries, next_sheet_last_entry in query:
-        if not has_current_sheet and next_sheet is not None:
+    for user, next_sheet, next_sheet_num_entries, next_sheet_last_entry in query:
+        if (user.current_sheet_id is None or repeat) and next_sheet is not None:
             user.current_sheet = next_sheet
-            result.append(Message(user.chat_id, _format_for_next(SheetProgressInfo(
-                next_sheet,
-                next_sheet_num_entries if next_sheet_num_entries is not None else 0,
-                next_sheet_last_entry))))
+            result.append(Message(user.chat_id, _format_for_next(
+                SheetProgressInfo(next_sheet,
+                                  next_sheet_num_entries if next_sheet_num_entries is not None else 0,
+                                  next_sheet_last_entry),
+                user.current_sheet_id is not None)))
     return result
 
 
@@ -510,9 +513,11 @@ def _format_result(sheet: model.Sheet) -> str:
     return "\n".join(entry.text for entry in sheet.entries)  # TODO UX: improve
 
 
-def _format_for_next(sheet_info: SheetProgressInfo) -> str:
+def _format_for_next(sheet_info: SheetProgressInfo, repeat: bool) -> str:
     """ Create the message content for showing a sheet to a user and ask them for their next submission. The message
-    contains the last entry of the sheet or a request to write the initial question if the sheet is empty. """
+    contains the last entry of the sheet or a request to write the initial question if the sheet is empty.
+
+    :param repeat: True, if this a repeated message for the same sheet and user"""
     if sheet_info.num_entries == 0:
         return f"Please ask a question to begin a new sheet for game {sheet_info.sheet.game.name}."
     else:
