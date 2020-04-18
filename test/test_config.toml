@@ -1,0 +1,8 @@
+
+[bot]
+username = "botname"
+api_key = ""
+owner_username = "mhthies"
+
+[database]
+connection = "sqlite:///:memory:"
