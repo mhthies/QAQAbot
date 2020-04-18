@@ -362,6 +362,8 @@ class GameServer:
         elif pending_games:
             message += f"You will be participating in the follwing games, as soom as they start: " \
                        f"{', '.join(g.name for g in pending_games)}"
+        else:
+            message += f"You are currently not participating in any QAQA game."
 
         # Inform about pending sheets
         if running_games:
