@@ -1,4 +1,9 @@
 
 [bot]
-username = ""
+username = "the_bots_username"
 api_key = ""
+owner_username = "@your_telegram_username"
+
+[database]
+# For more info about SQLAlchemy connect strings, see https://docs.sqlalchemy.org/en/13/dialects/index.html
+connection = "mysql+mysqldb://qaqabot:TODO@localhost/qaqabot"

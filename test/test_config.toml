@@ -1,8 +1,8 @@
 
 [bot]
-username = "botname"
+username = "testbot"
 api_key = ""
-owner_username = "mhthies"
+owner_username = "Noone"
 
 [database]
 connection = "sqlite:///:memory:"
