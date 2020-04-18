@@ -312,6 +312,7 @@ class GameServer:
                       if not current_sheet.entries or current_sheet.entries[-1].type == model.EntryType.ANSWER
                       else model.EntryType.ANSWER)
         current_sheet.entries.append(model.Entry(user=user, text=text, type=entry_type))
+        # TODO generate success message
         user.current_sheet = None
         current_sheet.current_user = None
 
@@ -336,6 +337,8 @@ class GameServer:
 
         result.extend(_next_sheet([user], session))
         self.send_callback(result)
+
+    # TODO resend_current_sheet()
 
     @with_session
     def get_user_status(self, session: Session, chat_id: int):
