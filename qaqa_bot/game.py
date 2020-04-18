@@ -29,7 +29,7 @@ COMMAND_STOP_GAME = "stop_game"
 COMMAND_STOP_GAME_IMMEDIATELY = "stop_game_immediately"
 COMMAND_SET_ROUNDS = "set_rounds"
 COMMAND_SET_SYNCHRONOUS = "set_synchronous"
-COMMAND_SET_ASYNCHRONOUS = "set_synchronous"
+COMMAND_SET_ASYNCHRONOUS = "set_asynchronous"
 
 
 class Message(NamedTuple):

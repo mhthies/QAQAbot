@@ -23,22 +23,29 @@ class Frontend:
         self.dispatcher = self.updater.dispatcher
 
         # Command general activities
-        help_handler = CommandHandler(game.COMMAND_HELP, self.help)
-        status_handler = CommandHandler(game.COMMAND_STATUS, self.status)
+        help_handler = CommandHandler(game.COMMAND_HELP, self.help, filters=~Filters.update.edited_message)
+        status_handler = CommandHandler(game.COMMAND_STATUS, self.status, filters=~Filters.update.edited_message)
         self.dispatcher.add_handler(help_handler)
         self.dispatcher.add_handler(status_handler)
         # Commandhandler private activities
-        start_handler = CommandHandler(game.COMMAND_REGISTER, self.start)
+        start_handler = CommandHandler(game.COMMAND_REGISTER, self.start, filters=~Filters.update.edited_message)
         self.dispatcher.add_handler(start_handler)
         # Commandhandler group activites
-        start_game_handler = CommandHandler(game.COMMAND_REGISTER, self.start_game)
-        new_game_handler = CommandHandler(game.COMMAND_NEW_GAME, self.new_game)
-        join_game_handler = CommandHandler(game.COMMAND_JOIN_GAME, self.join_game)
-        stop_game_handler = CommandHandler(game.COMMAND_STOP_GAME, self.stop_game)
-        stop_game_immediately_handler = CommandHandler(game.COMMAND_STOP_GAME_IMMEDIATELY, self.stop_game_immediately)
-        set_rounds_handler = CommandHandler(game.COMMAND_SET_ROUNDS, self.set_rounds, pass_args=True)
-        set_synchronous_handler = CommandHandler(game.COMMAND_SET_SYNCHRONOUS, self.set_synchronous)
-        set_asynchronous_handler = CommandHandler(game.COMMAND_SET_ASYNCHRONOUS, self.set_asynchronous)
+        start_game_handler = CommandHandler(game.COMMAND_START_GAME, self.start_game,
+                                            filters=~Filters.update.edited_message)
+        new_game_handler = CommandHandler(game.COMMAND_NEW_GAME, self.new_game, filters=~Filters.update.edited_message)
+        join_game_handler = CommandHandler(game.COMMAND_JOIN_GAME, self.join_game,
+                                           filters=~Filters.update.edited_message)
+        stop_game_handler = CommandHandler(game.COMMAND_STOP_GAME, self.stop_game,
+                                           filters=~Filters.update.edited_message)
+        stop_game_immediately_handler = CommandHandler(game.COMMAND_STOP_GAME_IMMEDIATELY, self.stop_game_immediately,
+                                                       filters=~Filters.update.edited_message)
+        set_rounds_handler = CommandHandler(game.COMMAND_SET_ROUNDS, self.set_rounds, pass_args=True,
+                                            filters=~Filters.update.edited_message)
+        set_synchronous_handler = CommandHandler(game.COMMAND_SET_SYNCHRONOUS, self.set_synchronous,
+                                                 filters=~Filters.update.edited_message)
+        set_asynchronous_handler = CommandHandler(game.COMMAND_SET_ASYNCHRONOUS, self.set_asynchronous,
+                                                  filters=~Filters.update.edited_message)
         self.dispatcher.add_handler(start_game_handler)
         self.dispatcher.add_handler(new_game_handler)
         self.dispatcher.add_handler(join_game_handler)
@@ -49,8 +56,12 @@ class Frontend:
         self.dispatcher.add_handler(set_asynchronous_handler)
 
         # Messagehandler
-        message_handler = MessageHandler(filters=Filters.text, callback=self.incoming_message)  # TODO test the filter
+        message_handler = MessageHandler(filters=telegram.ext.filters.MergedFilter(
+            Filters.text, ~Filters.update.edited_message), callback=self.incoming_message)
         self.dispatcher.add_handler(message_handler)
+        message_edit_handler = MessageHandler(filters=telegram.ext.filters.MergedFilter(
+            Filters.update.edited_message, Filters.command), callback=self.edited_message)
+        self.dispatcher.add_handler(message_edit_handler)
 
         # Errorhandling
         self.dispatcher.add_error_handler(self.error)
@@ -106,6 +117,9 @@ class Frontend:
         if update.message.entities:
             logger.info(msg=f"Got message from {update.message.chat.first_name}: {update.message.entities}")
 
+    def edited_message(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
+        logger.info(msg=f"Message edited!")
+
     def stop_game(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Stop the game after the current round."""
         pass                                        # TODO implement
@@ -114,17 +128,41 @@ class Frontend:
         """Stop the game without awaiting the end of the current round."""
         pass
 
-    def set_rounds(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
-        """Set the number of rounds"""              # TODO args-parsing
-        pass
+    def set_rounds(self, update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
+        """Set the number of rounds"""
+        chat_id: int = update.effective_chat.id
+        if update.message.chat.type == "private":
+            self.send_messages([game.Message(chat_id, "Games can only edited in group chats.")])
+            return
+        # Accept just one parameter and when given more or less
+        if len(context.args) == 1:
+            try:
+                rounds: int = int(context.args[0])
+                self.gs.set_rounds(chat_id, rounds)
+            except ValueError:
+                self.send_messages([game.Message(chat_id, f"‘{context.args[0]}’ is not a number of rounds!")])
+        elif len(context.args) == 0:
+            self.send_messages([game.Message(chat_id, "Please specify the number of rounds.")])
+        else:
+            self.send_messages([game.Message(chat_id, "Don't you think these are too many parameters?")])
 
     def set_synchronous(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Set the mode of the current game to synchronous (pass sheets when everyone's ready)."""
-        pass                                        # TODO implement
+        chat_id: int = update.effective_chat.id
+        if update.message.chat.type == "private":
+            self.send_messages([game.Message(chat_id, "Games can only edited in group chats.")])
+            return
+        else:
+            self.gs.set_synchronous(chat_id, True)
 
     def set_asynchronous(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Set the mode of the current game to asynchronous (pass sheets ASAP)."""
-        pass                                        # TODO implement
+        chat_id: int = update.effective_chat.id
+        if update.message.chat.type == "private":
+            self.send_messages([game.Message(chat_id, "Games can only edited in group chats.")])
+            return
+        else:
+            self.gs.set_synchronous(chat_id, False)
 
     def help(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Print explanation of the game and commands."""
@@ -132,7 +170,11 @@ class Frontend:
 
     def status(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Print info about game states and sheets."""
-        pass                                        # TODO implement
+        chat_id: int = update.effective_chat.id
+        if update.message.chat.type == "private":
+            self.gs.get_user_status(chat_id)
+        else:
+            self.gs.get_group_status(chat_id)
 
     def send_messages(self, messages: List[game.Message]) -> None:
         """Send the messages to the corporated chat ids."""
