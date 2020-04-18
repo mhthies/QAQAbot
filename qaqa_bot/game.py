@@ -498,7 +498,8 @@ def _finalize_game(game: model.Game, session: Session) -> List[Message]:
 
     # Generate result messages
     for sheet in sheets:
-        messages.append(Message(game.chat_id, _format_result(sheet)))
+        if sheet.entries:
+            messages.append(Message(game.chat_id, _format_result(sheet)))
 
     game.is_finished = True
     return messages
