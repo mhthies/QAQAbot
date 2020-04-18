@@ -94,9 +94,6 @@ class GameServer:
         session.add(user)
         self.send_callback([Message(chat_id, "hi there")])  # TODO UX: return explanation
 
-    def give_help_meesage(self, chat_id: int) -> None:
-        self.send_callback([Message(chat_id, "help message not implemented")])
-
     @with_session
     def new_game(self, session: Session, chat_id: int, name: str) -> None:
         running_games = session.query(model.Game).filter(model.Game.chat_id == chat_id,
