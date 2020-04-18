@@ -184,6 +184,9 @@ class FullGameTests(unittest.TestCase):
         #   Jenny: --
         #   Lukas: {G2: "Question B1"}, {G1: "Question A2"}, {G1: "Question A1", "Answer A2" (waiting)}
         #   Jannik: {G2: }, {G2: "Question B3"},
+        self.game_server.get_user_status(13)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(),
+                                   {13: re.compile(r"(?s)Serious Group.*Funny Group.*2 pending sheets|Question B1")})
         # Now, let's try to stop Game 2 with all sheets answered
         self.game_server.stop_game(22)
         self.assertMessagesCorrect(self.message_store.fetch_messages(), {})

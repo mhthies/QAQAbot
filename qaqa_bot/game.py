@@ -336,6 +336,43 @@ class GameServer:
         result.extend(_next_sheet([user], session))
         self.send_callback(result)
 
+    @with_session
+    def get_user_status(self, session: Session, chat_id: int):
+        """
+        Send infos about the current state (games, pending sheets) to a user.
+
+        Make sure that the chat_id actually belongs to a private chat before calling this method.
+        """
+        user = session.query(model.User).filter(model.User.chat_id == chat_id).one_or_none()
+        if user is None:
+            self.send_callback([Message(chat_id, f"You are currently not registered for using this bot. Please use "
+                                                 f"/{COMMAND_REGISTER} to register with the bot.")])
+            return
+
+        # Inform about game participations
+        running_games = [p.game for p in user.participations if p.game.is_started and not p.game.is_finished]
+        pending_games = [p.game for p in user.participations if not p.game.is_started and not p.game.is_finished]
+        message = ""
+        if running_games:
+            message += f"You are currently participating in the following games: " \
+                       f"{', '.join(g.name for g in running_games)}"
+            if pending_games:
+                message += f"\nAdditionally, you will be participating in {', '.join(g.name for g in pending_games)}, " \
+                           f"as soon as they start.\n"
+        elif pending_games:
+            message += f"You will be participating in the follwing games, as soom as they start: " \
+                       f"{', '.join(g.name for g in pending_games)}"
+
+        # Inform about pending sheets
+        if running_games:
+            if user.pending_sheets:
+                message += f"\n\nYou have currently {len(user.pending_sheets)} pending sheets to ask or answer " \
+                           f"questions, including the current one."
+            else:
+                message += f"\n\nYou have currently no pending sheets"
+
+        self.send_callback([Message(chat_id, message)] + _next_sheet([user], session, repeat=True))
+
 
 class SheetProgressInfo(NamedTuple):
     """ A helper type, with the relevant information about a single sheet:
