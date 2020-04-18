@@ -86,13 +86,28 @@ class GameServer:
 
     @with_session
     def register_user(self, session: Session, chat_id: int, user_id: int, user_name: str) -> None:
+        """
+        Register a new user and its private chat_id in the database, when they begin a private chat with the
+        COMMAND_REGISTER.
+
+        Make sure that the command has been sent in a private chat, before calling this method.
+
+        In case of an already existing user, the user data is updated.
+
+        :param chat_id: The user's private chat id
+        :param user_id: The user's Telegram API id
+        :param user_name: The user's name: Either the Telegram username (including an '@' prefix) or otherwise their
+            first name
+        """
         existing_user = session.query(model.User).filter(model.User.api_id == user_id).one_or_none()
         if existing_user is not None:
-            self.send_callback([Message(chat_id, "already registered")])
-            return
-        user = model.User(api_id=user_id, chat_id=chat_id, name=user_name)
-        session.add(user)
-        self.send_callback([Message(chat_id, "hi there")])  # TODO UX: return explanation
+            existing_user.chat_id = chat_id
+            existing_user.name = user_name
+            self.send_callback([Message(chat_id, "hi again")])  # TODO UX
+        else:
+            user = model.User(api_id=user_id, chat_id=chat_id, name=user_name)
+            session.add(user)
+            self.send_callback([Message(chat_id, "hi there")])  # TODO UX: return explanation
 
     @with_session
     def new_game(self, session: Session, chat_id: int, name: str) -> None:
