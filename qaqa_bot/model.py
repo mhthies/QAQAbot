@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import Table, Column, Integer, BigInteger, String, Boolean, Enum, ForeignKey
+from sqlalchemy import Column, Integer, BigInteger, String, Boolean, Enum, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.orderinglist import ordering_list

@@ -1,6 +1,4 @@
-import itertools
 from contextlib import contextmanager
-from typing import Type, TypeVar, Iterable, Tuple
 
 import sqlalchemy.orm
 
@@ -18,14 +16,3 @@ def session_scope(Session: sqlalchemy.orm.sessionmaker):
         raise
     finally:
         session.close()
-
-
-T = TypeVar('T')
-
-
-def pairwise(iterable: Iterable[T]) -> Iterable[Tuple[T, T]]:
-    """s -> (s0,s1), (s1,s2), (s2, s3), ...
-    From https://docs.python.org/3/library/itertools.html"""
-    a, b = itertools.tee(iterable)
-    next(b, None)
-    return zip(a, b)

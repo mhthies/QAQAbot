@@ -1,11 +1,11 @@
 import functools
-from typing import NamedTuple, List, Optional, Tuple, Iterable, Dict, Any, Callable, MutableMapping
+from typing import NamedTuple, List, Optional, Iterable, Dict, Any, Callable, MutableMapping
 
 import sqlalchemy
 from sqlalchemy import func, and_
-from sqlalchemy.orm import Session, joinedload, aliased
+from sqlalchemy.orm import Session, joinedload
 
-from . import model, util
+from . import model
 
 COMMAND_NEW_GAME = "newgame"
 COMMAND_JOIN = "join"
