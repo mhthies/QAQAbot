@@ -1,5 +1,6 @@
 import logging
 from typing import List
+import re
 
 import telegram
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters)
@@ -81,7 +82,7 @@ class Frontend:
                     if update.message.from_user.username is not None
                     else update.message.from_user.first_name)
             self.gs.register_user(update.message.chat.id, update.message.from_user.id, name)
-            logger.debug(msg=f"Welcome {update.message.chat.first_name}")
+            logger.debug(msg=f"Welcome {update.message.from_user.first_name}")
         else:
             logger.debug(msg=f"Chat {chat_id} sends start-commands")
 
@@ -112,21 +113,26 @@ class Frontend:
 
     def incoming_message(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Parse a text-message that was send to the bot in a private chat."""
-        logger.info(msg=f"Got message from {update.message.chat.first_name}: {update.message.text}")
-        self.gs.submit_text(update.message.chat.id, update.message.text)
-        if update.message.entities:
-            logger.info(msg=f"Got message from {update.message.chat.first_name}: {update.message.entities}")
+        text = update.message.text
+        logger.info(msg=f"Got message from {update.message.from_user.first_name}: {text}")
+        logger.info(update)
+        if re.search(r'\/.*', text):
+            self.send_messages([game.Message(update.message.chat.id, "Sorry, this is not a valid command. 🧐")])
+        else:
+            self.gs.submit_text(update.message.chat.id, text)
+            if update.message.entities:
+                logger.info(msg=f"Got messages from {update.message.from_user.first_name}: {update.message.entities}")
 
     def edited_message(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         logger.info(msg=f"Message edited!")
 
     def stop_game(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Stop the game after the current round."""
-        pass                                        # TODO implement
+        self.gs.stop_game(chat_id=update.message.chat.id)
 
     def stop_game_immediately(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Stop the game without awaiting the end of the current round."""
-        pass
+        self.gs.immediately_stop_game(chat_id=update.message.chat.id)
 
     def set_rounds(self, update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
         """Set the number of rounds"""
@@ -166,7 +172,7 @@ class Frontend:
 
     def help(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Print explanation of the game and commands."""
-        pass                                        # TODO implement
+        pass  # TODO implement
 
     def status(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Print info about game states and sheets."""
