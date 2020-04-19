@@ -223,6 +223,11 @@ class FullGameTests(unittest.TestCase):
             {11: re.compile(r"(?s)No answer required"),
              13: re.compile(r"(?s)answer.*Question A2|" + self.TEXT_SUBMIT_RESPONSE),
              22: re.compile("(?s)Question B3.*Answer B4|Question B1.*Answer B3|Question B4.*Answer B1")})
+        self.game_server.submit_text(13, "Answer A3")
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(r"(?s)ask.*?Answer A3"),
+                                                                         12: re.compile(r"(?s)ask.*?Answer A1"),
+                                                                         13: re.compile(r"(?s)ask.*?Answer A2|"
+                                                                                        + self.TEXT_SUBMIT_RESPONSE)})
 
     def assertMessagesCorrect(self, messages: List[game.Message], expected: Dict[int, Pattern]) -> None:
         for message in messages:
