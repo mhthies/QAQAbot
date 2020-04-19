@@ -314,7 +314,7 @@ class GameServer:
                       else model.EntryType.ANSWER)
         current_sheet.entries.append(model.Entry(user=user, text=text, type=entry_type,
                                                  timestamp=datetime.datetime.now(datetime.timezone.utc)))
-        # TODO generate success message
+        result.append(Message(chat_id, "ok"))
         user.current_sheet = None
         current_sheet.current_user = None
 

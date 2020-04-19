@@ -49,6 +49,8 @@ class FullGameTests(unittest.TestCase):
             for user in users:
                 session.add(user)
 
+    TEXT_SUBMIT_RESPONSE = r"ok"
+
     def test_simple_game(self) -> None:
         # Create new game in "Funny Group" chat (chat_id=21)
         self.game_server.new_game(21, "Funny Group")
@@ -66,18 +68,19 @@ class FullGameTests(unittest.TestCase):
                                     **{i: re.compile("ask a question") for i in (11, 12, 13)}})
         # Write questions
         self.game_server.submit_text(11, "Question 1")
-        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(self.TEXT_SUBMIT_RESPONSE)})
         self.game_server.submit_text(13, "Question 3")
-        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {13: re.compile(self.TEXT_SUBMIT_RESPONSE)})
         self.game_server.submit_text(12, "Question 2")
         self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(r"(?s)answer.*?Question 3"),
-                                                                         12: re.compile(r"(?s)answer.*?Question 1"),
+                                                                         12: re.compile(r"(?s)answer.*?Question 1|"
+                                                                                        + self.TEXT_SUBMIT_RESPONSE),
                                                                          13: re.compile(r"(?s)answer.*?Question 2")})
         # Write answers
         self.game_server.submit_text(11, "Answer 1")
-        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(self.TEXT_SUBMIT_RESPONSE)})
         self.game_server.submit_text(13, "Answer 3")
-        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {13: re.compile(self.TEXT_SUBMIT_RESPONSE)})
         self.game_server.get_group_status(21)
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
                                    {21: re.compile(r"(?s)game is on.*3 sheets.*waiting for Jenny.*Michael.*"
@@ -85,7 +88,8 @@ class FullGameTests(unittest.TestCase):
         self.game_server.submit_text(12, "Answer 2")
         self.assertMessagesCorrect(
             self.message_store.fetch_messages(),
-            {21: re.compile("(?s)Question 3.*Answer 1|Question 1.*Answer 2|Question 2.*Answer 3")})
+            {12: re.compile(self.TEXT_SUBMIT_RESPONSE),
+             21: re.compile("(?s)Question 3.*Answer 1|Question 1.*Answer 2|Question 2.*Answer 3")})
 
     def test_asynchronous_game(self):
         # Create new game in "Funny Group" chat (chat_id=21)
@@ -105,19 +109,19 @@ class FullGameTests(unittest.TestCase):
                                     **{i: re.compile("ask a question") for i in (11, 12, 13)}})
         # Let Michael write question
         self.game_server.submit_text(11, "Question 1")
-        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(self.TEXT_SUBMIT_RESPONSE)})
         self.game_server.submit_text(12, "Question 2")
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
-                                   {12: re.compile(r"(?s)answer.*?Question 1")})
+                                   {12: re.compile(r"(?s)answer.*?Question 1|" + self.TEXT_SUBMIT_RESPONSE)})
         self.game_server.submit_text(12, "Answer 2")
-        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {12: re.compile(self.TEXT_SUBMIT_RESPONSE)})
         self.game_server.submit_text(13, "Question 3")
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
                                    {11: re.compile(r"(?s)answer.*?Question 3"),
-                                    13: re.compile(r"(?s)answer.*?Question 2")})
+                                    13: re.compile(r"(?s)answer.*?Question 2|" + self.TEXT_SUBMIT_RESPONSE)})
         self.game_server.submit_text(13, "Answer 3")
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
-                                   {13: re.compile(r"(?s)ask a question.*?Answer 2")})
+                                   {13: re.compile(r"(?s)ask a question.*?Answer 2|" + self.TEXT_SUBMIT_RESPONSE)})
 
     def test_parallel_games(self):
         # Create new game in "Funny Group" chat (chat_id=21)
@@ -139,7 +143,7 @@ class FullGameTests(unittest.TestCase):
                                     **{i: re.compile("(?s)ask a question.*?Funny Group") for i in (11, 12, 13)}})
         # Michael writes the first question
         self.game_server.submit_text(11, "Question A1")
-        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(self.TEXT_SUBMIT_RESPONSE)})
         # Jannik and Michael join the second game
         self.game_server.join_game(22, 4)
         self.game_server.join_game(22, 1)
@@ -163,13 +167,14 @@ class FullGameTests(unittest.TestCase):
         self.game_server.submit_text(13, "Question A3")
         # The first question waits for the synchronous game …
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
-                                   {13: re.compile(r"(?s)ask a question.*?Serious Group")})
+                                   {13: re.compile(r"(?s)ask a question.*?Serious Group|" + self.TEXT_SUBMIT_RESPONSE)})
         self.game_server.submit_text(13, "Question B3")
         # … the second question is put on Jannik's stack, but he's still working on a question
-        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {13: re.compile(self.TEXT_SUBMIT_RESPONSE)})
         # Michael submits one question. He should not get the question in Game 1
         self.game_server.submit_text(11, "Question B1")
-        self.assertMessagesCorrect(self.message_store.fetch_messages(), {13: re.compile(r"(?s)answer.*?Question B1")})
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(self.TEXT_SUBMIT_RESPONSE),
+                                                                         13: re.compile(r"(?s)answer.*?Question B1")})
 
         # We now have the following Sheets:
         #   Michael: {G1: "Question A3" (waiting)},
@@ -179,9 +184,10 @@ class FullGameTests(unittest.TestCase):
         # Now, Jenny questions/answers two sheets, the first one triggers a new round in Game 1:
         self.game_server.submit_text(12, "Question A2")
         self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(r"(?s)answer.*?Question A3"),
-                                                                         12: re.compile(r"(?s)answer.*?Question A1")})
+                                                                         12: re.compile(r"(?s)answer.*?Question A1|" +
+                                                                                        self.TEXT_SUBMIT_RESPONSE)})
         self.game_server.submit_text(12, "Answer A2")
-        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {12: re.compile(self.TEXT_SUBMIT_RESPONSE)})
 
         # We now have the following Sheets:
         #   Michael: {G1: "Question A3"},
@@ -196,15 +202,15 @@ class FullGameTests(unittest.TestCase):
         self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
         self.game_server.submit_text(14, "Question B4")
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
-                                   {14: re.compile(r"(?s)answer.*?Question B3")})
+                                   {14: re.compile(r"(?s)answer.*?Question B3|" + self.TEXT_SUBMIT_RESPONSE)})
         self.game_server.submit_text(14, "Answer B4")
-        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {14: re.compile(self.TEXT_SUBMIT_RESPONSE)})
         self.game_server.submit_text(11, "Answer A1")
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
-                                   {11: re.compile(r"(?s)answer.*?Question B4")})
+                                   {11: re.compile(r"(?s)answer.*?Question B4|" + self.TEXT_SUBMIT_RESPONSE)})
         self.game_server.submit_text(11, "Answer B1")
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
-                                   {11: re.compile(r"(?s)ask a question.*?Answer B4")})
+                                   {11: re.compile(r"(?s)ask a question.*?Answer B4|" + self.TEXT_SUBMIT_RESPONSE)})
         # We now have the following Sheets:
         #   Michael: {G2: "Question B3", "Answer B4"}
         #   Jenny: {G1: "Question A3", "Answer A1" (waiting)}
@@ -215,7 +221,7 @@ class FullGameTests(unittest.TestCase):
         self.assertMessagesCorrect(
             self.message_store.fetch_messages(),
             {11: re.compile(r"(?s)No answer required"),
-             13: re.compile(r"(?s)No answer required|answer.*Question A2"),
+             13: re.compile(r"(?s)answer.*Question A2|" + self.TEXT_SUBMIT_RESPONSE),
              22: re.compile("(?s)Question B3.*Answer B4|Question B1.*Answer B3|Question B4.*Answer B1")})
 
     def assertMessagesCorrect(self, messages: List[game.Message], expected: Dict[int, Pattern]) -> None:
