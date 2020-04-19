@@ -135,7 +135,7 @@ class GameServer:
             self.send_callback([Message(chat_id, "Already a running pending game in this chat")])  # TODO UX: Add hint to COMMAND_NEW_GAME
             return
         game = model.Game(name=name, chat_id=chat_id, is_finished=False, is_started=False, is_waiting_for_finish=False,
-                          is_synchronous=True)
+                          is_synchronous=True, is_showing_result_names=False)
         session.add(game)
         self.send_callback([Message(chat_id, f"""New game created. Use /{COMMAND_JOIN_GAME} to join the game.""")])  # TODO UX: more info
 
