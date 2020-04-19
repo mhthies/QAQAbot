@@ -576,7 +576,7 @@ def _finalize_game(game: model.Game, session: Session) -> List[Message]:
     messages to the game's group chat."""
     messages = []
     # Requery sheets with optimized loading of current_user
-    sheets = session.query(model.Sheet)\
+    sheets: List[model.Sheet] = session.query(model.Sheet)\
         .filter(model.Sheet.game == game)\
         .populate_existing()\
         .options(joinedload(model.Sheet.current_user))\
@@ -589,6 +589,7 @@ def _finalize_game(game: model.Game, session: Session) -> List[Message]:
         if sheet_user is not None:
             sheet.current_user = None
             if sheet_user.current_sheet == sheet:
+                sheet_user.current_sheet = None
                 messages.append(Message(sheet_user.chat_id, "Game was ended. No answer required anymore."))
                 users_to_update.add(sheet_user)
     messages.extend(_next_sheet(list(users_to_update), session))
