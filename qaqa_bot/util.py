@@ -34,9 +34,9 @@ def run_migrations(engine: sqlalchemy.engine.Engine):
     config = alembic.config.Config()
     # `script_location` is not really required for our use case, but alembic refuses to construct the `ScriptDirectory`
     # without it.
-    config.set_main_option('script_location', os.path.join(os.path.dirname(__file__), '..', 'alembic'))
+    config.set_main_option('script_location', os.path.join(os.path.dirname(__file__)))
     # multiple locations comma-separated
-    config.set_main_option('version_locations', os.path.join(os.path.dirname(__file__), '..', 'alembic', 'versions'))
+    config.set_main_option('version_locations', os.path.join(os.path.dirname(__file__), 'database_versions'))
     # Create ScriptDirectory and EnvironmentContext objects
     script_directory = alembic.script.ScriptDirectory.from_config(config)
     context = alembic.environment.EnvironmentContext(config, script_directory)
