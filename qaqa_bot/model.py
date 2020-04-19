@@ -3,23 +3,24 @@ This module defines the object-relational database model for the QAQA game bot.
 
 A brief overview of the model:
 
-|--------| 1          |-------------| n           |------|
++--------+ 1          +-------------+ *           +------+
 |  Game  | ---------- | Participant | ----------- | User |
-|--------|          n |-------------|           1 |------|
++--------+          * +-------------+           1 +------+
   1 |                                               |  | 1 current_user
     |                                               |  |
-    | n    1 current_sheet                          |  |
-|-------| <-----------------------------------------+  |
+    | *    1 current_sheet                          |  |
++-------+ <-----------------------------------------+  |
 | Sheet | ---------------------------------------------+
-|-------|  n pending_sheets
++-------+  0..* pending_sheets
   1 |
-    | n
-|-------|
+    | *
++-------+
 | Entry |
-|-------|
++-------+
 
 A database schema according to the model can be creating using `Base.metadata.create_all(engine)` with an SQLAlchemy
-database engine.
+database engine. However, this should typically done through Alembic migrations, provided in the `database_versions/`
+directory. Use `alembic upgrade head` on the CLI or `util.run_migrations()`.
 """
 
 import enum
