@@ -134,7 +134,8 @@ class GameServer:
         if running_games:
             self.send_callback([Message(chat_id, "Already a running pending game in this chat")])  # TODO UX: Add hint to COMMAND_NEW_GAME
             return
-        game = model.Game(name=name, chat_id=chat_id, is_finished=False, is_started=False, is_synchronous=True)
+        game = model.Game(name=name, chat_id=chat_id, is_finished=False, is_started=False, is_waiting_for_finish=False,
+                          is_synchronous=True)
         session.add(game)
         self.send_callback([Message(chat_id, f"""New game created. Use /{COMMAND_JOIN_GAME} to join the game.""")])  # TODO UX: more info
 
@@ -268,7 +269,26 @@ class GameServer:
             return
         game.is_waiting_for_finish = True
         sheet_infos = list(_game_sheet_infos(game, session))
-        self.send_callback(_finish_if_stopped_and_all_answered(game, sheet_infos, session))
+
+        messages = _finish_if_stopped_and_all_answered(game, sheet_infos, session)
+
+        if not game.is_finished:
+            # Retract sheets that do not end with a question (i.e. remove from users' stacks and inform user if it is
+            # their current_sheet)
+            users_to_update = set()
+            for sheet_info in sheet_infos:
+                if not sheet_info.num_entries or sheet_info.last_entry.type == model.EntryType.ANSWER:
+                    sheet_user: Optional[model.User] = sheet_info.sheet.current_user   # TODO optimize?
+                    if sheet_user is not None:
+                        sheet_info.sheet.current_user = None
+                        if sheet_user.current_sheet == sheet_info.sheet:
+                            sheet_user.current_sheet = None
+                            messages.append(Message(sheet_user.chat_id,
+                                                    "Game will be stopped. No new question required anymore."))
+                            users_to_update.add(sheet_user)
+            messages.extend(_next_sheet(list(users_to_update), session))
+
+        self.send_callback(messages)
 
     @with_session
     def immediately_stop_game(self, session: Session, chat_id: int) -> None:
@@ -328,11 +348,12 @@ class GameServer:
             # In a synchronous game: Check if the round is finished and pass sheets on
             if game.is_synchronous:
                 if all(num_entries == len(current_sheet.entries) for sheet, num_entries, last_entry in sheet_infos):
+                    # TODO don't assign answered sheets in stopped games? Might be relevant for leaving/joining in-game
                     _assign_sheet_to_next(list(game.sheets), game, session)
                     result.extend(_next_sheet(list(p.user for p in game.participants), session))
 
             # In an asynchronous game: Pass on this sheet
-            else:
+            elif not game.is_waiting_for_finish or entry_type == model.EntryType.QUESTION:
                 _assign_sheet_to_next([current_sheet], game, session)
                 assert(current_sheet.current_user is not None)
                 result.extend(_next_sheet([current_sheet.current_user], session))
@@ -476,7 +497,6 @@ def _next_sheet(users: Iterable[model.User], session: Session, repeat: bool = Fa
     :param users: The users to check for pending sheets and send messages to
     :param repeat: If True, resend the request for submission to all given users, even if they already have a sheet
         assigned."""
-    # TODO exclude answered sheets of games waiting to be stopped
     # The following manually crafted SQL query is basically and extended version of _game_sheet_infos() to efficiently
     # query sheets, their entry numbers and last entries along with each User object.
     min_sheet_pos_subquery = session.query(model.Sheet.current_user_id,

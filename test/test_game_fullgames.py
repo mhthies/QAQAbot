@@ -199,18 +199,13 @@ class FullGameTests(unittest.TestCase):
                                    {13: re.compile(r"(?s)Serious Group.*Funny Group.*2 pending sheets|Question B1")})
         # Now, let's try to stop Game 2 with all sheets answered
         self.game_server.stop_game(22)
-        self.assertMessagesCorrect(self.message_store.fetch_messages(), {})
-        self.game_server.submit_text(14, "Question B4")
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
-                                   {14: re.compile(r"(?s)answer.*?Question B3|" + self.TEXT_SUBMIT_RESPONSE)})
+                                   {14: re.compile(r"No new question required|Question B3")})
         self.game_server.submit_text(14, "Answer B4")
         self.assertMessagesCorrect(self.message_store.fetch_messages(), {14: re.compile(self.TEXT_SUBMIT_RESPONSE)})
         self.game_server.submit_text(11, "Answer A1")
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
-                                   {11: re.compile(r"(?s)answer.*?Question B4|" + self.TEXT_SUBMIT_RESPONSE)})
-        self.game_server.submit_text(11, "Answer B1")
-        self.assertMessagesCorrect(self.message_store.fetch_messages(),
-                                   {11: re.compile(r"(?s)ask a question.*?Answer B4|" + self.TEXT_SUBMIT_RESPONSE)})
+                                   {11: re.compile(self.TEXT_SUBMIT_RESPONSE)})
         # We now have the following Sheets:
         #   Michael: {G2: "Question B3", "Answer B4"}
         #   Jenny: {G1: "Question A3", "Answer A1" (waiting)}
@@ -220,8 +215,7 @@ class FullGameTests(unittest.TestCase):
         self.game_server.submit_text(13, "Answer B3")
         self.assertMessagesCorrect(
             self.message_store.fetch_messages(),
-            {11: re.compile(r"(?s)No answer required"),
-             13: re.compile(r"(?s)answer.*Question A2|" + self.TEXT_SUBMIT_RESPONSE),
+            {13: re.compile(r"(?s)answer.*Question A2|" + self.TEXT_SUBMIT_RESPONSE),
              22: re.compile("(?s)Question B3.*Answer B4|Question B1.*Answer B3|Question B4.*Answer B1")})
         self.game_server.submit_text(13, "Answer A3")
         self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(r"(?s)ask.*?Answer A3"),
