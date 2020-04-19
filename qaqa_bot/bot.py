@@ -3,6 +3,7 @@ from typing import List
 import re
 
 import telegram
+from telegram import BotCommand
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters)
 
 from . import game
@@ -69,6 +70,26 @@ class Frontend:
 
         # Gameserver
         self.gs = game.GameServer(config=config, send_callback=self.send_messages)
+
+    def set_commands(self):
+        """Sends the commands to the BotFather."""           # Todo: unclear what's going on
+        actual: List[(str,str)] = (self.updater.bot.getMyCommands())
+        print(actual[1].command)
+        commands: List[BotCommand] = [
+            BotCommand(command="testste",description="Explains the commands."),
+            BotCommand(game.COMMAND_HELP, "Explains the commands."),
+            BotCommand(game.COMMAND_REGISTER, "Let the bot talk to you. Necessary for playing the game."),
+            BotCommand(game.COMMAND_NEW_GAME,
+                       "Spawns a game.Default settings: asynchronous, number of rounds is the number of players."),
+            BotCommand(game.COMMAND_JOIN_GAME, "Join the current game."),
+            BotCommand(game.COMMAND_START_GAME, "Start the game.This does only work if a game has been spawned."),
+            BotCommand(game.COMMAND_SET_ROUNDS, "Defines the number of rounds for the actual game."),
+            BotCommand(game.COMMAND_SET_SYNCHRONOUS, "Switch to synchronous mode (pass all sheets at once)."),
+            BotCommand(game.COMMAND_SET_ASYNCHRONOUS, "Switch to asynchronous mode (pass sheet ASAP)."),
+            BotCommand(game.COMMAND_STOP_GAME, "Stops the game after the current round."),
+            BotCommand(game.COMMAND_STOP_GAME_IMMEDIATELY,
+                       "Stops the game without waiting for the round to be finished.")]
+        self.updater.bot.set_my_commands(commands)  # Todo: for some unknown reason this does not do anything
 
     def start_bot(self):
         """Polls for user interaction."""
