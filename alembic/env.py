@@ -1,4 +1,4 @@
-from logging.config import fileConfig
+import logging.config
 import sys
 import os.path
 
@@ -11,15 +11,16 @@ from alembic import context
 # access to the values within the .ini file in use.
 config = context.config
 
-qaqa_bot_config = toml.load("config.toml")
-
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
-fileConfig(config.config_file_name)
+logging.config.fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+# Customizations for the QAQAbot project
+qaqa_bot_dir = os.path.dirname(config.config_file_name)
+qaqa_bot_config = toml.load(os.path.join(qaqa_bot_dir, "config.toml"))
+
+# Add our model's MetaData object here for 'autogenerate' support
+sys.path.append(qaqa_bot_dir)
 from qaqa_bot import model
 target_metadata = model.Base.metadata
 
