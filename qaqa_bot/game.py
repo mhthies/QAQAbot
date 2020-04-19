@@ -9,6 +9,7 @@ un-inlined into some helper functions at the bottom of the file.
 Additionally, this module defines the `Message` tuple for passing Telegram messages the message sending callback
 function and the `@with_session` for magically handling (creating/committing/rolling back) the database sessions.
 """
+import datetime
 import functools
 import statistics
 from typing import NamedTuple, List, Optional, Iterable, Dict, Any, Callable, MutableMapping
@@ -311,7 +312,8 @@ class GameServer:
         entry_type = (model.EntryType.QUESTION
                       if not current_sheet.entries or current_sheet.entries[-1].type == model.EntryType.ANSWER
                       else model.EntryType.ANSWER)
-        current_sheet.entries.append(model.Entry(user=user, text=text, type=entry_type))
+        current_sheet.entries.append(model.Entry(user=user, text=text, type=entry_type,
+                                                 timestamp=datetime.datetime.now(datetime.timezone.utc)))
         # TODO generate success message
         user.current_sheet = None
         current_sheet.current_user = None

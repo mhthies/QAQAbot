@@ -24,7 +24,7 @@ database engine.
 
 import enum
 
-from sqlalchemy import Column, Integer, BigInteger, String, Boolean, Enum, ForeignKey
+from sqlalchemy import Column, Integer, BigInteger, String, Boolean, Enum, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.orderinglist import ordering_list
@@ -117,6 +117,7 @@ class Entry(Base):
     user_id = Column(Integer, ForeignKey('users.id'))
     text = Column(String)
     type = Column(Enum(EntryType))
+    timestamp = Column(DateTime)
 
     sheet = relationship('Sheet', back_populates='entries')
     user = relationship('User')
