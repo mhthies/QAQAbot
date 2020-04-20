@@ -201,12 +201,30 @@ class GameServer:
             self.send_callback([Message(chat_id, f"You must start a chat with the bot first. Use the following link: "
                                                  f"https://t.me/{self.config['bot']['username']}?start")])
             return
+
+        new_sheet = False
         if game.is_started:
-            self.send_callback([Message(chat_id, "Too late")])
-            return
-            # TODO allow joining into running games
+            # Joining into running games ist only allowed for asynchronous games or in the first round of a synchronous
+            # game
+            sheet_infos = _game_sheet_infos(game, session)
+            if game.is_synchronous:
+                if any(si.num_entries == 0 for si in sheet_infos):
+                    new_sheet = True
+                else:
+                    self.send_callback([Message(chat_id, "Too late")])
+                    return
+            else:
+                # Add a new sheet if other sheets have only few entries (< ¼ of target rounds), too.
+                if min((si.num_entries for si in sheet_infos), default=0) < game.rounds // 4:
+                    new_sheet = True
+
         game.participants.append(model.Participant(user=user))
-        self.send_callback([Message(chat_id, "ok")])  # TODO UX
+        messages = [Message(chat_id, "ok")]
+
+        if new_sheet:
+            user.pending_sheets.append(model.Sheet(game=game))
+            messages.extend(_next_sheet([user], session))
+        self.send_callback(messages)  # TODO UX
 
     @with_session
     def start_game(self, session: Session, chat_id: int) -> None:

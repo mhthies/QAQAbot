@@ -64,10 +64,9 @@ class FullGameTests(unittest.TestCase):
     def test_simple_game(self) -> None:
         # Create new game in "Funny Group" chat (chat_id=21)
         self.game_server.new_game(21, "Funny Group")
-        # Let Michael, Jenny and Lukas join
+        # Let Michael and Jenny join
         self.game_server.join_game(21, 1)
         self.game_server.join_game(21, 2)
-        self.game_server.join_game(21, 3)
         # Set rounds
         self.game_server.set_rounds(21, 2)
         self.message_store.fetch_messages()
@@ -75,10 +74,15 @@ class FullGameTests(unittest.TestCase):
         self.game_server.start_game(21)
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
                                    {21: re.compile("ok"),
-                                    **{i: re.compile("ask a question") for i in (11, 12, 13)}})
+                                    **{i: re.compile("ask a question") for i in (11, 12)}})
         # Write questions
         self.game_server.submit_text(11, "Question 1")
         self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(self.TEXT_SUBMIT_RESPONSE)})
+        # Lukas joins late
+        self.game_server.join_game(21, 3)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(),
+                                   {21: re.compile("ok"),
+                                    13: re.compile("ask a question")})
         self.game_server.submit_text(13, "Question 3")
         self.assertMessagesCorrect(self.message_store.fetch_messages(), {13: re.compile(self.TEXT_SUBMIT_RESPONSE)})
         self.game_server.submit_text(12, "Question 2")
@@ -86,6 +90,10 @@ class FullGameTests(unittest.TestCase):
                                                                          12: re.compile(r"(?s)answer.*?Question 1|"
                                                                                         + self.TEXT_SUBMIT_RESPONSE),
                                                                          13: re.compile(r"(?s)answer.*?Question 2")})
+        # Jannik wants to join too, but it's too late
+        self.game_server.join_game(21, 4)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(),
+                                   {21: re.compile("late")})
         # Write answers
         self.game_server.submit_text(11, "Answer 1")
         self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(self.TEXT_SUBMIT_RESPONSE)})
