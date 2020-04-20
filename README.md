@@ -50,3 +50,9 @@ The class has different handlers for any kind of Telegram update (esp. commands 
 TODO requirements and installation
 
 TODO database initialization
+
+
+## License
+
+This project is released under the Terms of the Apache License v2.0. See `NOTICE` and `LICENSE` files for more
+information.
