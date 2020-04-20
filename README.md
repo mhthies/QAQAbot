@@ -43,13 +43,82 @@ It provides specific methods for all interaction events that update the game sta
 The interaction with Telegram is provided by the `quqa_bot.bot` module, using the *Python Telegram Bot* library.
 Instances of its `Frontend` class hold an `Updater` object to interact with the Telegram API and an `GameServer` object to do the game logic.
 The class has different handlers for any kind of Telegram update (esp. commands and text messages), that are automatically registered with the *Updater* on initialization and use the *GameServer's* interaction methods to carry out the actions.
- 
- 
+
+Incoming updates from the Telegram API (esp. incoming messages) are handled either by the Frontend on its own or with help of the GameServer: Typically, response messages that do not require interaction with the database, are sent by the Frontend immediately. In the other case, the Frontend's handler method identifies the correct game action, determines the action's arguments from the update data, and calls the respective method of the GameServer. The response message/s are sent by the GameServer.
+
+We use Alembic to manage database migrations.
+To allow easy packaging and automatic migrations (see *Deployment* instructions below), the database versions are stored in `qaqa_bot/database_versions/`.
+However, you can still use the alembic cli tool normally. 
+
+
 ## Deployment
 
-TODO requirements and installation
+### Prerequisites
 
-TODO database initialization
+For running this bot, a Python 3 environment (>= Python 3.6) with the dependencies (see `requirements.txt`) installed is required.
+It is recommended to use a virtualenv environment for easier management and updating of dependencies. 
+
+Additionally, a database in one of the DBMS supported by SQLAlchemy is required, including the appropriate Python driver library. 
+See https://docs.sqlalchemy.org/en/13/dialects/index.html for a list of supported database systems and instructions.
+ 
+For a small installation, development and testing, an SQLite database is sufficient, which can be run with Python's integrated SQLite support.
+For this purpose, use `sqlite:////path/to/your/database.db` as database connection string in the bot's `config.toml`.
+However, we recommend to use a proper™ database server for production use.
+
+
+### Setup
+
+Currently, the easiest setup is to clone this Git Repository and run the `qaqa_bot` python module from within it.
+We may add proper Python packaging later, to make installation via pip possible. 
+
+1. clone and enter repository
+   ```bash
+   git clone https://gitea.nephos.link/michael/QAQABot.git
+   cd QAQABot/
+   ```
+2. setup virtualenv
+   ```bash
+   python3 -m virtualenv -p python3 venv
+   ```
+3. install requirements
+   ```bash
+   venv/bin/pip install -r requirements.txt
+   ```
+4. create a Telegram Bot account: follow the instructions at https://core.telegram.org/bots#creating-a-new-bot
+5. create `config.toml`
+   ```bash
+   cp config.example.toml config.toml
+   $EDITOR config.toml
+   ```
+   Insert
+   * the bot's username,
+   * the bot's API token (recived from the BotFather),
+   * your personal Telegram username (will be used in the bot's description and help texts), and
+   * the connection URL of your database.
+
+### Running
+
+Run the following command in the repository directory: 
+```bash
+venv/bin/python -m qaqa_bot
+```
+
+At startup, the database will be initialized or upgraded automatically.
+Additionally, the Telegram bot will be configured using the Telegram API.
+To avoid this behaviour, add `--no-init` to the run command.
+
+To run the database and bot setup manually, use `--init-only`.
+You may also run database migrations with Alembic for full control: `alembic upgrade head`.
+
+
+### Updating
+
+Simply update the git repository and restart the bot for updating:
+```bash
+git pull
+venv/bin/python -m qaqa_bot
+```
+As explained above, the database and Telegram bot settings will be updated automatically at startup.
 
 
 ## License
