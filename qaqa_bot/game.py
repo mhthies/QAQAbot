@@ -23,6 +23,7 @@ function and the `@with_session` for magically handling (creating/committing/rol
 
 import datetime
 import functools
+import math
 import statistics
 from typing import NamedTuple, List, Optional, Iterable, Dict, Any, Callable, MutableMapping
 
@@ -230,7 +231,7 @@ class GameServer:
 
         # Set number of rounds if unset
         if game.rounds is None:
-            game.rounds = len(game.participants)
+            game.rounds = max(6, math.floor(len(game.participants)/2)*2)
 
         # Give sheets to participants
         result = [Message(chat_id, "ok")]
