@@ -62,8 +62,9 @@ def with_session(f):
     def wrapper(self: "GameServer", *args, **kwargs):
         session = self.session_maker()
         try:
-            f(self, session, *args, **kwargs)
+            result = f(self, session, *args, **kwargs)
             session.commit()
+            return result
         except Exception:
             session.rollback()
             raise
