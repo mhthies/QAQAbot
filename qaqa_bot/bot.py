@@ -92,8 +92,13 @@ class Frontend:
         self.updater.bot.set_my_commands(commands)  # Todo: for some unknown reason this does not do anything
 
     def start_bot(self):
-        """Polls for user interaction."""
+        """Starts polling for user interaction.
+
+        This method is blocking: It blocks the calling thread until an interrupt signal is received, using
+        `Updater.idle()`.
+        """
         self.updater.start_polling()
+        self.updater.idle()
 
     def start(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Send a friendly welcome message."""

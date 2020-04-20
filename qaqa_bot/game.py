@@ -89,10 +89,12 @@ class GameServer:
 
         # database_engine may be given (e.g. for testing purposes). Otherwise, we construct one from the configuration
         if database_engine is None:
-            database_engine = sqlalchemy.create_engine(config['database']['connection'])
+            self.database_engine = sqlalchemy.create_engine(config['database']['connection'])
+        else:
+            self.database_engine = database_engine
 
         # Create database session maker
-        self.session_maker = sqlalchemy.orm.sessionmaker(bind=database_engine)
+        self.session_maker = sqlalchemy.orm.sessionmaker(bind=self.database_engine)
 
     @with_session
     def register_user(self, session: Session, chat_id: int, user_id: int, user_name: str) -> None:
