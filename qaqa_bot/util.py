@@ -8,9 +8,11 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
-
+import abc
+import gettext
 import os.path
 from contextlib import contextmanager
+from typing import Dict, Any
 
 import alembic
 import alembic.config
@@ -64,3 +66,46 @@ def run_migrations(engine: sqlalchemy.engine.Engine):
 
         with context.begin_transaction():
             context.run_migrations()
+
+
+class LazyGetTextBase(metaclass=abc.ABCMeta):
+    """
+    Abstract base class for the lazy GNU gettext implementation.
+
+    Instances of this class contain a translatable string, that may be translated with a given gettext `Translations`
+    environment, as soon as the target locale is known, using `get_translation()`. Additionally, they may contain
+    formatting parameters to fill into the translated strings afterwards.
+    """
+    @abc.abstractmethod
+    def get_translation(self, translations: gettext.NullTranslations) -> str:
+        pass
+
+
+class GetText(LazyGetTextBase):
+    """ Lazy version of `gettext()`
+
+    Supports lazy formatting parameters which are applied to the translated string using Python's `str.format()` method.
+    """
+    def __init__(self, message: str):
+        self.message = message
+        self.fields: Dict[str, Any] = {}
+
+    def format(self, **fields) -> "GetText":
+        self.fields.update(fields)
+        return self
+
+    def get_translation(self, translations: gettext.NullTranslations) -> str:
+        translated_fields = {k: (v.get_translation if isinstance(v, LazyGetTextBase) else v)
+                             for k, v in self.fields.items()}
+        return translations.gettext(self.message).format(**translated_fields)
+
+
+class NGetText(LazyGetTextBase):
+    """ Lazy version of `ngettext()` """
+    def __init__(self, singular: str, plural: str, n: int):
+        self.singular = singular
+        self.plural = plural
+        self.n = n
+
+    def get_translation(self, translations: gettext.NullTranslations) -> str:
+        return translations.ngettext(self.singular, self.plural, self.n)
