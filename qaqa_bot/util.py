@@ -142,7 +142,7 @@ class FormattedText(LazyGetTextBase):
         self.fields = fields
 
     def get_translation(self, translations: gettext.NullTranslations) -> str:
-        translated_fields = {k: (v.get_translation if isinstance(v, LazyGetTextBase) else v)
+        translated_fields = {k: (v.get_translation(translations) if isinstance(v, LazyGetTextBase) else v)
                              for k, v in self.fields.items()}
         return self.message.get_translation(translations).format(**translated_fields)
 
@@ -158,7 +158,7 @@ class JoinedText(LazyGetTextBase):
         self.parts = parts
 
     def get_translation(self, translations: gettext.NullTranslations) -> str:
-        parts = (p.get_translation if isinstance(p, LazyGetTextBase) else p
+        parts = (p.get_translation(translations) if isinstance(p, LazyGetTextBase) else p
                  for p in self.parts)
         return self.message.get_translation(translations).join(parts)
 
