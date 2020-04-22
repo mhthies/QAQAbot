@@ -183,7 +183,7 @@ class GameServer:
         running_games = session.query(model.Game).filter(model.Game.chat_id == chat_id,
                                                          model.Game.is_finished == False).count()
         if running_games:
-            self._send_messages([Message(chat_id, GetText("Already a running pending game in this chat"))], session)  # TODO UX: Add hint to COMMAND_NEW_GAME
+            self._send_messages([Message(chat_id, GetText("Already a running or pending game in this chat"))], session)  # TODO UX: Add hint to COMMAND_STATUS
             return
         game = model.Game(name=name, chat_id=chat_id, is_finished=False, is_started=False, is_waiting_for_finish=False,
                           is_synchronous=True, is_showing_result_names=False)
@@ -482,6 +482,7 @@ class GameServer:
         # Inform about pending sheets
         if running_games:
             if user.pending_sheets:
+                # TODO use NGetText for pluralizing sheets
                 parts.append(GetText("\nYou have currently {num_sheets} pending sheets to ask or answer "
                                      "questions, including the current one.")
                              .format(num_sheets=len(user.pending_sheets)))
