@@ -12,7 +12,7 @@ import abc
 import gettext
 import os.path
 from contextlib import contextmanager
-from typing import Dict, Any
+from typing import Dict, Any, Iterable, List, Union
 
 import alembic
 import alembic.config
@@ -80,24 +80,20 @@ class LazyGetTextBase(metaclass=abc.ABCMeta):
     def get_translation(self, translations: gettext.NullTranslations) -> str:
         pass
 
+    def format(self, **fields) -> "FormattedText":
+        return FormattedText(self, fields)
+
+    def join(self, iterable: Iterable[Union[str, "LazyGetTextBase"]]):
+        return JoinedText(self, list(iterable))
+
 
 class GetText(LazyGetTextBase):
-    """ Lazy version of `gettext()`
-
-    Supports lazy formatting parameters which are applied to the translated string using Python's `str.format()` method.
-    """
+    """ Lazy version of `gettext()`"""
     def __init__(self, message: str):
         self.message = message
-        self.fields: Dict[str, Any] = {}
-
-    def format(self, **fields) -> "GetText":
-        self.fields.update(fields)
-        return self
 
     def get_translation(self, translations: gettext.NullTranslations) -> str:
-        translated_fields = {k: (v.get_translation if isinstance(v, LazyGetTextBase) else v)
-                             for k, v in self.fields.items()}
-        return translations.gettext(self.message).format(**translated_fields)
+        return translations.gettext(self.message)
 
 
 class NGetText(LazyGetTextBase):
@@ -109,3 +105,43 @@ class NGetText(LazyGetTextBase):
 
     def get_translation(self, translations: gettext.NullTranslations) -> str:
         return translations.ngettext(self.singular, self.plural, self.n)
+
+
+class GetNoText(LazyGetTextBase):
+    def __init__(self, message: str):
+        self.message = message
+
+    def get_translation(self, translations: gettext.NullTranslations) -> str:
+        return self.message
+
+
+class FormattedText(LazyGetTextBase):
+    """ Lazy formatting string.
+
+    This class is the result type of `LazyGetTextBase.format(**kwargs)`. It stores a translatable string and formatting
+    parameters. When getting the translation, the formatting parameters are translated recursively and afterwards
+    formatted into the translated message, using Python's `str.format()`."""
+    def __init__(self, message: LazyGetTextBase, fields: Dict[str, Any]):
+        self.message = message
+        self.fields = fields
+
+    def get_translation(self, translations: gettext.NullTranslations) -> str:
+        translated_fields = {k: (v.get_translation if isinstance(v, LazyGetTextBase) else v)
+                             for k, v in self.fields.items()}
+        return self.message.get_translation(translations).format(**translated_fields)
+
+
+class JoinedText(LazyGetTextBase):
+    """ Lazy string joining.
+
+    This class is the result type of `LazyGetTextBase.join(iterator)`. It stores a translatable string and a list of
+    parts. When getting the translation, the parts are translated recursively and afterwards joined with the translated
+    message using Python's `str.join()`."""
+    def __init__(self, message: LazyGetTextBase, parts: List[Union[str, LazyGetTextBase]]):
+        self.message = message
+        self.parts = parts
+
+    def get_translation(self, translations: gettext.NullTranslations) -> str:
+        parts = (p.get_translation if isinstance(p, LazyGetTextBase) else p
+                 for p in self.parts)
+        return self.message.get_translation(translations).join(parts)
