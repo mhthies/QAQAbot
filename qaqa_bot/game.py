@@ -44,7 +44,7 @@ COMMAND_STOP_GAME_IMMEDIATELY = "stop_game_immediately"
 COMMAND_SET_ROUNDS = "set_rounds"
 COMMAND_SET_SYNCHRONOUS = "set_synchronous"
 COMMAND_SET_ASYNCHRONOUS = "set_asynchronous"
-
+COMMAND_SET_LANGUAGE = "set_language"
 
 class Message(NamedTuple):
     """ Representation of an outgoing Telegram message, triggered by some game state change """
