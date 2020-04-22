@@ -26,6 +26,7 @@ import functools
 import gettext
 import math
 import statistics
+import os.path
 from typing import NamedTuple, List, Optional, Iterable, Dict, Any, Callable, MutableMapping
 
 import sqlalchemy
@@ -47,6 +48,8 @@ COMMAND_SET_ROUNDS = "set_rounds"
 COMMAND_SET_SYNCHRONOUS = "set_synchronous"
 COMMAND_SET_ASYNCHRONOUS = "set_asynchronous"
 COMMAND_SET_LANGUAGE = "set_language"
+
+LOCALE_DIR = os.path.join(os.path.dirname(__file__), 'i18n')
 
 
 class Message(NamedTuple):
@@ -121,7 +124,13 @@ class GameServer:
         self.session_maker = sqlalchemy.orm.sessionmaker(bind=self.database_engine)
 
     @with_session
-    def send_messages(self, session: Session, messages: List[Message]):
+    def send_messages(self, session: Session, messages: List[Message]) -> None:
+        """
+        Send a list of translatable messages.
+
+        For each message, the target locale is looked up in the database according to the target chat_id, and the
+        message is translated for that locale and sent to the chat.
+        """
         self._send_messages(messages, session)
 
     @with_session
@@ -524,9 +533,16 @@ class GameServer:
         self._send_messages([Message(chat_id, status)], session)
 
     def _send_messages(self, messages: List[Message], session: Session) -> None:
-        # TODO fetch target chat locales
-        self._send_callback([TranslatedMessage(m.chat_id, m.text.get_translation(gettext.NullTranslations()))
-                            for m in messages])
+        locales = dict(session.query(model.SelectedLocale.chat_id, model.SelectedLocale.locale)
+                       .filter(model.SelectedLocale.chat_id.in_(set(m.chat_id for m in messages)))
+                       .all())
+        self._send_callback(
+            [TranslatedMessage(m.chat_id,
+                               m.text.get_translation(gettext.translation('qaqa_bot',
+                                                                          LOCALE_DIR,
+                                                                          (locales.get(m.chat_id, 'en'),),
+                                                                          fallback=True)))
+             for m in messages])
 
 
 class SheetProgressInfo(NamedTuple):

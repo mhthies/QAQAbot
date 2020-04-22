@@ -25,9 +25,9 @@ A brief overview of the model:
 +-------+  0..* pending_sheets
   1 |
     | *
-+-------+
-| Entry |
-+-------+
++-------+                                                   +----------------+
+| Entry |                                                   | SelectedLocale |
++-------+                                                   +----------------+
 
 A database schema according to the model can be creating using `Base.metadata.create_all(engine)` with an SQLAlchemy
 database engine. However, this should typically done through Alembic migrations, provided in the `database_versions/`
@@ -133,3 +133,9 @@ class Entry(Base):
 
     sheet = relationship('Sheet', back_populates='entries')
     user = relationship('User')
+
+
+class SelectedLocale(Base):
+    __tablename__ = 'selected_locales'
+    chat_id = Column(BigInteger, nullable=False, primary_key=True, autoincrement=False)
+    locale = Column(String(length=20))
