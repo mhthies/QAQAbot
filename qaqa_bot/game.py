@@ -134,6 +134,18 @@ class GameServer:
         self._send_messages(messages, session)
 
     @with_session
+    def set_chat_locale(self, session: Session, chat_id: int, locale: str) -> None:
+        """
+        Set the target locale for outgoing messages for a specific chat id.
+
+        :param locale: A language string like 'de', 'en'
+        """
+        l = model.SelectedLocale()
+        l.chat_id = chat_id
+        l.locale = locale
+        session.merge(l)
+
+    @with_session
     def register_user(self, session: Session, chat_id: int, user_id: int, user_name: str) -> None:
         """
         Register a new user and its private chat_id in the database, when they begin a private chat with the
