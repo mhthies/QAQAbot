@@ -125,3 +125,26 @@ As explained above, the database and Telegram bot settings will be updated autom
 
 This project is released under the Terms of the Apache License v2.0. See `NOTICE` and `LICENSE` files for more
 information.
+
+
+## Development
+
+Creating a new database version:
+```bash
+alembic upgrade head
+# do changes to model.py
+alembic revision --autogenerate -m "do data things"
+# revisit qaqa_bot/database_versions/*_do_data_things.py
+git add qaqa_bot/model.py qaqa_bot/database_versions
+```
+
+Updating i18n translation files:
+```bash
+pybabel extract -k "GetText" -k "NGetText" -o qaqa_bot.pot qaqa_bot/
+pybabel update -i qaqa_bot.pot -d qaqa_bot/i18n/ -l de -D qaqa_bot
+```
+
+Compiling i18n translation files:
+```bash
+pybabel compile -d qaqa_bot/i18n/ -l de -D qaqa_bot
+```
