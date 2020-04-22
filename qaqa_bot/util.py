@@ -86,6 +86,22 @@ class LazyGetTextBase(metaclass=abc.ABCMeta):
     def join(self, iterable: Iterable[Union[str, "LazyGetTextBase"]]):
         return JoinedText(self, list(iterable))
 
+    def __add__(self, other):
+        if isinstance(other, LazyGetTextBase):
+            return ConcatGetText(self, other)
+        elif isinstance(other, str):
+            return ConcatGetText(self, GetNoText(other))
+        else:
+            return NotImplemented
+
+    def __radd__(self, other):
+        if isinstance(other, LazyGetTextBase):
+            return ConcatGetText(other, self)
+        elif isinstance(other, str):
+            return ConcatGetText(GetNoText(str), self)
+        else:
+            return NotImplemented
+
 
 class GetText(LazyGetTextBase):
     """ Lazy version of `gettext()`"""
@@ -145,3 +161,15 @@ class JoinedText(LazyGetTextBase):
         parts = (p.get_translation if isinstance(p, LazyGetTextBase) else p
                  for p in self.parts)
         return self.message.get_translation(translations).join(parts)
+
+
+class ConcatGetText(LazyGetTextBase):
+    """ Lazy gettext string concatenating.
+
+    This class is the result type of concatenating lazy gettext objects."""
+    def __init__(self, a: LazyGetTextBase, b: LazyGetTextBase):
+        self.a = a
+        self.b = b
+
+    def get_translation(self, translations: gettext.NullTranslations) -> str:
+        return self.a.get_translation(translations) + self.b.get_translation(translations)
