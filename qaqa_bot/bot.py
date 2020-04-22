@@ -26,6 +26,10 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 
+def _(x: str) -> str:
+    return x
+
+
 class Frontend:
     def __init__(self, config):
         self.config = config
@@ -38,8 +42,10 @@ class Frontend:
         # Command general activities
         help_handler = CommandHandler(game.COMMAND_HELP, self.help, filters=~Filters.update.edited_message)
         status_handler = CommandHandler(game.COMMAND_STATUS, self.status, filters=~Filters.update.edited_message)
+        set_language_handler = CommandHandler(game.COMMAND_SET_LANGUAGE, self.set_language)
         self.dispatcher.add_handler(help_handler)
         self.dispatcher.add_handler(status_handler)
+        self.dispatcher.add_handler(set_language_handler)
         # Commandhandler private activities
         start_handler = CommandHandler(game.COMMAND_REGISTER, self.start, filters=~Filters.update.edited_message)
         self.dispatcher.add_handler(start_handler)
@@ -83,11 +89,10 @@ class Frontend:
         self.gs = game.GameServer(config=config, send_callback=self.send_messages)
 
     def set_commands(self):
-        """Sends the commands to the BotFather."""           # Todo: unclear what's going on
+        """Sends the commands to the BotFather."""
         actual: List[(str,str)] = (self.updater.bot.getMyCommands())
-        print(actual[1].command)
+        print(actual[0].command)
         commands: List[BotCommand] = [
-            BotCommand(command="testste",description="Explains the commands."),
             BotCommand(game.COMMAND_HELP, "Explains the commands."),
             BotCommand(game.COMMAND_REGISTER, "Let the bot talk to you. Necessary for playing the game."),
             BotCommand(game.COMMAND_NEW_GAME,
@@ -97,10 +102,11 @@ class Frontend:
             BotCommand(game.COMMAND_SET_ROUNDS, "Defines the number of rounds for the actual game."),
             BotCommand(game.COMMAND_SET_SYNCHRONOUS, "Switch to synchronous mode (pass all sheets at once)."),
             BotCommand(game.COMMAND_SET_ASYNCHRONOUS, "Switch to asynchronous mode (pass sheet ASAP)."),
+            BotCommand(game.COMMAND_SET_LANGUAGE, "Choose the language. Available atm: English."),
             BotCommand(game.COMMAND_STOP_GAME, "Stops the game after the current round."),
             BotCommand(game.COMMAND_STOP_GAME_IMMEDIATELY,
                        "Stops the game without waiting for the round to be finished.")]
-        self.updater.bot.set_my_commands(commands)  # Todo: for some unknown reason this does not do anything
+        self.updater.bot.set_my_commands(commands)
 
     def start_bot(self):
         """Starts polling for user interaction.
@@ -183,17 +189,18 @@ class Frontend:
                 rounds: int = int(context.args[0])
                 self.gs.set_rounds(chat_id, rounds)
             except ValueError:
-                self.send_messages([game.Message(chat_id, f"‘{context.args[0]}’ is not a number of rounds!")])
+                self.send_messages([game.Message(chat_id, _("‘{arg}’ is not a number of rounds!").
+                                                 format(arg=context.args[0]))])
         elif len(context.args) == 0:
-            self.send_messages([game.Message(chat_id, "Please specify the number of rounds.")])
+            self.send_messages([game.Message(chat_id, _("Please specify the number of rounds."))])
         else:
-            self.send_messages([game.Message(chat_id, "Don't you think these are too many parameters?")])
+            self.send_messages([game.Message(chat_id, _("Don't you think these are too many parameters?"))])
 
     def set_synchronous(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Set the mode of the current game to synchronous (pass sheets when everyone's ready)."""
         chat_id: int = update.effective_chat.id
         if update.message.chat.type == "private":
-            self.send_messages([game.Message(chat_id, "Games can only edited in group chats.")])
+            self.send_messages([game.Message(chat_id, _("Games can only edited in group chats."))])
             return
         else:
             self.gs.set_synchronous(chat_id, True)
@@ -202,10 +209,13 @@ class Frontend:
         """Set the mode of the current game to asynchronous (pass sheets ASAP)."""
         chat_id: int = update.effective_chat.id
         if update.message.chat.type == "private":
-            self.send_messages([game.Message(chat_id, "Games can only edited in group chats.")])
+            self.send_messages([game.Message(chat_id, _("Games can only edited in group chats."))])
             return
         else:
             self.gs.set_synchronous(chat_id, False)
+
+    def set_language(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
+        pass                # TODO implement
 
     def help(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Print explanation of the game and commands."""
