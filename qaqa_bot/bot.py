@@ -18,16 +18,13 @@ from telegram import BotCommand
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters)
 
 from . import game
+from .util import GetText
 
 # Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-
-
-def _(x: str) -> str:
-    return x
 
 
 class Frontend:
@@ -135,7 +132,7 @@ class Frontend:
             logger.debug(msg=f"Try to spawn a game in {chat_id}")
             self.gs.new_game(chat_id=chat_id, name=update.message.chat.title)
         else:
-            self.send_messages([game.Message(chat_id, "Games can only be spawned in group chats.")])
+            self.gs.send_messages([game.Message(chat_id, "Games can only be spawned in group chats.")])
 
     def start_game(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Start game in current chat."""
@@ -144,7 +141,7 @@ class Frontend:
             logger.debug(msg=f"Try to start a game in {chat_id}")
             self.gs.start_game(chat_id)
         else:
-            self.send_messages([game.Message(chat_id, "Games can only be started in group chats.")])
+            self.gs.send_messages([game.Message(chat_id, "Games can only be started in group chats.")])
 
     def join_game(self, update: telegram.Update, _context: telegram.ext.CallbackContext):
         chat_id: int = update.effective_chat.id
@@ -152,7 +149,7 @@ class Frontend:
             logger.info(msg=f"{update.message.from_user} tries to join a game in {chat_id}")
             self.gs.join_game(chat_id=chat_id, user_id=update.message.from_user.id)
         else:
-            self.send_messages([game.Message(chat_id, "Games can only be joined in group chats.")])
+            self.gs.send_messages([game.Message(chat_id, "Games can only be joined in group chats.")])
 
     def incoming_message(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Parse a text-message that was send to the bot in a private chat."""
@@ -160,7 +157,7 @@ class Frontend:
         logger.info(msg=f"Got message from {update.message.from_user.first_name}: {text}")
         logger.info(update)
         if re.search(r'\/.*', text):
-            self.send_messages([game.Message(update.message.chat.id, "Sorry, this is not a valid command. 🧐")])
+            self.gs.send_messages([game.Message(update.message.chat.id, "Sorry, this is not a valid command. 🧐")])
         else:
             self.gs.submit_text(update.message.chat.id, text)
             if update.message.entities:
@@ -181,7 +178,7 @@ class Frontend:
         """Set the number of rounds"""
         chat_id: int = update.effective_chat.id
         if update.message.chat.type == "private":
-            self.send_messages([game.Message(chat_id, "Games can only edited in group chats.")])
+            self.gs.send_messages([game.Message(chat_id, GetText("Games can only edited in group chats."))])
             return
         # Accept just one parameter and when given more or less
         if len(context.args) == 1:
@@ -189,18 +186,18 @@ class Frontend:
                 rounds: int = int(context.args[0])
                 self.gs.set_rounds(chat_id, rounds)
             except ValueError:
-                self.send_messages([game.Message(chat_id, _("‘{arg}’ is not a number of rounds!").
+                self.gs.send_messages([game.Message(chat_id, GetText("‘{arg}’ is not a number of rounds!").
                                                  format(arg=context.args[0]))])
         elif len(context.args) == 0:
-            self.send_messages([game.Message(chat_id, _("Please specify the number of rounds."))])
+            self.gs.send_messages([game.Message(chat_id, GetText("Please specify the number of rounds."))])
         else:
-            self.send_messages([game.Message(chat_id, _("Don't you think these are too many parameters?"))])
+            self.gs.send_messages([game.Message(chat_id, GetText("Don't you think these are too many parameters?"))])
 
     def set_synchronous(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Set the mode of the current game to synchronous (pass sheets when everyone's ready)."""
         chat_id: int = update.effective_chat.id
         if update.message.chat.type == "private":
-            self.send_messages([game.Message(chat_id, _("Games can only edited in group chats."))])
+            self.gs.send_messages([game.Message(chat_id, GetText("Games can only edited in group chats."))])
             return
         else:
             self.gs.set_synchronous(chat_id, True)
@@ -209,7 +206,7 @@ class Frontend:
         """Set the mode of the current game to asynchronous (pass sheets ASAP)."""
         chat_id: int = update.effective_chat.id
         if update.message.chat.type == "private":
-            self.send_messages([game.Message(chat_id, _("Games can only edited in group chats."))])
+            self.gs.send_messages([game.Message(chat_id, GetText("Games can only edited in group chats."))])
             return
         else:
             self.gs.set_synchronous(chat_id, False)
