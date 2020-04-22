@@ -48,6 +48,7 @@ COMMAND_SET_SYNCHRONOUS = "set_synchronous"
 COMMAND_SET_ASYNCHRONOUS = "set_asynchronous"
 COMMAND_SET_LANGUAGE = "set_language"
 
+
 class Message(NamedTuple):
     """ Representation of an outgoing Telegram message, triggered by some game state change, which still needs to
     be translated with the correct locale for the target chat_id. """
@@ -443,28 +444,31 @@ class GameServer:
         # Inform about game participations
         running_games = [p.game for p in user.participations if p.game.is_started and not p.game.is_finished]
         pending_games = [p.game for p in user.participations if not p.game.is_started and not p.game.is_finished]
-        message = ""
+
+        parts = []
         if running_games:
-            message += f"You are currently participating in the following games: " \
-                       f"{', '.join(g.name for g in running_games)}"
+            parts.append(GetText("You are currently participating in the following games: {games}")
+                         .format(games=GetText(', ').join(g.name for g in running_games)))
             if pending_games:
-                message += f"\nAdditionally, you will be participating in {', '.join(g.name for g in pending_games)}, " \
-                           f"as soon as they start.\n"
+                parts.append(GetText("Additionally, you will be participating in {games}, as soon as they start.")
+                             .format(games=GetText(', ').join(g.name for g in pending_games)))
         elif pending_games:
-            message += f"You will be participating in the follwing games, as soom as they start: " \
-                       f"{', '.join(g.name for g in pending_games)}"
+            parts.append(GetText("You will be participating in the follwing games, as soom as they start: {games}")
+                         .format(games=', '.join(g.name for g in pending_games)))
         else:
-            message += f"You are currently not participating in any QAQA game."
+            parts.append(GetText("You are currently not participating in any QAQA game."))
 
         # Inform about pending sheets
         if running_games:
             if user.pending_sheets:
-                message += f"\n\nYou have currently {len(user.pending_sheets)} pending sheets to ask or answer " \
-                           f"questions, including the current one."
+                parts.append(GetText("\nYou have currently {num_sheets} pending sheets to ask or answer "
+                                     "questions, including the current one.")
+                             .format(num_sheets=len(user.pending_sheets)))
             else:
-                message += f"\n\nYou have currently no pending sheets"
+                parts.append(GetText("\nYou have currently no pending sheets"))
 
-        self._send_messages([Message(chat_id, GetText(message))] + _next_sheet([user], session, repeat=True), session)  # TODO fix translation
+        status = GetNoText("\n").join(parts)
+        self._send_messages([Message(chat_id, status)] + _next_sheet([user], session, repeat=True), session)
 
     @with_session
     def get_group_status(self, session: Session, chat_id: int):
@@ -476,44 +480,48 @@ class GameServer:
         current_game: model.Game = session.query(model.Game).filter(model.Game.chat_id == chat_id,
                                                                     model.Game.is_finished == False).one_or_none()
         if current_game is None:
-            status = f"There is currently no QAQA-game in this group. Use /{COMMAND_NEW_GAME} to start one."
+            status = GetText("There is currently no QAQA-game in this group. Use /{command} to start one.")\
+                .format(command=COMMAND_NEW_GAME)
         else:
-            players = ("* " + '\n* '.join(p.user.name for p in current_game.participants)
+            players = (GetNoText("* ") + GetNoText('\n* ').join(p.user.name for p in current_game.participants)
                        if current_game.participants
-                       else "– none –")
-            configuration = (
-                f"Rounds: {'– number of players –' if current_game.rounds is None else current_game.rounds}\n"
-                f"Synchronous: {'yes' if current_game.is_synchronous else 'no'}")
+                       else GetText("– none –"))
+            configuration = GetText("Rounds: {num_rounds}\nSynchronous: {synchronous}")\
+                .format(num_rounds=(GetText('– number of players –')
+                                    if current_game.rounds is None
+                                    else current_game.rounds),
+                        synchronous=GetText('yes') if current_game.is_synchronous else GetText('no'))
             sheet_infos = _game_sheet_infos(current_game, session)
             sheets_stats = (
-                f" They have {min(si.num_entries for si in sheet_infos)}–"
-                f"{max(si.num_entries for si in sheet_infos)} "
-                f"(Median: {statistics.median(si.num_entries for si in sheet_infos)}) entries yet."
+                GetText(" They have {min}–{max} (Median: {median}) entries yet.")
+                .format(min=min(si.num_entries for si in sheet_infos),
+                        max=max(si.num_entries for si in sheet_infos),
+                        median=statistics.median(si.num_entries for si in sheet_infos))
                 if sheet_infos else "")
             pending_sheets = [si.sheet for si in sheet_infos if si.sheet.current_user_id is not None]
-            # TODO optimization: access to s.current_user.name with eager loading
             pending_users = (
-                f"We are currently waiting for {','.join(s.current_user.name for s in pending_sheets)}\n\n"
+                GetText("We are currently waiting for {users}\n\n")
+                # TODO optimization: access to s.current_user.name with eager loading
+                .format(users=','.join(s.current_user.name for s in pending_sheets))
                 if current_game.is_synchronous or len(pending_sheets) <= len(sheets_stats) / 3
                 else "")
             if current_game.is_started:
-                status = (
-                    f"The game is on!\n\n"
-                    f"{len(sheet_infos)} sheets are in the game.{sheets_stats}\n\n"
-                    f"{pending_users}"
-                    f"Registered players:\n"
-                    f"{players}\n\n"
-                    f"Game configuration:\n{configuration}"
-                    )
+                status = GetText("The game is on!\n\n"
+                                 "{num_sheets} sheets are in the game.{sheets_stats}\n\n"
+                                 "{pending_users}"
+                                 "Registered players:\n"
+                                 "{players}\n\n"
+                                 "Game configuration:\n{configuration}")\
+                    .format(num_sheets=len(sheet_infos), sheets_stats=sheets_stats, pending_users=pending_users,
+                            players=players, configuration=configuration)
             else:
-                status = (
-                    f"The game has been created and waits to be started.\n"
-                    f"Use /{COMMAND_START_GAME} to start the game.\n\n"
-                    f"Registered players:\n"
-                    f"{players}\n\n"
-                    f"Game configuration:\n{configuration}"
-                    )
-        self._send_messages([Message(chat_id, GetText(status))], session)  # TODO fix translation
+                status = GetText("The game has been created and waits to be started.\n"
+                                 "Use /{command} to start the game.\n\n"
+                                 "Registered players:\n"
+                                 "{players}\n\n"
+                                 "Game configuration:\n{configuration}")\
+                    .format(command=COMMAND_START_GAME, players=players, configuration=configuration)
+        self._send_messages([Message(chat_id, status)], session)
 
     def _send_messages(self, messages: List[Message], session: Session) -> None:
         # TODO fetch target chat locales
