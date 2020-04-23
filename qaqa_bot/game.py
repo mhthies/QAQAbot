@@ -164,12 +164,18 @@ class GameServer:
         if existing_user is not None:
             existing_user.chat_id = chat_id
             existing_user.name = user_name
-            self._send_messages([Message(chat_id, GetText("hi again"))]  # TODO UX
+            self._send_messages([Message(chat_id, GetText(
+                "You are already registered. If you want to start a game, head over to a group chat and spawn a game "
+                "with {cmd}").format(cmd=COMMAND_NEW_GAME))]  # TODO UX
                                 + _next_sheet([existing_user], session, repeat=True), session)
         else:
             user = model.User(api_id=user_id, chat_id=chat_id, name=user_name)
             session.add(user)
-            self._send_messages([Message(chat_id, GetText("hi there"))], session)  # TODO UX: return explanation
+            self._send_messages([Message(chat_id, GetText(
+                "Hi! I am your friendly qaqa-bot 🤖. \n"
+                "I will guide you through hopefully many games of the question-answer-question-answer party game. "
+                "Thanks for joining! Now head to the group you want to play the game with and spawn, join and "
+                "start a game."))], session)  # TODO UX: return explanation
 
     @with_session
     def new_game(self, session: Session, chat_id: int, name: str) -> None:

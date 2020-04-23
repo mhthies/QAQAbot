@@ -132,7 +132,7 @@ class Frontend:
             logger.debug(msg=f"Try to spawn a game in {chat_id}")
             self.gs.new_game(chat_id=chat_id, name=update.message.chat.title)
         else:
-            self.gs.send_messages([game.Message(chat_id, "Games can only be spawned in group chats.")])
+            self.gs.send_messages([game.Message(chat_id, GetText("Games can only be spawned in group chats."))])
 
     def start_game(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Start game in current chat."""
@@ -141,7 +141,7 @@ class Frontend:
             logger.debug(msg=f"Try to start a game in {chat_id}")
             self.gs.start_game(chat_id)
         else:
-            self.gs.send_messages([game.Message(chat_id, "Games can only be started in group chats.")])
+            self.gs.send_messages([game.Message(chat_id, GetText("Games can only be started in group chats."))])
 
     def join_game(self, update: telegram.Update, _context: telegram.ext.CallbackContext):
         chat_id: int = update.effective_chat.id
@@ -149,7 +149,7 @@ class Frontend:
             logger.info(msg=f"{update.message.from_user} tries to join a game in {chat_id}")
             self.gs.join_game(chat_id=chat_id, user_id=update.message.from_user.id)
         else:
-            self.gs.send_messages([game.Message(chat_id, "Games can only be joined in group chats.")])
+            self.gs.send_messages([game.Message(chat_id, GetText("Games can only be joined in group chats."))])
 
     def incoming_message(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Parse a text-message that was send to the bot in a private chat."""
@@ -157,7 +157,7 @@ class Frontend:
         logger.info(msg=f"Got message from {update.message.from_user.first_name}: {text}")
         logger.info(update)
         if re.search(r'\/.*', text):
-            self.gs.send_messages([game.Message(update.message.chat.id, "Sorry, this is not a valid command. 🧐")])
+            self.gs.send_messages([game.Message(update.message.chat.id, GetText("Sorry, this is not a valid command. 🧐"))])
         else:
             self.gs.submit_text(update.message.chat.id, text)
             if update.message.entities:
@@ -226,7 +226,7 @@ class Frontend:
         else:
             self.gs.get_group_status(chat_id)
 
-    def send_messages(self, messages: List[game.Message]) -> None:
+    def send_messages(self, messages: List[game.TranslatedMessage]) -> None:
         """Send the messages to the corporated chat ids."""
         for msg in messages:
             chat_id, text = msg

@@ -1,13 +1,13 @@
-# German translations for PROJECT.
+# German translations for .
 # Copyright (C) 2020 ORGANIZATION
-# This file is distributed under the same license as the PROJECT project.
+# This file is distributed under the same license as the  project.
 # FIRST AUTHOR <EMAIL@ADDRESS>, 2020.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: QAQABot\n"
+"Project-Id-Version:  QAQABot\n"
 "Report-Msgid-Bugs-To: mail@mhthies.de\n"
-"POT-Creation-Date: 2020-04-22 21:35+0200\n"
+"POT-Creation-Date: 2020-04-23 16:51+0200\n"
 "PO-Revision-Date: 2020-04-22 21:32+0200\n"
 "Last-Translator: Michael Thies <mail@mhthies.de>\n"
 "Language: de\n"
@@ -17,6 +17,22 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.8.0\n"
+
+#: qaqa_bot/bot.py:135
+msgid "Games can only be spawned in group chats."
+msgstr "Spiele können nur in Gruppenchats erstellt werden."
+
+#: qaqa_bot/bot.py:144
+msgid "Games can only be started in group chats."
+msgstr "Spiele können nur in Gruppenchats gestartet werden."
+
+#: qaqa_bot/bot.py:152
+msgid "Games can only be joined in group chats."
+msgstr "Du kannst Spielen nur in Gruppenchats beitreten."
+
+#: qaqa_bot/bot.py:160
+msgid "Sorry, this is not a valid command. 🧐"
+msgstr "Sorry, dieses Kommando verstehe ich leider nicht. 🧐"
 
 #: qaqa_bot/bot.py:181 qaqa_bot/bot.py:200 qaqa_bot/bot.py:209
 msgid "Games can only edited in group chats."
@@ -34,99 +50,106 @@ msgstr "Bitte gib eine Rundenzahl an."
 msgid "Don't you think these are too many parameters?"
 msgstr "Glaubst Du nicht, dass das zu viele Parameter sind?"
 
-#: qaqa_bot/game.py:152
-msgid "hi again"
-msgstr "Hallo zurück!"
+#: qaqa_bot/game.py:167
+msgid ""
+"You are already registered. If you want to start a game, head over to a "
+"group chat and spawn a game with {cmd}"
+msgstr ""
+"Hallo! Du bist schon registriert. Wenn du ein Spiel starten möchtest, "
+"wechsle in einen Gruppenchat und initiiere ein neues Spiel mit {cmd}"
 
-#: qaqa_bot/game.py:157
-msgid "hi there"
-msgstr "Hallo!"
+#: qaqa_bot/game.py:174
+msgid ""
+"Hi! I am your friendly qaqa-bot 🤖. \n"
+"I will guide you through hopefully many games of the question-answer-"
+"question-answer party game. Thanks for joining! Now head to the group you"
+" want to play the game with and spawn, join andstart a game."
+msgstr ""
 
-#: qaqa_bot/game.py:171
+#: qaqa_bot/game.py:192
 msgid "Already a running or pending game in this chat"
 msgstr "In diesem Chat gibt es bereits ein wartendes oder laufendes Spiel."
 
-#: qaqa_bot/game.py:177
+#: qaqa_bot/game.py:198
 msgid "New game created. Use /{command} to join the game."
 msgstr "Neues Spiel wurde erstellt. Verwende /{command}, um ihm beizutreten."
 
-#: qaqa_bot/game.py:185 qaqa_bot/game.py:203
+#: qaqa_bot/game.py:206 qaqa_bot/game.py:224
 msgid "No game to configure in this chat"
 msgstr "In diesem Chat gibt es kein Spiel zu konfigurieren."
 
-#: qaqa_bot/game.py:188
+#: qaqa_bot/game.py:209
 msgid "Game already started"
 msgstr "Das Spiel läuft bereits."
 
-#: qaqa_bot/game.py:193
+#: qaqa_bot/game.py:214
 msgid "invalid rounds number. Must be >= 1"
 msgstr "Ungültige Rundenanzahl. Muss >= 1 sein."
 
-#: qaqa_bot/game.py:196 qaqa_bot/game.py:210 qaqa_bot/game.py:249
-#: qaqa_bot/game.py:284 qaqa_bot/game.py:307 qaqa_bot/game.py:406
+#: qaqa_bot/game.py:217 qaqa_bot/game.py:231 qaqa_bot/game.py:270
+#: qaqa_bot/game.py:305 qaqa_bot/game.py:328 qaqa_bot/game.py:427
 msgid "ok"
 msgstr "ok"
 
-#: qaqa_bot/game.py:206 qaqa_bot/game.py:241
+#: qaqa_bot/game.py:227 qaqa_bot/game.py:262
 msgid "Too late"
 msgstr "Zu spät"
 
-#: qaqa_bot/game.py:219 qaqa_bot/game.py:263
+#: qaqa_bot/game.py:240 qaqa_bot/game.py:284
 msgid ""
 "There is currently no pending game in this Group. Use /{command} to start"
 " one."
 msgstr ""
-"Es gibt in dieser Gruppe zur Zeit kein wartendes Spiel. Verwende /{command}, "
-"um ein neues zu starten."
+"Es gibt in dieser Gruppe zur Zeit kein wartendes Spiel. Verwende "
+"/{command}, um ein neues zu starten."
 
-#: qaqa_bot/game.py:226
+#: qaqa_bot/game.py:247
 msgid ""
 "You must start a chat with the bot first. Use the following link: "
 "https://t.me/{bot_name}?{command}=now"
 msgstr ""
-"Du musst zuerst einen Chat mit dem Bot starten. Verwende dazu den folgenden "
-"Link: https://t.me/{bot_name}?{command}=now"
+"Du musst zuerst einen Chat mit dem Bot starten. Verwende dazu den "
+"folgenden Link: https://t.me/{bot_name}?{command}=now"
 
-#: qaqa_bot/game.py:268
+#: qaqa_bot/game.py:289
 msgid "The game is already running"
 msgstr "Das Spiel läuft bereits"
 
-#: qaqa_bot/game.py:271
+#: qaqa_bot/game.py:292
 msgid "No games with less than two participants permitted"
 msgstr "Spiele mit weniger als zwei Teilnehmern sind nicht erlaubt"
 
-#: qaqa_bot/game.py:295
+#: qaqa_bot/game.py:316
 msgid "There is currently no running or pending game in this Chat."
 msgstr "In diesem Chat gibt es zur Zeit kein laufendes oder wartendes Spiel."
 
-#: qaqa_bot/game.py:303
+#: qaqa_bot/game.py:324
 msgid "You didn't participate in this game."
 msgstr "Du hast an diesem Spiel nicht teilgenommen."
 
-#: qaqa_bot/game.py:311
+#: qaqa_bot/game.py:332
 msgid "You left the game. No answer required anymore."
-msgstr "Du hast das Spiel verlassen. Deshalb brauchst Du nicht mehr zu "
-"antworten."
+msgstr "Du hast das Spiel verlassen. Deshalb brauchst Du nicht mehr zu antworten."
 
-#: qaqa_bot/game.py:333 qaqa_bot/game.py:370
+#: qaqa_bot/game.py:354 qaqa_bot/game.py:391
 msgid "There is currently no running game in this Group."
 msgstr "Aktuell gibt es in dieser Gruppe kein laufendes Spiel."
 
-#: qaqa_bot/game.py:353
+#: qaqa_bot/game.py:374
 msgid "Game will be stopped. No new question required anymore."
 msgstr "Das Spiel wird gestoppt. Du brauchst nicht mehr zu antworten."
 
-#: qaqa_bot/game.py:389
+#: qaqa_bot/game.py:410
 msgid "Unexpected message. Please use /{command} to register with the bot."
 msgstr ""
 "Unerwartete Nachricht. Benutze bitte /{command}, um dich bei diesem Bot "
 "zu registrieren."
 
-#: qaqa_bot/game.py:395
+#: qaqa_bot/game.py:416
 msgid "Unexpected message."
 msgstr "Unerwartete Nachricht."
 
-#: qaqa_bot/game.py:445
+#: qaqa_bot/game.py:466
 msgid ""
 "You are currently not registered for using this bot. Please use "
 "/{command} to register with the bot."
@@ -134,58 +157,59 @@ msgstr ""
 "Du bist aktuell nicht bei diesem Bot registriert. Benutze bitte "
 "/{command}, um dich zu registrieren."
 
-#: qaqa_bot/game.py:456
+#: qaqa_bot/game.py:477
 msgid "You are currently participating in the following games: {games}"
 msgstr "Du nimmst aktuell an folgenden Spielen teil: {games}"
 
-#: qaqa_bot/game.py:457 qaqa_bot/game.py:460
+#: qaqa_bot/game.py:478 qaqa_bot/game.py:481
 msgid ", "
 msgstr ", "
 
-#: qaqa_bot/game.py:459
+#: qaqa_bot/game.py:480
 msgid "Additionally, you will be participating in {games}, as soon as they start."
 msgstr "Zusätzlich wirst du an {games} teilnehmen, sobald sie starten."
 
-#: qaqa_bot/game.py:462
+#: qaqa_bot/game.py:483
 msgid ""
 "You will be participating in the follwing games, as soom as they start: "
 "{games}"
-msgstr ""
-"Du wirst an den folgenden Spielen teilnehmen, sobald sie starten: "
-"{games}"
+msgstr "Du wirst an den folgenden Spielen teilnehmen, sobald sie starten: {games}"
 
-#: qaqa_bot/game.py:465
+#: qaqa_bot/game.py:486
 msgid "You are currently not participating in any QAQA game."
 msgstr "Du nimmst aktuell an keinem QAQA-Spiel teil."
 
-#: qaqa_bot/game.py:470
+#: qaqa_bot/game.py:492
 msgid ""
 "\n"
 "You have currently {num_sheets} pending sheets to ask or answer "
 "questions, including the current one."
 msgstr ""
-"\nDu hast aktuell {num_sheets} zu bearbeitende Blätter, "
-"das aktuelle mit eingerechnet."
+"\n"
+"Du hast aktuell {num_sheets} zu bearbeitende Blätter, das aktuelle mit "
+"eingerechnet."
 
-#: qaqa_bot/game.py:474
+#: qaqa_bot/game.py:496
 msgid ""
 "\n"
 "You have currently no pending sheets"
-msgstr "\nDu hast aktuell keine zu bearbeitenden Blätter"
+msgstr ""
+"\n"
+"Du hast aktuell keine zu bearbeitenden Blätter"
 
-#: qaqa_bot/game.py:489
+#: qaqa_bot/game.py:511
 msgid ""
 "There is currently no QAQA-game in this group. Use /{command} to start "
 "one."
 msgstr ""
-"Aktuell gibt es QAQA-Spiel in dieser Gruppe. Benutze /{command}, um eines "
-"zu starten."
+"Aktuell gibt es QAQA-Spiel in dieser Gruppe. Benutze /{command}, um eines"
+" zu starten."
 
-#: qaqa_bot/game.py:494
+#: qaqa_bot/game.py:516
 msgid "– none –"
 msgstr "– keine –"
 
-#: qaqa_bot/game.py:495
+#: qaqa_bot/game.py:517
 msgid ""
 "Rounds: {num_rounds}\n"
 "Synchronous: {synchronous}"
@@ -193,29 +217,31 @@ msgstr ""
 "Runden: {num_rounds}\n"
 "Synchron: {synchronous}"
 
-#: qaqa_bot/game.py:496
+#: qaqa_bot/game.py:518
 msgid "– number of players –"
 msgstr "– Anzahl der Spieler –"
 
-#: qaqa_bot/game.py:499
+#: qaqa_bot/game.py:521
 msgid "yes"
 msgstr "ja"
 
-#: qaqa_bot/game.py:499
+#: qaqa_bot/game.py:521
 msgid "no"
 msgstr "nein"
 
-#: qaqa_bot/game.py:502
+#: qaqa_bot/game.py:524
 msgid " They have {min}–{max} (Median: {median}) entries yet."
 msgstr " Sie haben bislang {min}–{max} (Median: {median}) Einträge."
 
-#: qaqa_bot/game.py:509
+#: qaqa_bot/game.py:531
 msgid ""
 "We are currently waiting for {users}\n"
 "\n"
-msgstr "Aktuell warten wir auf {users}\n\n"
+msgstr ""
+"Aktuell warten wir auf {users}\n"
+"\n"
 
-#: qaqa_bot/game.py:515
+#: qaqa_bot/game.py:537
 msgid ""
 "The game is on!\n"
 "\n"
