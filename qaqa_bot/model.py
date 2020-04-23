@@ -49,11 +49,11 @@ class Game(Base):
     __tablename__ = 'games'
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
-    chat_id = Column(BigInteger, nullable=False)
+    chat_id = Column(BigInteger, nullable=False, index=True)
     # Game state:
     is_started = Column(Boolean, nullable=False)
     is_waiting_for_finish = Column(Boolean, nullable=False)
-    is_finished = Column(Boolean, nullable=False)
+    is_finished = Column(Boolean, nullable=False, index=True)
     # Game seetings:
     rounds = Column(Integer)  # May be NULL until game start. In this case it is set to the number of players
     is_synchronous = Column(Boolean, nullable=False)
@@ -68,7 +68,7 @@ class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True)
     api_id = Column(Integer, nullable=False)
-    chat_id = Column(BigInteger, nullable=False)
+    chat_id = Column(BigInteger, nullable=False, unique=True, index=True)
     name = Column(String, nullable=False)
     # The sheet on which the user is currently working, i.e. which they were requested to add an entry to. Or NULL, if
     # they are not currently working on a sheet. If not NULL, this should always correspond the first entry of
@@ -91,7 +91,7 @@ class Participant(Base):
     user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
     # Position (sort key) of the participant/user in the game. `Game.participants` is ordered by this key. It is used
     # to determine the order in which the sheets are passed
-    game_order = Column(Integer)
+    game_order = Column(Integer, index=True)
 
     game = relationship('Game', back_populates='participants', lazy='joined')
     user = relationship('User', back_populates='participations', lazy='joined')
@@ -100,13 +100,13 @@ class Participant(Base):
 class Sheet(Base):
     __tablename__ = 'sheets'
     id = Column(Integer, primary_key=True)
-    game_id = Column(Integer, ForeignKey('games.id'), nullable=False)
+    game_id = Column(Integer, ForeignKey('games.id'), nullable=False, index=True)
     hint = Column(String)
     # In which user's queue (`User.pending_sheets`) does this sheet wait? May be NULL, if the sheet is finished or the
     # game is synchronous and the sheet is waiting for the next round.
-    current_user_id = Column(Integer, ForeignKey('users.id'))
+    current_user_id = Column(Integer, ForeignKey('users.id'), index=True)
     # Position of this Sheet in the `current_user`'s queue of sheets. Lower sheets are taken first.
-    pending_position = Column(Integer)
+    pending_position = Column(Integer, index=True)
 
     game = relationship('Game', back_populates='sheets')
     entries = relationship('Entry', back_populates='sheet', order_by='Entry.position',
@@ -122,9 +122,9 @@ class EntryType(enum.Enum):
 class Entry(Base):
     __tablename__ = 'entries'
     id = Column(Integer, primary_key=True)
-    sheet_id = Column(Integer, ForeignKey('sheets.id'), nullable=False)
+    sheet_id = Column(Integer, ForeignKey('sheets.id'), nullable=False, index=True)
     # Position (sort key) of the entry on the sheet. `Sheet.entries` is sorted by this.
-    position = Column(Integer)
+    position = Column(Integer, nullable=False, index=True)
     # The user, who wrote this entry
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     text = Column(String, nullable=False)
