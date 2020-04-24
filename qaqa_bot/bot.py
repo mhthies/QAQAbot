@@ -167,11 +167,11 @@ class Frontend:
         logger.info(msg=f"Got message from {update.message.from_user.first_name}: {text}")
         logger.info(update)
         if re.search(r'\/.*', text):
-            self.gs.send_messages([game.Message(update.message.chat.id, GetText("Sorry, this is not a valid command. 🧐"))])
+            self.gs.send_messages([game.Message(update.message.chat.id,
+                                                GetText("Sorry, this is not a valid command. 🧐"))])
         else:
-            self.gs.submit_text(update.message.chat.id, text)
-            if update.message.entities:
-                logger.info(msg=f"Got messages from {update.message.from_user.first_name}: {update.message.entities}")
+            submitted_text = update.message.text_markdown_v2_urled.replace('\n', ' ‖ ')
+            self.gs.submit_text(update.message.chat.id, submitted_text)
 
     def edited_message(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         logger.info(msg=f"Message edited!")
