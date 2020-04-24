@@ -832,15 +832,31 @@ def _finalize_game(game: model.Game, session: Session) -> List[Message]:
     # Generate result messages
     for sheet in sheets:
         if sheet.entries:
-            messages.append(Message(game.chat_id, _format_result(sheet)))
-
+            messages.extend(Message(game.chat_id, text) for text in _format_result(game, sheet))
     game.is_finished = True
     return messages
 
+def _entry_to_string(game: model.Game, entry: model.Entry) -> str:
+    if game.is_showing_result_names:
+        return f"\n{entry.user.name}: {entry.text}"
+    else:
+        return "\n" + entry.text
 
-def _format_result(sheet: model.Sheet) -> LazyGetTextBase:
-    """ Serialize a finished sheet to a string to be sent as result message when finalizing a game. """
-    return GetNoText("\n").join(entry.text for entry in sheet.entries)  # TODO UX: improve
+def _format_result(game: model.Game, sheet: model.Sheet) -> List[LazyGetTextBase]:
+    """ Serialize a finished sheet to a list of strings to be sent as result message when finalizing a game. """
+    messages = [GetNoText("❓❕  ❔❗️  ⁉️  ‼️")]
+    msg = ""
+    for entry in sheet.entries:
+        # size 4096 is defined by the telegram API as maximal message length
+        entry_str = _entry_to_string(game, entry)
+        if len(msg) + len(entry_str) < 4096:
+            msg += entry_str
+        else:
+            messages.append(GetNoText(msg))
+            msg = entry_str
+    messages.append(GetNoText(msg))
+    return messages
+    # TODO UX: improve
 
 
 def _format_for_next(sheet_info: SheetProgressInfo, repeat: bool) -> LazyGetTextBase:
