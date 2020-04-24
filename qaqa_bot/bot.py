@@ -210,12 +210,12 @@ class Frontend:
             update.message.reply_text('Do you want to see the authors names in the result?', reply_markup=reply_markup)
         else:
             self.gs.send_messages([game.Message(update.message.chat.id,
-                                                GetText("Games can only edited in group chats."))])
+                                                GetText("Games can only be edited in group chats."))])
 
     def set_sync(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         if update.message.chat.type == "private":
             self.gs.send_messages([game.Message(update.message.chat.id,
-                                                GetText("Games can only edited in group chats."))])
+                                                GetText("Games can only be edited in group chats."))])
             return
         else:
             keyboard = [[InlineKeyboardButton(v, callback_data=k)
@@ -275,7 +275,7 @@ class Frontend:
         """Send the messages to the corporated chat ids."""
         for msg in messages:
             chat_id, text = msg
-            self.updater.bot.send_message(chat_id=chat_id, text=text)
+            self.updater.bot.send_message(chat_id=chat_id, text=text, parse_mode=telegram.ParseMode.MARKDOWN_V2)
 
     def error(self, update, context) -> None:
         """Log errors caused by updates."""
