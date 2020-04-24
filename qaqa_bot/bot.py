@@ -172,8 +172,13 @@ class Frontend:
             self.gs.send_messages([game.Message(update.message.chat.id,
                                                 GetText("Sorry, this is not a valid command. 🧐"))])
         else:
-            submitted_text = update.message.text_html_urled.replace('\n', ' ‖ ')
-            self.gs.submit_text(update.message.chat.id, submitted_text)
+            if update.message.chat.type == "private":
+                submitted_text = update.message.text_html_urled.replace('\n', ' ‖ ')
+                self.gs.submit_text(update.message.chat.id, submitted_text)
+            else:
+                self.gs.send_messages([game.Message(update.message.chat.id,
+                                                    GetText("Sorry, I do not understand. Please use a command to "
+                                                            "communicate with me."))])
 
     def edited_message(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         logger.info(msg=f"Message edited!")
