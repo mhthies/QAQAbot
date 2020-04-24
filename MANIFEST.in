@@ -1,0 +1,4 @@
+include NOTICE LICENSE README.md
+
+include qaqa_bot/i18n/*/LC_MESSAGES/*.po
+exclude qaqa_bot/i18n/*/LC_MESSAGES/*.mo
