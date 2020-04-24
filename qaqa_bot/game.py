@@ -240,6 +240,21 @@ class GameServer:
         self._send_messages([Message(chat_id, GetText("ok"))], session)  # TODO UX
 
     @with_session
+    def set_show_result_names(self, session: Session, chat_id: int, state: bool) -> None:
+        game = session.query(model.Game).filter(model.Game.chat_id == chat_id,
+                                                model.Game.is_finished == False).one_or_none()
+        if game is None:
+            self._send_messages([Message(chat_id, GetText("No game to configure in this chat"))], session)  # TODO UX
+            return
+        if game.is_started:
+            self._send_messages([Message(chat_id, GetText("Too late"))], session)  # TODO UX
+            # TODO should this be possible?
+            return
+        logger.info("Setting game %s to %s", game.id, "show result names" if state else "not show result names")
+        game.is_showing_result_names = state
+        self._send_messages([Message(chat_id, GetText("ok"))], session)  # TODO UX
+
+    @with_session
     def join_game(self, session: Session, chat_id: int, user_id: int) -> None:
         game = session.query(model.Game)\
             .filter(model.Game.chat_id == chat_id, model.Game.is_finished == False)\
