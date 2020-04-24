@@ -133,8 +133,21 @@ class GameServer:
 
         For each message, the target locale is looked up in the database according to the target chat_id, and the
         message is translated for that locale and sent to the chat.
+
+        This message can be used by the `Frontend` to send a direct response message (without further interaction with
+        the GameServer) in the correct language.
         """
         self._send_messages(messages, session)
+
+    @with_session
+    def get_translation(self, session: Session, message: Message) -> TranslatedMessage:
+        """
+        Translate a translatable `Message` into the correct language for the target chat.
+
+        This message can be used by the `Frontend` to update messages and do other fancy Telegram stuff (which is not
+        sending messages) with translated strings.
+        """
+        return _get_translations([message], session)[0]
 
     @with_session
     def set_chat_locale(self, session: Session, chat_id: int, locale: str) -> None:
@@ -603,16 +616,22 @@ class GameServer:
         self._send_messages([Message(chat_id, status)], session)
 
     def _send_messages(self, messages: List[Message], session: Session) -> None:
-        locales = dict(session.query(model.SelectedLocale.chat_id, model.SelectedLocale.locale)
-                       .filter(model.SelectedLocale.chat_id.in_(set(m.chat_id for m in messages)))
-                       .all())
-        self._send_callback(
-            [TranslatedMessage(m.chat_id,
-                               m.text.get_translation(gettext.translation('qaqa_bot',
-                                                                          LOCALE_DIR,
-                                                                          (locales.get(m.chat_id, 'en'),),
-                                                                          fallback=True)))
-             for m in messages])
+        self._send_callback(_get_translations(messages, session))
+
+
+def _get_translations(messages: List[Message], session: Session) -> List[TranslatedMessage]:
+    """
+    Helper function to look up a the target language for a list of `Message`s and translate them.
+    """
+    locales = dict(session.query(model.SelectedLocale.chat_id, model.SelectedLocale.locale)
+                   .filter(model.SelectedLocale.chat_id.in_(set(m.chat_id for m in messages)))
+                   .all())
+    return [TranslatedMessage(m.chat_id,
+                              m.text.get_translation(gettext.translation('qaqa_bot',
+                                                                         LOCALE_DIR,
+                                                                         (locales.get(m.chat_id, 'en'),),
+                                                                         fallback=True)))
+            for m in messages]
 
 
 class SheetProgressInfo(NamedTuple):
