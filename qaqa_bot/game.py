@@ -231,7 +231,7 @@ class GameServer:
             # TODO allow rounds change for running games (unless a sheet has > rounds * entries). In this case, sheets with
             #  len(entries) = old_rounds may require to be newly assigned
         if rounds < 1:
-            self._send_messages([Message(chat_id, GetText("invalid rounds number. Must be >= 1"))], session)
+            self._send_messages([Message(chat_id, GetText("invalid rounds number. Must be &gt;= 1"))], session)
             return
         logger.info("Setting rounds of game %s to %s", game.id, rounds)
         game.rounds = rounds

@@ -170,7 +170,7 @@ class Frontend:
             self.gs.send_messages([game.Message(update.message.chat.id,
                                                 GetText("Sorry, this is not a valid command. 🧐"))])
         else:
-            submitted_text = update.message.text_markdown_v2_urled.replace('\n', ' ‖ ')
+            submitted_text = update.message.text_html_urled.replace('\n', ' ‖ ')
             self.gs.submit_text(update.message.chat.id, submitted_text)
 
     def edited_message(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
@@ -275,7 +275,7 @@ class Frontend:
         """Send the messages to the corporated chat ids."""
         for msg in messages:
             chat_id, text = msg
-            self.updater.bot.send_message(chat_id=chat_id, text=text, parse_mode=telegram.ParseMode.MARKDOWN_V2)
+            self.updater.bot.send_message(chat_id=chat_id, text=text, parse_mode=telegram.ParseMode.HTML)
 
     def error(self, update, context) -> None:
         """Log errors caused by updates."""

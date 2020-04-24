@@ -83,8 +83,8 @@ msgid "Game already started"
 msgstr "Das Spiel läuft bereits."
 
 #: qaqa_bot/game.py:221
-msgid "invalid rounds number. Must be >= 1"
-msgstr "Ungültige Rundenanzahl. Muss >= 1 sein."
+msgid "invalid rounds number. Must be &gt;= 1"
+msgstr "Ungültige Rundenanzahl. Muss &gt;= 1 sein."
 
 #: qaqa_bot/game.py:225 qaqa_bot/game.py:240 qaqa_bot/game.py:255
 #: qaqa_bot/game.py:299 qaqa_bot/game.py:337 qaqa_bot/game.py:361
