@@ -14,8 +14,8 @@ from typing import List
 import re
 
 import telegram
-from telegram import BotCommand
-from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters)
+from telegram import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler)
 
 from . import game
 from .util import GetText
@@ -26,6 +26,10 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
+LANGUAGES = {'de': '🇩🇪',
+             'en': '🇬🇧'}
+BOOL = {"True": "Yes 👍", "False": "No 👎"}
+SYNC = {"True": "Synchronous mode", "False": "Asynchronous mode"}
 
 class Frontend:
     def __init__(self, config):
@@ -43,6 +47,9 @@ class Frontend:
         self.dispatcher.add_handler(help_handler)
         self.dispatcher.add_handler(status_handler)
         self.dispatcher.add_handler(set_language_handler)
+
+        self.dispatcher.add_handler(CallbackQueryHandler(self.button))
+
         # Commandhandler private activities
         start_handler = CommandHandler(game.COMMAND_REGISTER, self.start, filters=~Filters.update.edited_message)
         self.dispatcher.add_handler(start_handler)
@@ -58,9 +65,9 @@ class Frontend:
                                                        filters=~Filters.update.edited_message)
         set_rounds_handler = CommandHandler(game.COMMAND_SET_ROUNDS, self.set_rounds, pass_args=True,
                                             filters=~Filters.update.edited_message)
-        set_synchronous_handler = CommandHandler(game.COMMAND_SET_SYNCHRONOUS, self.set_synchronous,
+        set_synchronous_handler = CommandHandler(game.COMMAND_SET_SYNC, self.set_sync,
                                                  filters=~Filters.update.edited_message)
-        set_asynchronous_handler = CommandHandler(game.COMMAND_SET_ASYNCHRONOUS, self.set_asynchronous,
+        set_display_name_handler = CommandHandler(game.COMMAND_SET_DISPLAY_NAME, self.set_display_name,
                                                   filters=~Filters.update.edited_message)
         self.dispatcher.add_handler(start_game_handler)
         self.dispatcher.add_handler(new_game_handler)
@@ -69,7 +76,7 @@ class Frontend:
         self.dispatcher.add_handler(stop_game_immediately_handler)
         self.dispatcher.add_handler(set_rounds_handler)
         self.dispatcher.add_handler(set_synchronous_handler)
-        self.dispatcher.add_handler(set_asynchronous_handler)
+        self.dispatcher.add_handler(set_display_name_handler)
 
         # Messagehandler
         message_handler = MessageHandler(filters=telegram.ext.filters.MergedFilter(
@@ -97,9 +104,11 @@ class Frontend:
             BotCommand(game.COMMAND_JOIN_GAME, "Join the current game."),
             BotCommand(game.COMMAND_START_GAME, "Start the game.This does only work if a game has been spawned."),
             BotCommand(game.COMMAND_SET_ROUNDS, "Defines the number of rounds for the actual game."),
-            BotCommand(game.COMMAND_SET_SYNCHRONOUS, "Switch to synchronous mode (pass all sheets at once)."),
-            BotCommand(game.COMMAND_SET_ASYNCHRONOUS, "Switch to asynchronous mode (pass sheet ASAP)."),
-            BotCommand(game.COMMAND_SET_LANGUAGE, "Choose the language. Available atm: English."),
+            BotCommand(game.COMMAND_SET_SYNC, "Choose between synchronous mode (pass all sheets at once and "
+                                              "asynchronous mode (pass sheet ASAP)."),
+            BotCommand(game.COMMAND_SET_DISPLAY_NAME, "Define whether to show the authors names in the result."),
+            BotCommand(game.COMMAND_SET_LANGUAGE, f"Choose the language. Available atm: "
+                                                  f"{', '.join(flag for code, flag in LANGUAGES.items())}."),
             BotCommand(game.COMMAND_STOP_GAME, "Stops the game after the current round."),
             BotCommand(game.COMMAND_STOP_GAME_IMMEDIATELY,
                        "Stops the game without waiting for the round to be finished.")]
@@ -115,14 +124,15 @@ class Frontend:
         self.updater.idle()
 
     def start(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
-        """Send a friendly welcome message."""
+        """Send a friendly welcome message with language set to locale."""
         chat_id: int = update.effective_chat.id
+        self.gs.set_chat_locale(chat_id, update.message.from_user.language_code)
         if update.message.chat.type == "private":
             name = (f"@{update.message.from_user.username}"
                     if update.message.from_user.username is not None
                     else update.message.from_user.first_name)
             self.gs.register_user(update.message.chat.id, update.message.from_user.id, name)
-            logger.debug(msg=f"Welcome {update.message.from_user.first_name}")
+            logger.debug(msg=f"{update.message.from_user.first_name} registered.")
         else:
             logger.debug(msg=f"Chat {chat_id} sends start-commands")
 
@@ -193,26 +203,61 @@ class Frontend:
         else:
             self.gs.send_messages([game.Message(chat_id, GetText("Don't you think these are too many parameters?"))])
 
-    def set_synchronous(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
-        """Set the mode of the current game to synchronous (pass sheets when everyone's ready)."""
-        chat_id: int = update.effective_chat.id
-        if update.message.chat.type == "private":
-            self.gs.send_messages([game.Message(chat_id, GetText("Games can only edited in group chats."))])
-            return
+    def set_display_name(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
+        if update.message.chat.type == "group" or update.message.chat.type == "supergroup":
+            keyboard = [[InlineKeyboardButton(v, callback_data=k) for k, v in BOOL.items()]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            update.message.reply_text('Do you want to see the authors names in the result?', reply_markup=reply_markup)
         else:
-            self.gs.set_synchronous(chat_id, True)
+            self.gs.send_messages([game.Message(update.message.chat.id,
+                                                GetText("Games can only edited in group chats."))])
 
-    def set_asynchronous(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
-        """Set the mode of the current game to asynchronous (pass sheets ASAP)."""
-        chat_id: int = update.effective_chat.id
+    def set_sync(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         if update.message.chat.type == "private":
-            self.gs.send_messages([game.Message(chat_id, GetText("Games can only edited in group chats."))])
+            self.gs.send_messages([game.Message(update.message.chat.id,
+                                                GetText("Games can only edited in group chats."))])
             return
         else:
-            self.gs.set_synchronous(chat_id, False)
+            keyboard = [[InlineKeyboardButton(v, callback_data=k)
+                         for k, v in SYNC.items()]]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            update.message.reply_text('Please choose:', reply_markup=reply_markup)
 
     def set_language(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
-        pass                # TODO implement
+        keyboard = [[InlineKeyboardButton(v, callback_data=k)
+                     for k, v in LANGUAGES.items()]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        update.message.reply_text('Please choose:', reply_markup=reply_markup)
+
+    def button(self, update, context):
+        query = update.callback_query
+        print(query)
+        command = query.message.reply_to_message.text
+        if command == f'/{game.COMMAND_SET_LANGUAGE}@qaqagamebot' or \
+                command == f'/{game.COMMAND_SET_LANGUAGE}':
+            query.edit_message_text(text="Chosen language: {}".format(LANGUAGES.get(query.data, '–')))
+            self.gs.set_chat_locale(query.message.chat.id, query.data)
+        elif command == f"/{game.COMMAND_SET_DISPLAY_NAME}@qaqagamebot" or \
+                command == f"/{game.COMMAND_SET_DISPLAY_NAME}":
+            query.edit_message_text(text="Display the names: {}".format(BOOL.get(query.data, '–')))
+            if query.data == "True":
+                self.gs.set_show_result_names(query.message.chat.id, True)
+            elif query.data == "False":
+                self.gs.set_show_result_names(query.message.chat.id, False)
+            else:
+                query.edit_message_text(text="Oh no! 😱 There's a problem!")
+        elif command == f"/{game.COMMAND_SET_SYNC}@qaqagamebot" or \
+                command == f"/{game.COMMAND_SET_SYNC}":
+            query.edit_message_text(text="Chosen mode: {}".format(SYNC.get(query.data, '–')))
+            if query.data == "True":
+                self.gs.set_synchronous(query.message.chat.id, True)
+            elif query.data == "False":
+                self.gs.set_synchronous(query.message.chat.id, False)
+            else:
+                query.edit_message_text(text="Oh no! 😱 There's a problem!")
+        else:
+            query.edit_message_text(text="Oh no! 😱 There's a problem!")
+
 
     def help(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Print explanation of the game and commands."""

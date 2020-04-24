@@ -46,9 +46,9 @@ COMMAND_JOIN_GAME = "join_game"
 COMMAND_STOP_GAME = "stop_game"
 COMMAND_STOP_GAME_IMMEDIATELY = "stop_game_immediately"
 COMMAND_SET_ROUNDS = "set_rounds"
-COMMAND_SET_SYNCHRONOUS = "set_synchronous"
-COMMAND_SET_ASYNCHRONOUS = "set_asynchronous"
-COMMAND_SET_LANGUAGE = "set_language"
+COMMAND_SET_LANGUAGE = "set_lang"
+COMMAND_SET_DISPLAY_NAME = "set_show_name"
+COMMAND_SET_SYNC = "set_sync"
 
 LOCALE_DIR = os.path.join(os.path.dirname(__file__), 'i18n')
 
