@@ -595,7 +595,7 @@ class GameServer:
                 GetText("We are currently waiting for {users}\n\n")
                 # TODO optimization: access to s.current_user.name with eager loading
                 .format(users=','.join(s.current_user.name for s in pending_sheets))
-                if current_game.is_synchronous or len(pending_sheets) <= len(sheets_stats) / 3
+                if current_game.is_synchronous or len(pending_sheets) <= len(sheet_infos) / 3
                 else "")
             if current_game.is_started:
                 status = GetText("The game is on!\n\n"
