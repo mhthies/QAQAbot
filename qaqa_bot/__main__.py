@@ -8,6 +8,8 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
+import logging
+
 import toml
 
 from .bot import Frontend
@@ -23,8 +25,13 @@ def main():
                         help="Don't migrate database and set Telegram Bot settings on start")
     parser.add_argument('--init-only', '-i', action='store_const', const=True, default=False,
                         help="Only run database migrations and set Telegram Bot settings, than exit.")
+    parser.add_argument('--verbose', '-v', action='count', default=0,
+                        help="Make log output more verbose, i.e. reduce log level.")
+    parser.add_argument('--quiet', '-q', action='count', default=0,
+                        help="Make log output less verbose, i.e. increase log level.")
     args = parser.parse_args()
 
+    logging.basicConfig(level=30 - 10 * args.verbose + 10 * args.quiet)
     config = toml.load(args.config)
     frontend = Frontend(config)
 
