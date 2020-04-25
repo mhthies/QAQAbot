@@ -189,7 +189,7 @@ class GameServer:
             logger.info("Updating user %s (%s)", existing_user.id, user_name)
             self._send_messages([Message(chat_id, GetText(
                 "You are already registered. If you want to start a game, head over to a group chat and spawn a game "
-                "with {cmd}").format(cmd=COMMAND_NEW_GAME))]  # TODO UX
+                "with /{cmd}").format(cmd=COMMAND_NEW_GAME))]  # TODO UX
                                 + _next_sheet([existing_user], session, repeat=True), session)
         else:
             user = model.User(api_id=user_id, chat_id=chat_id, name=user_name)
@@ -208,7 +208,7 @@ class GameServer:
 
         Make sure that the chat_id actually belongs to a group chat before calling this method.
 
-        :param name: The Game's name. May be the group chat name for simplicity
+        :param name: The game's name. May be the group chat name for simplicity
         """
         running_games = session.query(model.Game).filter(model.Game.chat_id == chat_id,
                                                          model.Game.is_finished == False).count()
@@ -220,7 +220,7 @@ class GameServer:
         logger.info("Created new game %s in chat %s (%s)", game.id, chat_id, name)
         session.add(game)
         self._send_messages([Message(chat_id,
-                                     GetText("New game created. Use /{command} to join the game.")  # TODO UX: more info
+                                     GetText("✅ New game created. Use /{command} to join the game.")  # TODO UX: more info
                                      .format(command=COMMAND_JOIN_GAME))], session)
 
     @with_session
@@ -228,10 +228,10 @@ class GameServer:
         game = session.query(model.Game).filter(model.Game.chat_id == chat_id,
                                                 model.Game.is_finished == False).one_or_none()
         if game is None:
-            self._send_messages([Message(chat_id, GetText("No game to configure in this chat"))], session)  # TODO UX: Add hint to COMMAND_NEW_GAME
+            self._send_messages([Message(chat_id, GetText("❌ No game to configure in this chat"))], session)  # TODO UX: Add hint to COMMAND_NEW_GAME
             return
         if game.is_started:
-            self._send_messages([Message(chat_id, GetText("Game already started"))], session)
+            self._send_messages([Message(chat_id, GetText("❌ Sorry, I can only configure a game before its start. ⏳"))], session)
             return
             # TODO allow rounds change for running games (unless a sheet has > rounds * entries). In this case, sheets with
             #  len(entries) = old_rounds may require to be newly assigned
@@ -240,7 +240,8 @@ class GameServer:
             return
         logger.info("Setting rounds of game %s to %s", game.id, rounds)
         game.rounds = rounds
-        self._send_messages([Message(chat_id, GetText("ok"))], session)  # TODO UX
+        self._send_messages([Message(chat_id, GetText(
+            "Number of rounds set: {number_rounds}").format(number_rounds=game.rounds))], session)  # TODO UX
 
     @with_session
     def set_synchronous(self, session: Session, chat_id: int, state: bool) -> None:
@@ -250,27 +251,29 @@ class GameServer:
             self._send_messages([Message(chat_id, GetText("No game to configure in this chat"))], session)  # TODO UX
             return
         if game.is_started:
-            self._send_messages([Message(chat_id, GetText("Too late"))], session)  # TODO UX
+            self._send_messages([Message(chat_id, GetText(
+                "❌ Sorry, I can only configure a game before its start. ⏳"))], session)  # TODO UX
             return
             # TODO allow mode change for running games (requires passing of waiting sheets for sync → unsync)
         logger.info("Setting game %s to %s", game.id, "synchronous" if state else "asynchronous")
         game.is_synchronous = state
-        self._send_messages([Message(chat_id, GetText("ok"))], session)  # TODO UX
+        self._send_messages([Message(chat_id, GetText(f"✅ Set game mode."))], session)
 
     @with_session
     def set_show_result_names(self, session: Session, chat_id: int, state: bool) -> None:
         game = session.query(model.Game).filter(model.Game.chat_id == chat_id,
                                                 model.Game.is_finished == False).one_or_none()
         if game is None:
-            self._send_messages([Message(chat_id, GetText("No game to configure in this chat"))], session)  # TODO UX
+            self._send_messages([Message(chat_id, GetText("❌ No game to configure in this chat"))], session)  # TODO UX
             return
         if game.is_started:
-            self._send_messages([Message(chat_id, GetText("Too late"))], session)  # TODO UX
+            self._send_messages([Message(chat_id, GetText(
+                "❌ Sorry, I can only configure a game before its start. ⏳"))], session)  # TODO UX
             # TODO should this be possible?
             return
         logger.info("Setting game %s to %s", game.id, "show result names" if state else "not show result names")
         game.is_showing_result_names = state
-        self._send_messages([Message(chat_id, GetText("ok"))], session)  # TODO UX
+        self._send_messages([Message(chat_id, GetNoText("✅"))], session)  # TODO UX
 
     @with_session
     def join_game(self, session: Session, chat_id: int, user_id: int) -> None:
@@ -279,7 +282,7 @@ class GameServer:
             .one_or_none()
         if game is None:
             self._send_messages([Message(chat_id,
-                                         GetText("There is currently no pending game in this Group. "
+                                         GetText("There is currently no pending game in this group. 🙃"
                                                  "Use /{command} to start one.").format(command=COMMAND_NEW_GAME))],
                                 session)
             return
@@ -303,7 +306,8 @@ class GameServer:
                     logger.info("User %s joins running synchronous game %s in first round", user.id, game.id)
                 else:
                     logger.info("User %s cannot join %s, which is already started synchronously.", user.id, game.id)
-                    self._send_messages([Message(chat_id, GetText("Too late"))], session)
+                    self._send_messages([Message(chat_id, GetText("⏳ Oh no! The game has already started! "
+                                                                  "Please join the next game."))], session)
                     return
             else:
                 # Add a new sheet if other sheets have only few entries (< ¼ of target rounds), too.
@@ -314,7 +318,7 @@ class GameServer:
         else:
             logger.info("User %s joins to game %s", user.id, game.id)
         game.participants.append(model.Participant(user=user))
-        messages = [Message(chat_id, GetText("ok"))]
+        messages = [Message(chat_id, GetText("Yay! Welcome {name} 🤗").format(name=user.name))]
 
         if new_sheet:
             user.pending_sheets.append(model.Sheet(game=game))
@@ -337,7 +341,8 @@ class GameServer:
             return
         elif len(game.participants) < 2:
             logger.debug("Game %s has not enough participants to be started", game.id)
-            self._send_messages([Message(chat_id, GetText("No games with less than two participants permitted"))], session)
+            self._send_messages([Message(chat_id, GetText(
+                "No games with less than two participants permitted 🙅‍♀️"))], session)
             return
 
         # Create sheets and start game
@@ -352,7 +357,7 @@ class GameServer:
 
         logger.info("Starting game %s", game.id)
         # Give sheets to participants
-        result = [Message(chat_id, GetText("ok"))]
+        result = [Message(chat_id, GetNoText("Let's go!")), Message(chat_id, GetNoText("📝"))]
         result.extend(_next_sheet([p.user for p in game.participants], session))
         self._send_messages(result, session)
 
@@ -363,7 +368,7 @@ class GameServer:
             .one_or_none()
         if game is None:
             self._send_messages([Message(chat_id,
-                                         GetText("There is currently no running or pending game in this Chat."))],
+                                         GetText("There is currently no running or pending game in this chat."))],
                                 session)
             return
         num_participants = session.query(func.count(model.Participant.user_id))\
@@ -383,12 +388,12 @@ class GameServer:
             .filter(model.Participant.user == user, model.Participant.game == game)\
             .one_or_none()
         if participation is None:
-            logger.debug("Cannot remove user %s from game %s, since they do not participate", user.id, game.id)
+            logger.debug("Cannot remove user %s from game %s, since they do not participate. 🤨", user.id, game.id)
             self._send_messages([Message(chat_id, GetText("You didn't participate in this game."))], session)
             return
         session.delete(participation)
 
-        result = [Message(chat_id, GetText("ok"))]  # TODO
+        result = [Message(chat_id, GetText("👋 Bye!"))]  # TODO
         logger.info("User %s leaves %sgame %s.", user.id, "running " if game.is_started else "", game.id)
 
         # Pass on pending sheets
@@ -418,11 +423,11 @@ class GameServer:
                                                 model.Game.is_started == True,
                                                 model.Game.is_finished == False).one_or_none()
         if game is None:
-            self._send_messages([Message(chat_id, GetText("There is currently no running game in this Group."))],
+            self._send_messages([Message(chat_id, GetText("There is currently no running game in this group."))],
                                 session)
             return
 
-        logger.info("Marking game %s to stop at next opportunity.", game.id)
+        logger.info("Marking game %s to stop at next opportunity. ✋", game.id)
         game.is_waiting_for_finish = True
         sheet_infos = list(_game_sheet_infos(game, session))
 
@@ -462,7 +467,7 @@ class GameServer:
                                                 model.Game.is_started == True,
                                                 model.Game.is_finished == False).one_or_none()
         if game is None:
-            self._send_messages([Message(chat_id, GetText("There is currently no running game in this Group."))],
+            self._send_messages([Message(chat_id, GetText("There is currently no running game in this group."))],
                                 session)
             return
         logger.info("Immediately stopping game %s.", game.id)
@@ -502,7 +507,7 @@ class GameServer:
                       else model.EntryType.ANSWER)
         current_sheet.entries.append(model.Entry(user=user, text=text, type=entry_type,
                                                  timestamp=datetime.datetime.now(datetime.timezone.utc)))
-        result.append(Message(chat_id, GetText("ok")))
+        result.append(Message(chat_id, GetNoText("🆗")))
         user.current_sheet = None
         current_sheet.current_user = None
 
@@ -561,7 +566,7 @@ class GameServer:
                 parts.append(GetText("Additionally, you will be participating in {games}, as soon as they start.")
                              .format(games=GetText(', ').join(g.name for g in pending_games)))
         elif pending_games:
-            parts.append(GetText("You will be participating in the follwing games, as soom as they start: {games}")
+            parts.append(GetText("You will be participating in the follwing games, as soon as they start: {games}")
                          .format(games=', '.join(g.name for g in pending_games)))
         else:
             parts.append(GetText("You are currently not participating in any QAQA game."))
@@ -574,7 +579,7 @@ class GameServer:
                                      "questions, including the current one.")
                              .format(num_sheets=len(user.pending_sheets)))
             else:
-                parts.append(GetText("\nYou have currently no pending sheets"))
+                parts.append(GetText("\nYou have currently no pending sheets ✨"))
 
         status = GetNoText("\n").join(parts)
         self._send_messages([Message(chat_id, status)] + _next_sheet([user], session, repeat=True), session)
@@ -609,13 +614,13 @@ class GameServer:
                 if sheet_infos else "")
             pending_sheets = [si.sheet for si in sheet_infos if si.sheet.current_user_id is not None]
             pending_users = (
-                GetText("We are currently waiting for {users}\n\n")
+                GetText("We are currently waiting for {users} 👀\n\n")
                 # TODO optimization: access to s.current_user.name with eager loading
                 .format(users=','.join(s.current_user.name for s in pending_sheets))
                 if current_game.is_synchronous or len(pending_sheets) <= len(sheet_infos) / 3
                 else "")
             if current_game.is_started:
-                status = GetText("The game is on!\n\n"
+                status = GetText("The game is on! 👾\n\n"
                                  "{num_sheets} sheets are in the game.{sheets_stats}\n\n"
                                  "{pending_users}"
                                  "Registered players:\n"
@@ -624,7 +629,7 @@ class GameServer:
                     .format(num_sheets=len(sheet_infos), sheets_stats=sheets_stats, pending_users=pending_users,
                             players=players, configuration=configuration)
             else:
-                status = GetText("The game has been created and waits to be started.\n"
+                status = GetText("The game has been created and waits to be started. 🕰\n"
                                  "Use /{command} to start the game.\n\n"
                                  "Registered players:\n"
                                  "{players}\n\n"
