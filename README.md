@@ -95,6 +95,10 @@ We may add proper Python packaging later, to make installation via pip possible.
    * the bot's API token (recived from the BotFather),
    * your personal Telegram username (will be used in the bot's description and help texts), and
    * the connection URL of your database.
+6. compile i18n message catalouges
+   ```bash
+   pybabel compile -d qaqa_bot/i18n/ -D qaqa_bot
+   ```
 
 ### Running
 
@@ -141,10 +145,10 @@ git add qaqa_bot/model.py qaqa_bot/database_versions
 Updating i18n translation files:
 ```bash
 pybabel extract -k "GetText" -k "NGetText" -o qaqa_bot.pot qaqa_bot/
-pybabel update -i qaqa_bot.pot -d qaqa_bot/i18n/ -l de -D qaqa_bot
+pybabel update -i qaqa_bot.pot -d qaqa_bot/i18n/ -D qaqa_bot
 ```
 
 Compiling i18n translation files:
 ```bash
-pybabel compile -d qaqa_bot/i18n/ -l de -D qaqa_bot
+pybabel compile -d qaqa_bot/i18n/ -D qaqa_bot
 ```
