@@ -10,9 +10,12 @@
 # specific language governing permissions and limitations under the License.
 import logging
 
+import cherrypy
 import toml
 
 from .bot import Frontend
+from .game import GameServer
+from .web import WebRoot, WebData
 from .util import run_migrations
 import argparse
 
@@ -34,12 +37,15 @@ def main():
     logging.basicConfig(level=30 - 10 * args.verbose + 10 * args.quiet)
     config = toml.load(args.config)
     frontend = Frontend(config)
+    web_data = WebData(frontend.gs)
 
     if not args.no_init:
         run_migrations(frontend.gs.database_engine)  # TODO make this better in terms of sensible architecture
         frontend.set_commands()
 
     if not args.init_only:
+        cherrypy.tree.mount(WebRoot(web_data), '/')
+        cherrypy.engine.start()
         frontend.start_bot()
 
 
