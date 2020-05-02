@@ -52,6 +52,7 @@ def main():
         cherrypy.engine.start()
         # Start Telegram Bot Updater
         frontend.start_bot()
+        cherrypy.engine.exit()
 
 
 if __name__ == '__main__':
