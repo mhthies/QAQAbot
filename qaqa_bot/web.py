@@ -1,3 +1,29 @@
+# Copyright 2020 Michael Thies
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+# the License. You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations under the License.
+
+"""
+A web frontend for the QAQA game bot to serve the game results as HTML pages.
+
+This module defines frontend Controller classes to be used with the CherryPy web engine. The root entry point is an
+object of the class `WebRoot`, which can be registered with the CherryPy engine:
+`cherrypy.tree.mount(WebRoot(env), '/')`. It provides handler functions for the following endpoints:
+* /
+* /game/<game_id>/
+* /game/<game_id>/sheet/<sheet_id>/
+
+Since I don't like global (or magic thread-local) data, all global (i.e. application-local) data for the frontend
+methods (esp. the GameServer object as a backend, the config and the template rendering engine) are encapsulated in an
+`WebEnvironment` object and explicitly passed to the Controller's init methods.
+"""
+
 import os
 from typing import Dict, Any
 
