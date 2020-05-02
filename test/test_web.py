@@ -37,7 +37,7 @@ class TestWeb(unittest.TestCase):
         self.app = TestApp(self.wsgiapp)
 
     def tearDown(self) -> None:
-        cherrypy.engine.stop()
+        cherrypy.engine.exit()
 
     def _simple_sample_game(self) -> None:
         self.game_server.new_game(21, "Funny Group")
@@ -61,5 +61,4 @@ class TestWeb(unittest.TestCase):
         resp = self.app.get("/game/1")
         resp = resp.follow()
         self.assertEqual(200, resp.status_int)
-        print(resp.text)
         resp.mustcontain("Question 1")
