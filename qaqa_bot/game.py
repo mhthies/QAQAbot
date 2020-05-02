@@ -114,8 +114,12 @@ class GameServer:
     messages (which are triggered by incoming events depending on the game state). For this purpose, it is initialized
     with a callback function to be used for sending messages.
 
-    The available game actions are provided as methods of the GameState object. They should be called by the appropriate
-    handlers of the Telegram Bot frontend.
+    The available game actions are provided as methods of the GameServer object. They should be called by the
+    appropriate handlers of the Telegram Bot frontend.
+
+    The GameServer itself is stateless. Since all it member fields are either static (config) or thread-safe
+    (_send_callback, session_maker), it is considered to be thread-safe and may be used from thread-pool-executed
+    handlers of the Telegram and Web frontends.
     """
     def __init__(self, config: MutableMapping[str, Any],
                  send_callback: Callable[[List[TranslatedMessage]], None],
