@@ -15,7 +15,8 @@ methods of the `GameServer` class, one for each type of user action. In order to
 be instantiated with a given bot config and a callback method for sending the messages.
 
 Some of the action methods share code fragments (e.g. for finalizing a game under certain conditions), which have been
-un-inlined into some helper functions at the bottom of the file.
+un-inlined into some helper functions at the end of the class. Some of them use the `SheetProgressInfo` helper class
+to pass around information about sheets.
 
 Additionally, this module defines the `Message` tuple for passing Telegram messages the message sending callback
 function and the `@with_session` for magically handling (creating/committing/rolling back) the database sessions.
@@ -67,6 +68,19 @@ class TranslatedMessage(NamedTuple):
     """ Representation of a (translated) outgoing Telegram message, triggered by some game state change """
     chat_id: int
     text: str
+
+
+class SheetProgressInfo(NamedTuple):
+    """ A helper type, with the relevant information about a single sheet:
+    * The sheet itself
+    * the number of entries on it and
+    * the last of its entries.
+
+    This information may be queried together (e.g. using `_query_sheet_infos()`) and passed between functions to avoid
+    superflous SQL queries."""
+    sheet: model.Sheet
+    num_entries: int
+    last_entry: Optional[model.Entry]
 
 
 def with_session(f):
@@ -148,7 +162,7 @@ class GameServer:
         This message can be used by the `Frontend` to update messages and do other fancy Telegram stuff (which is not
         sending messages) with translated strings.
         """
-        return _get_translations([message], session)[0]
+        return self._get_translations([message], session)[0]
 
     @with_session
     def set_chat_locale(self, session: Session, chat_id: int, locale: str, override: bool = False) -> None:
@@ -191,7 +205,7 @@ class GameServer:
             self._send_messages([Message(chat_id, GetText(
                 "You are already registered. If you want to start a game, head over to a group chat and spawn a game "
                 "with /{cmd}").format(cmd=COMMAND_NEW_GAME))]  # TODO UX
-                                + _next_sheet([existing_user], session, repeat=True), session)
+                                + self._next_sheet([existing_user], session, repeat=True), session)
         else:
             user = model.User(api_id=user_id, chat_id=chat_id, name=user_name)
             session.add(user)
@@ -302,7 +316,7 @@ class GameServer:
         if game.is_started:
             # Joining into running games ist only allowed for asynchronous games or in the first round of a synchronous
             # game
-            sheet_infos = _game_sheet_infos(game, session)
+            sheet_infos = self._game_sheet_infos(game, session)
             if game.is_synchronous:
                 if any(si.num_entries == 0 for si in sheet_infos):
                     new_sheet = True
@@ -325,7 +339,7 @@ class GameServer:
 
         if new_sheet:
             user.pending_sheets.append(model.Sheet(game=game))
-            messages.extend(_next_sheet([user], session))
+            messages.extend(self._next_sheet([user], session))
         self._send_messages(messages, session)  # TODO UX
 
     @with_session
@@ -361,7 +375,7 @@ class GameServer:
         logger.info("Starting game %s", game.id)
         # Give sheets to participants
         result = [Message(chat_id, GetNoText("Let's go!")), Message(chat_id, GetNoText("📝"))]
-        result.extend(_next_sheet([p.user for p in game.participants], session))
+        result.extend(self._next_sheet([p.user for p in game.participants], session))
         self._send_messages(result, session)
 
     @with_session
@@ -403,14 +417,14 @@ class GameServer:
         if user.current_sheet is not None and user.current_sheet.game_id == game.id:
             logger.debug("Retracting sheet %s from user %s, who left the game.", user.current_sheet_id, user.id)
             result.append(Message(user.chat_id, GetText("You left the game. No answer required anymore.")))
-            result.extend(_next_sheet([user], session))
+            result.extend(self._next_sheet([user], session))
         obsolete_sheets = [sheet
                            for sheet in user.pending_sheets
                            if sheet.game_id == game.id]
         logger.debug("Passing sheets %s from user %s, who left the game.",
                      ",".join(str(s.id) for s in obsolete_sheets), user.id)
-        _assign_sheet_to_next(obsolete_sheets, game, session)
-        result.extend(_next_sheet([sheet.current_user for sheet in obsolete_sheets if sheet.current_user], session))
+        self._assign_sheet_to_next(obsolete_sheets, game, session)
+        result.extend(self._next_sheet([sheet.current_user for sheet in obsolete_sheets if sheet.current_user], session))
         self._send_messages(result, session)
 
     @with_session
@@ -432,9 +446,9 @@ class GameServer:
 
         logger.info("Marking game %s to stop at next opportunity. ✋", game.id)
         game.is_waiting_for_finish = True
-        sheet_infos = list(_game_sheet_infos(game, session))
+        sheet_infos = list(self._game_sheet_infos(game, session))
 
-        messages = _finish_if_stopped_and_all_answered(game, sheet_infos, session)
+        messages = self._finish_if_stopped_and_all_answered(game, sheet_infos, session)
 
         if not game.is_finished:
             logger.info("Retracting answered sheets of game %s to accelerate end of game.", game.id)
@@ -455,7 +469,7 @@ class GameServer:
                             messages.append(Message(sheet_user.chat_id,
                                                     GetText("Game will be stopped. No new question required anymore.")))
                             users_to_update.add(sheet_user)
-            messages.extend(_next_sheet(list(users_to_update), session))
+            messages.extend(self._next_sheet(list(users_to_update), session))
 
         self._send_messages(messages, session)
 
@@ -474,7 +488,7 @@ class GameServer:
                                 session)
             return
         logger.info("Immediately stopping game %s.", game.id)
-        self._send_messages(_finalize_game(game, session), session)
+        self._send_messages(self._finalize_game(game, session), session)
 
     @with_session
     def submit_text(self, session: Session, chat_id: int, text: str) -> None:
@@ -516,9 +530,9 @@ class GameServer:
 
         # Check if game is finished
         game = current_sheet.game
-        sheet_infos = list(_game_sheet_infos(game, session))
-        result.extend(_finish_if_complete(game, sheet_infos, session))
-        result.extend(_finish_if_stopped_and_all_answered(game, sheet_infos, session))
+        sheet_infos = list(self._game_sheet_infos(game, session))
+        result.extend(self._finish_if_complete(game, sheet_infos, session))
+        result.extend(self._finish_if_stopped_and_all_answered(game, sheet_infos, session))
 
         if not game.is_finished and len(current_sheet.entries) < game.rounds:
             # In a synchronous game: Check if the round is finished and pass sheets on
@@ -528,16 +542,16 @@ class GameServer:
                     logger.info("Triggering new round %s in synchronous game %s.",
                                 len(current_sheet.entries) + 1, game.id)
                     # TODO don't assign answered sheets in stopped games? Might be relevant for leaving/joining in-game
-                    _assign_sheet_to_next(list(game.sheets), game, session)
-                    result.extend(_next_sheet(list(p.user for p in game.participants), session))
+                    self._assign_sheet_to_next(list(game.sheets), game, session)
+                    result.extend(self._next_sheet(list(p.user for p in game.participants), session))
 
             # In an asynchronous game: Pass on this sheet
             elif not game.is_waiting_for_finish or entry_type == model.EntryType.QUESTION:
-                _assign_sheet_to_next([current_sheet], game, session)
+                self._assign_sheet_to_next([current_sheet], game, session)
                 assert(current_sheet.current_user is not None)
-                result.extend(_next_sheet([current_sheet.current_user], session))
+                result.extend(self._next_sheet([current_sheet.current_user], session))
 
-        result.extend(_next_sheet([user], session))
+        result.extend(self._next_sheet([user], session))
         self._send_messages(result, session)
 
     # TODO resend_current_sheet()
@@ -585,7 +599,7 @@ class GameServer:
                 parts.append(GetText("\nYou have currently no pending sheets ✨"))
 
         status = GetNoText("\n").join(parts)
-        self._send_messages([Message(chat_id, status)] + _next_sheet([user], session, repeat=True), session)
+        self._send_messages([Message(chat_id, status)] + self._next_sheet([user], session, repeat=True), session)
 
     @with_session
     def get_group_status(self, session: Session, chat_id: int):
@@ -608,7 +622,7 @@ class GameServer:
                                     if current_game.rounds is None
                                     else current_game.rounds),
                         synchronous=GetText('yes') if current_game.is_synchronous else GetText('no'))
-            sheet_infos = _game_sheet_infos(current_game, session)
+            sheet_infos = self._game_sheet_infos(current_game, session)
             sheets_stats = (
                 GetText(" They have {min}–{max} (Median: {median}) entries yet.")
                 .format(min=min(si.num_entries for si in sheet_infos),
@@ -641,245 +655,226 @@ class GameServer:
         self._send_messages([Message(chat_id, status)], session)
 
     def _send_messages(self, messages: List[Message], session: Session) -> None:
-        self._send_callback(_get_translations(messages, session))
+        self._send_callback(self._get_translations(messages, session))
 
+    def _get_translations(self, messages: List[Message], session: Session) -> List[TranslatedMessage]:
+        """
+        Helper function to look up a the target language for a list of `Message`s and translate them.
+        """
+        locales = dict(session.query(model.SelectedLocale.chat_id, model.SelectedLocale.locale)
+                       .filter(model.SelectedLocale.chat_id.in_(set(m.chat_id for m in messages)))
+                       .all())
+        return [TranslatedMessage(m.chat_id,
+                                  m.text.get_translation(gettext.translation('qaqa_bot',
+                                                                             LOCALE_DIR,
+                                                                             (locales.get(m.chat_id, 'en'),),
+                                                                             fallback=True)))
+                for m in messages]
 
-def _get_translations(messages: List[Message], session: Session) -> List[TranslatedMessage]:
-    """
-    Helper function to look up a the target language for a list of `Message`s and translate them.
-    """
-    locales = dict(session.query(model.SelectedLocale.chat_id, model.SelectedLocale.locale)
-                   .filter(model.SelectedLocale.chat_id.in_(set(m.chat_id for m in messages)))
-                   .all())
-    return [TranslatedMessage(m.chat_id,
-                              m.text.get_translation(gettext.translation('qaqa_bot',
-                                                                         LOCALE_DIR,
-                                                                         (locales.get(m.chat_id, 'en'),),
-                                                                         fallback=True)))
-            for m in messages]
+    def _game_sheet_infos(self, game: model.Game, session: Session) -> List[SheetProgressInfo]:
+        """ Helper function to get the `SheetProgressInfo` for all sheets of a given Game.
 
+        This list is required by some of the helper functions below. It is generated with an optimized SQL query and may
+        be used multiple times, e.g. for checking if a game is finished by `_finish_if_complete` and
+        `_finish_if_stopped_and_all_answered`.
+        """
+        num_subquery = session.query(model.Entry.sheet_id,
+                                     func.count('*').label('num_entries')) \
+            .group_by(model.Entry.sheet_id) \
+            .subquery()
+        max_pos_subquery = session.query(model.Entry.sheet_id,
+                                         func.max(model.Entry.position).label('max_position')) \
+            .group_by(model.Entry.sheet_id) \
+            .subquery()
+        return [SheetProgressInfo(sheet, num_entries if num_entries is not None else 0, last_entry)
+                for sheet, num_entries, last_entry
+                in session.query(model.Sheet, num_subquery.c.num_entries, model.Entry)
+                    .outerjoin(num_subquery, model.Sheet.id == num_subquery.c.sheet_id)
+                    .outerjoin(max_pos_subquery)
+                    .outerjoin(model.Entry, and_(model.Entry.sheet_id == model.Sheet.id,
+                                                 model.Entry.position == max_pos_subquery.c.max_position))
+                    .filter(model.Sheet.game == game)]
 
-class SheetProgressInfo(NamedTuple):
-    """ A helper type, with the relevant information about a single sheet:
-    * The sheet itself
-    * the number of entries on it and
-    * the last of its entries.
+    def _next_sheet(self, users: Iterable[model.User], session: Session, repeat: bool = False) -> List[Message]:
+        """ Helper function to check for a list of users, if they have no current sheet, pick the next sheet from their
+        pending stack and generate messages to them to ask for their next submission.
 
-    This information may be queried together (e.g. using `_query_sheet_infos()`) and passed between functions to avoid
-    superflous SQL queries."""
-    sheet: model.Sheet
-    num_entries: int
-    last_entry: Optional[model.Entry]
+        :param users: The users to check for pending sheets and send messages to
+        :param repeat: If True, resend the request for submission to all given users, even if they already have a sheet
+            assigned."""
+        # The following manually crafted SQL query is basically and extended version of _game_sheet_infos() to
+        # efficiently query sheets, their entry numbers and last entries along with each User object.
+        min_sheet_pos_subquery = session.query(model.Sheet.current_user_id,
+                                               func.min(model.Sheet.pending_position).label('min_position')) \
+            .group_by(model.Sheet.current_user_id) \
+            .subquery()
+        num_subquery = session.query(model.Entry.sheet_id,
+                                     func.count('*').label('num_entries')) \
+            .group_by(model.Entry.sheet_id) \
+            .subquery()
+        max_pos_subquery = session.query(model.Entry.sheet_id,
+                                         func.max(model.Entry.position).label('max_position')) \
+            .group_by(model.Entry.sheet_id) \
+            .subquery()
+        query = session.query(model.User,
+                              model.Sheet,
+                              num_subquery.c.num_entries,
+                              model.Entry)\
+            .outerjoin(min_sheet_pos_subquery)\
+            .outerjoin(model.Sheet, and_(model.Sheet.current_user_id == model.User.id,
+                                         model.Sheet.pending_position == min_sheet_pos_subquery.c.min_position))\
+            .outerjoin(num_subquery, model.Sheet.id == num_subquery.c.sheet_id)\
+            .outerjoin(max_pos_subquery)\
+            .outerjoin(model.Entry, and_(model.Entry.sheet_id == model.Sheet.id,
+                                         model.Entry.position == max_pos_subquery.c.max_position))\
+            .filter(model.User.id.in_(u.id for u in users))
 
+        result = []
+        logger.debug("Checking %s to users %s.",
+                     "current sheet to be processed" if repeat else "if a new sheets should be passed",
+                     ",".join(str(u.id) for u in users))
+        for user, next_sheet, next_sheet_num_entries, next_sheet_last_entry in query:
+            if (user.current_sheet_id is None or repeat) and next_sheet is not None:
+                user.current_sheet = next_sheet
+                logger.debug("Giving sheet %s to user %s.", next_sheet.id, user.id)
+                result.append(Message(user.chat_id, self._format_for_next(
+                    SheetProgressInfo(next_sheet,
+                                      next_sheet_num_entries if next_sheet_num_entries is not None else 0,
+                                      next_sheet_last_entry),
+                    user.current_sheet_id is not None)))
+        return result
 
-def _game_sheet_infos(game: model.Game, session: Session) -> List[SheetProgressInfo]:
-    """ Helper function to get the `SheetProgressInfo` for all sheets of a given Game.
+    def _assign_sheet_to_next(self, sheets: List[model.Sheet], game: model.Game, session: Session):
+        """ Assign a list of sheets of a single game to the next user according the game's participant order
 
-    This list is required by some of the helper functions below. It is generated with an optimized SQL query and may
-    be used multiple times, e.g. for checking if a game is finished by `_finish_if_complete` and
-    `_finish_if_stopped_and_all_answered`.
-    """
-    num_subquery = session.query(model.Entry.sheet_id,
-                                 func.count('*').label('num_entries')) \
-        .group_by(model.Entry.sheet_id) \
-        .subquery()
-    max_pos_subquery = session.query(model.Entry.sheet_id,
-                                     func.max(model.Entry.position).label('max_position')) \
-        .group_by(model.Entry.sheet_id) \
-        .subquery()
-    return [SheetProgressInfo(sheet, num_entries if num_entries is not None else 0, last_entry)
-            for sheet, num_entries, last_entry
-            in session.query(model.Sheet, num_subquery.c.num_entries, model.Entry)
-                .outerjoin(num_subquery, model.Sheet.id == num_subquery.c.sheet_id)
-                .outerjoin(max_pos_subquery)
-                .outerjoin(model.Entry, and_(model.Entry.sheet_id == model.Sheet.id,
-                                             model.Entry.position == max_pos_subquery.c.max_position))
-                .filter(model.Sheet.game == game)]
+        This may be used with a list of all sheets of the game to begin a new round in a synchronous game or a single
+        sheet for submissions in an asynchronous game.
 
+        The list of sheets is processed at once for optimization reasons: The order of game participants is generated
+        only once and an optimized query is used to fetch all required information about the sheets' entries at once."""
+        next_mapping = {p1.user_id: p2.user for p1, p2 in zip(game.participants, game.participants[1:])}
+        next_mapping[game.participants[-1].user_id] = game.participants[0].user
 
-def _next_sheet(users: Iterable[model.User], session: Session, repeat: bool = False) -> List[Message]:
-    """ Helper function to check for a list of users, if they have no current sheet, pick the next sheet from their
-    pending stack and generate messages to them to ask for their next submission.
+        # Fetch the last entry of all sheets with a single query. It is basically a manual version of SQLAlchemy's
+        # `selectinload`
+        max_pos_subquery = session.query(model.Entry.sheet_id,
+                                         func.max(model.Entry.position).label('max_position')) \
+            .group_by(model.Entry.sheet_id)\
+            .subquery()
+        query = session.query(model.Sheet.id, model.Entry)\
+            .outerjoin(max_pos_subquery)\
+            .outerjoin(model.Entry, and_(model.Entry.sheet_id == model.Sheet.id,
+                                         model.Entry.position == max_pos_subquery.c.max_position))\
+            .filter(model.Sheet.id.in_(sheet.id for sheet in sheets))
+        last_entry_by_sheet_id: Dict[int, model.Entry] = dict(query.all())
 
-    :param users: The users to check for pending sheets and send messages to
-    :param repeat: If True, resend the request for submission to all given users, even if they already have a sheet
-        assigned."""
-    # The following manually crafted SQL query is basically and extended version of _game_sheet_infos() to efficiently
-    # query sheets, their entry numbers and last entries along with each User object.
-    min_sheet_pos_subquery = session.query(model.Sheet.current_user_id,
-                                           func.min(model.Sheet.pending_position).label('min_position')) \
-        .group_by(model.Sheet.current_user_id) \
-        .subquery()
-    num_subquery = session.query(model.Entry.sheet_id,
-                                 func.count('*').label('num_entries')) \
-        .group_by(model.Entry.sheet_id) \
-        .subquery()
-    max_pos_subquery = session.query(model.Entry.sheet_id,
-                                     func.max(model.Entry.position).label('max_position')) \
-        .group_by(model.Entry.sheet_id) \
-        .subquery()
-    query = session.query(model.User,
-                          model.Sheet,
-                          num_subquery.c.num_entries,
-                          model.Entry)\
-        .outerjoin(min_sheet_pos_subquery)\
-        .outerjoin(model.Sheet, and_(model.Sheet.current_user_id == model.User.id,
-                                     model.Sheet.pending_position == min_sheet_pos_subquery.c.min_position))\
-        .outerjoin(num_subquery, model.Sheet.id == num_subquery.c.sheet_id)\
-        .outerjoin(max_pos_subquery)\
-        .outerjoin(model.Entry, and_(model.Entry.sheet_id == model.Sheet.id,
-                                     model.Entry.position == max_pos_subquery.c.max_position))\
-        .filter(model.User.id.in_(u.id for u in users))
-
-    result = []
-    logger.debug("Checking %s to users %s.",
-                 "current sheet to be processed" if repeat else "if a new sheets should be passed",
-                 ",".join(str(u.id) for u in users))
-    for user, next_sheet, next_sheet_num_entries, next_sheet_last_entry in query:
-        if (user.current_sheet_id is None or repeat) and next_sheet is not None:
-            user.current_sheet = next_sheet
-            logger.debug("Giving sheet %s to user %s.", next_sheet.id, user.id)
-            result.append(Message(user.chat_id, _format_for_next(
-                SheetProgressInfo(next_sheet,
-                                  next_sheet_num_entries if next_sheet_num_entries is not None else 0,
-                                  next_sheet_last_entry),
-                user.current_sheet_id is not None)))
-    return result
-
-
-def _assign_sheet_to_next(sheets: List[model.Sheet], game: model.Game, session: Session):
-    """ Assign a list of sheets of a single game to the next user according the game's participant order
-
-    This may be used with a list of all sheets of the game to begin a new round in a synchronous game or a single
-    sheet for submissions in an asynchronous game.
-
-    The list of sheets is processed at once for optimization reasons: The order of game participants is generated only
-    once and an optimized query is used to fetch all required information about the sheets' entries at once."""
-    next_mapping = {p1.user_id: p2.user for p1, p2 in zip(game.participants, game.participants[1:])}
-    next_mapping[game.participants[-1].user_id] = game.participants[0].user
-
-    # Fetch the last entry of all sheets with a single query. It is basically a manual version of SQLAlchemy's
-    # `selectinload`
-    max_pos_subquery = session.query(model.Entry.sheet_id,
-                                     func.max(model.Entry.position).label('max_position')) \
-        .group_by(model.Entry.sheet_id)\
-        .subquery()
-    query = session.query(model.Sheet.id, model.Entry)\
-        .outerjoin(max_pos_subquery)\
-        .outerjoin(model.Entry, and_(model.Entry.sheet_id == model.Sheet.id,
-                                     model.Entry.position == max_pos_subquery.c.max_position))\
-        .filter(model.Sheet.id.in_(sheet.id for sheet in sheets))
-    last_entry_by_sheet_id: Dict[int, model.Entry] = dict(query.all())
-
-    for sheet in sheets:
-        sheet.current_user = None
-        sheet.pending_position = None
-        if last_entry_by_sheet_id[sheet.id] is None:
-            # Passing on an empty sheet, means something unusual happend (e.g. the user left the game before writing
-            # something). Let's get rid of those sheets.
-            session.delete(sheet)
-            continue
-
-        next_user = next_mapping[last_entry_by_sheet_id[sheet.id].user_id]
-        logger.debug("Assigning sheet %s to user %s ...", sheet.id, next_user.id)
-        next_user.pending_sheets.append(sheet)
-
-
-def _finish_if_complete(game: model.Game, sheet_infos: Iterable[SheetProgressInfo], session: Session) -> List[Message]:
-    """ Finalize the game if it is completed (i.e. all sheets have the number entries).
-
-    This function uses `_finalize_game()` to generate the result messages in this case."""
-    logger.debug("Checking game %s for completeness ...", game.id)
-    if all(sheet_info.num_entries >= game.rounds for sheet_info in sheet_infos):
-        return _finalize_game(game, session)
-    return []
-
-
-def _finish_if_stopped_and_all_answered(game: model.Game, sheet_infos: Iterable[SheetProgressInfo],
-                                        session: Session) -> List[Message]:
-    """
-    Finish the game if it is waiting for finishing and the finishing condition (each page ends with an answer).
-
-    :param game: The Game object
-    :param sheet_infos: A list of SheetProgressInfo for *all* sheets of the game, as retrieved from
-        `_game_sheet_infos()`
-    """
-    if game.is_waiting_for_finish:
-        logger.debug("Checking if opportunity to stop game %s is give n...", game.id)
-        if all(sheet_info.last_entry is None or sheet_info.last_entry.type == model.EntryType.ANSWER
-               for sheet_info in sheet_infos):
-            return _finalize_game(game, session)
-    return []
-
-
-def _finalize_game(game: model.Game, session: Session) -> List[Message]:
-    """ Finalize a game: Collect pending sheets (inform users that no answer is required anymore) and generate result
-    messages to the game's group chat."""
-    logger.info("Finalizing game %s ...", game.id)
-    messages = []
-    # Requery sheets with optimized loading of current_user
-    sheets: List[model.Sheet] = session.query(model.Sheet)\
-        .filter(model.Sheet.game == game)\
-        .populate_existing()\
-        .options(joinedload(model.Sheet.current_user))\
-        .all()
-
-    # Reset pending sheets
-    users_to_update = set()
-    for sheet in sheets:
-        sheet_user: Optional[model.User] = sheet.current_user
-        if sheet_user is not None:
+        for sheet in sheets:
             sheet.current_user = None
-            if sheet_user.current_sheet == sheet:
-                sheet_user.current_sheet = None
-                logger.debug("Retracting sheet %s from user %s due to finalized game.", sheet.id, sheet_user.id)
-                messages.append(Message(sheet_user.chat_id, GetText("Game was ended. No answer required anymore.")))
-                users_to_update.add(sheet_user)
-    messages.extend(_next_sheet(list(users_to_update), session))
+            sheet.pending_position = None
+            if last_entry_by_sheet_id[sheet.id] is None:
+                # Passing on an empty sheet, means something unusual happend (e.g. the user left the game before writing
+                # something). Let's get rid of those sheets.
+                session.delete(sheet)
+                continue
 
-    # Generate result messages
-    for sheet in sheets:
-        if sheet.entries:
-            messages.extend(Message(game.chat_id, text) for text in _format_result(game, sheet))
-    game.is_finished = True
-    return messages
+            next_user = next_mapping[last_entry_by_sheet_id[sheet.id].user_id]
+            logger.debug("Assigning sheet %s to user %s ...", sheet.id, next_user.id)
+            next_user.pending_sheets.append(sheet)
 
-def _entry_to_string(game: model.Game, entry: model.Entry) -> str:
-    if game.is_showing_result_names:
-        return f"\n{entry.user.name}: {entry.text}"
-    else:
-        return "\n" + entry.text
+    def _finish_if_complete(self, game: model.Game, sheet_infos: Iterable[SheetProgressInfo],
+                            session: Session) -> List[Message]:
+        """ Finalize the game if it is completed (i.e. all sheets have the number entries).
 
-def _format_result(game: model.Game, sheet: model.Sheet) -> List[LazyGetTextBase]:
-    """ Serialize a finished sheet to a list of strings to be sent as result message when finalizing a game. """
-    messages = [GetNoText("❓❕  ❔❗️  ⁉️  ‼️")]
-    msg = ""
-    for entry in sheet.entries:
-        # size 4096 is defined by the telegram API as maximal message length
-        entry_str = _entry_to_string(game, entry)
-        if len(msg) + len(entry_str) < 4096:
-            msg += entry_str
+        This function uses `_finalize_game()` to generate the result messages in this case."""
+        logger.debug("Checking game %s for completeness ...", game.id)
+        if all(sheet_info.num_entries >= game.rounds for sheet_info in sheet_infos):
+            return self._finalize_game(game, session)
+        return []
+
+
+    def _finish_if_stopped_and_all_answered(self, game: model.Game, sheet_infos: Iterable[SheetProgressInfo],
+                                            session: Session) -> List[Message]:
+        """
+        Finish the game if it is waiting for finishing and the finishing condition (each page ends with an answer).
+
+        :param game: The Game object
+        :param sheet_infos: A list of SheetProgressInfo for *all* sheets of the game, as retrieved from
+            `_game_sheet_infos()`
+        """
+        if game.is_waiting_for_finish:
+            logger.debug("Checking if opportunity to stop game %s is give n...", game.id)
+            if all(sheet_info.last_entry is None or sheet_info.last_entry.type == model.EntryType.ANSWER
+                   for sheet_info in sheet_infos):
+                return self._finalize_game(game, session)
+        return []
+
+    def _finalize_game(self, game: model.Game, session: Session) -> List[Message]:
+        """ Finalize a game: Collect pending sheets (inform users that no answer is required anymore) and generate
+        result messages to the game's group chat."""
+        logger.info("Finalizing game %s ...", game.id)
+        messages = []
+        # Requery sheets with optimized loading of current_user
+        sheets: List[model.Sheet] = session.query(model.Sheet)\
+            .filter(model.Sheet.game == game)\
+            .populate_existing()\
+            .options(joinedload(model.Sheet.current_user))\
+            .all()
+
+        # Reset pending sheets
+        users_to_update = set()
+        for sheet in sheets:
+            sheet_user: Optional[model.User] = sheet.current_user
+            if sheet_user is not None:
+                sheet.current_user = None
+                if sheet_user.current_sheet == sheet:
+                    sheet_user.current_sheet = None
+                    logger.debug("Retracting sheet %s from user %s due to finalized game.", sheet.id, sheet_user.id)
+                    messages.append(Message(sheet_user.chat_id, GetText("Game was ended. No answer required anymore.")))
+                    users_to_update.add(sheet_user)
+        messages.extend(self._next_sheet(list(users_to_update), session))
+
+        # Generate result messages
+        for sheet in sheets:
+            if sheet.entries:
+                messages.extend(Message(game.chat_id, text) for text in self._format_result(game, sheet))
+        game.is_finished = True
+        return messages
+
+    def _entry_to_string(self, game: model.Game, entry: model.Entry) -> str:
+        if game.is_showing_result_names:
+            return f"\n{entry.user.name}: {entry.text}"
         else:
-            messages.append(GetNoText(msg))
-            msg = entry_str
-    messages.append(GetNoText(msg))
-    return messages
-    # TODO UX: improve
+            return "\n" + entry.text
 
+    def _format_result(self, game: model.Game, sheet: model.Sheet) -> List[LazyGetTextBase]:
+        """ Serialize a finished sheet to a list of strings to be sent as result message when finalizing a game. """
+        messages = [GetNoText("❓❕  ❔❗️  ⁉️  ‼️")]
+        msg = ""
+        for entry in sheet.entries:
+            # size 4096 is defined by the telegram API as maximal message length
+            entry_str = self._entry_to_string(game, entry)
+            if len(msg) + len(entry_str) < 4096:
+                msg += entry_str
+            else:
+                messages.append(GetNoText(msg))
+                msg = entry_str
+        messages.append(GetNoText(msg))
+        return messages
+        # TODO UX: improve
 
-def _format_for_next(sheet_info: SheetProgressInfo, repeat: bool) -> LazyGetTextBase:
-    """ Create the message content for showing a sheet to a user and ask them for their next submission. The message
-    contains the last entry of the sheet or a request to write the initial question if the sheet is empty.
+    def _format_for_next(self, sheet_info: SheetProgressInfo, repeat: bool) -> LazyGetTextBase:
+        """ Create the message content for showing a sheet to a user and ask them for their next submission. The message
+        contains the last entry of the sheet or a request to write the initial question if the sheet is empty.
 
-    :param repeat: True, if this a repeated message for the same sheet and user"""
-    if sheet_info.num_entries == 0:
-        return GetText("Please ask a question to begin a new sheet for game {game_name}.")\
-            .format(game_name=sheet_info.sheet.game.name)
-    else:
-        assert(sheet_info.last_entry is not None)
-        if sheet_info.last_entry.type == model.EntryType.ANSWER:
-            return GetText("Please ask a question that may be answered with:\n“{text}”")\
-                .format(text=sheet_info.last_entry.text)
+        :param repeat: True, if this a repeated message for the same sheet and user"""
+        if sheet_info.num_entries == 0:
+            return GetText("Please ask a question to begin a new sheet for game {game_name}.")\
+                .format(game_name=sheet_info.sheet.game.name)
         else:
-            return GetText("Please answer the following question:\n“{text}”")\
-                .format(text=sheet_info.last_entry.text)
+            assert(sheet_info.last_entry is not None)
+            if sheet_info.last_entry.type == model.EntryType.ANSWER:
+                return GetText("Please ask a question that may be answered with:\n“{text}”")\
+                    .format(text=sheet_info.last_entry.text)
+            else:
+                return GetText("Please answer the following question:\n“{text}”")\
+                    .format(text=sheet_info.last_entry.text)
