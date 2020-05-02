@@ -39,13 +39,18 @@ def main():
     frontend = Frontend(config)
     web_data = WebEnvironment(config, frontend.gs)
 
+    # Run initialization (migrate database and set Telegram Bot configuration)
     if not args.no_init:
         run_migrations(frontend.gs.database_engine)  # TODO make this better in terms of sensible architecture
         frontend.set_commands()
 
     if not args.init_only:
+        # Configure and start CherryPy engine and HTTP webserver
+        cherrypy.config.update(config['web'])
+        cherrypy.config.update({'engine.autoreload.on': False})
         cherrypy.tree.mount(WebRoot(web_data), '/')
         cherrypy.engine.start()
+        # Start Telegram Bot Updater
         frontend.start_bot()
 
 
