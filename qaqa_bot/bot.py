@@ -12,6 +12,7 @@
 import logging
 from typing import List
 import re
+import datetime
 
 import telegram
 from telegram import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup
@@ -299,3 +300,8 @@ class Frontend:
     def error(self, update, context) -> None:
         """Log errors caused by updates."""
         logger.error('Error while update %s', update, exc_info=context.error)
+        self.gs.send_messages([game.Message(update.effective_chat.id,
+                                            GetText("Oh no! 😱 A problem occured at {time}! \n "
+                                                    "Please forward this message to {owner} for help.").
+                                            format(time=datetime.datetime.now().isoformat(),
+                                                   owner=self.config["bot"]["owner_username"]))])
