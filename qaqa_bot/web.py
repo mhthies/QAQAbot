@@ -3,13 +3,13 @@ import os
 import cherrypy
 import mako.lookup
 
-from .game import  GameServer
+from .game import GameServer
 
 
-class WebData:
-    """ Shared data for all CherryPy controller objects
+class WebEnvironment:
+    """ Shared env for all CherryPy controller objects
 
-    I don't like global variables (incl. magic thread-local variables), so we pass this application-local data
+    I don't like global variables (incl. magic thread-local variables), so we pass this application-local env
     explicitly to the single CherryPy controller objects. It contains the Mako template lookup thing and our application
     backend, the `GameServer`."""
 
@@ -20,9 +20,9 @@ class WebData:
 
 
 class WebRoot:
-    def __init__(self, data: WebData):
-        self._data = data
-        self.game = Game(data)
+    def __init__(self, env: WebEnvironment):
+        self._env = env
+        self.game = Game(env)
 
     @cherrypy.expose
     def index(self):
@@ -31,20 +31,20 @@ class WebRoot:
 
 @cherrypy.popargs('game_id')
 class Game:
-    def __init__(self, data: WebData):
-        self._data = data
-        self.sheet = Sheet(data)
+    def __init__(self, env: WebEnvironment):
+        self._env = env
+        self.sheet = Sheet(env)
 
     @cherrypy.expose
     def index(self, game_id):
-        template = self._data.template_lookup.get_template('game_result.mako.html')
+        template = self._env.template_lookup.get_template('game_result.mako.html')
         return template.render(game_id=game_id, game_result=self._data.game_server.get_game_result(game_id))
 
 
 @cherrypy.popargs('sheet_id')
 class Sheet:
-    def __init__(self, data: WebData):
-        self._data = data
+    def __init__(self, env: WebEnvironment):
+        self._env = env
 
     @cherrypy.expose
     def index(self, sheet_id):
