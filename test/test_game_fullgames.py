@@ -59,7 +59,7 @@ class FullGameTests(unittest.TestCase):
             for user in users:
                 session.add(user)
 
-    TEXT_SUBMIT_RESPONSE = r"ok"
+    TEXT_SUBMIT_RESPONSE = r"🆗"
 
     def test_leave_game(self) -> None:
         # Create new game in "Funny Group" chat (chat_id=21)
@@ -75,16 +75,16 @@ class FullGameTests(unittest.TestCase):
         # Lukas leaves the game
         self.game_server.leave_game(21, 3)
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
-                                   {21: re.compile("ok")})
+                                   {21: re.compile("👋 Bye!")})
         # Start game
         self.game_server.start_game(21)
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
-                                   {21: re.compile("ok"),
+                                   {21: re.compile("📝|Let's go!"),
                                     **{i: re.compile("ask a question") for i in (11, 12, 14)}})
         # Jannik leaves the game
         self.game_server.leave_game(21, 4)
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
-                                   {21: re.compile("ok"),
+                                   {21: re.compile("👋 Bye!"),
                                     14: re.compile("No answer required")})
         # Jenny cannot leave the game
         self.game_server.leave_game(21, 4)
@@ -103,7 +103,7 @@ class FullGameTests(unittest.TestCase):
         # Start game
         self.game_server.start_game(21)
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
-                                   {21: re.compile("ok"),
+                                   {21: re.compile("📝|Let's go!"),
                                     **{i: re.compile("ask a question") for i in (11, 12)}})
         # Write questions
         self.game_server.submit_text(11, "Question 1")
@@ -111,7 +111,7 @@ class FullGameTests(unittest.TestCase):
         # Lukas joins late
         self.game_server.join_game(21, 3)
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
-                                   {21: re.compile("ok"),
+                                   {21: re.compile("Welcome Lukas"),
                                     13: re.compile("ask a question")})
         self.game_server.submit_text(13, "Question 3")
         self.assertMessagesCorrect(self.message_store.fetch_messages(), {13: re.compile(self.TEXT_SUBMIT_RESPONSE)})
@@ -123,7 +123,7 @@ class FullGameTests(unittest.TestCase):
         # Jannik wants to join too, but it's too late
         self.game_server.join_game(21, 4)
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
-                                   {21: re.compile("late")})
+                                   {21: re.compile("already started")})
         # Write answers
         self.game_server.submit_text(11, "Answer 1")
         self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(self.TEXT_SUBMIT_RESPONSE)})
@@ -137,7 +137,7 @@ class FullGameTests(unittest.TestCase):
         self.assertMessagesCorrect(
             self.message_store.fetch_messages(),
             {12: re.compile(self.TEXT_SUBMIT_RESPONSE),
-             21: re.compile("(?s)Question 3.*Answer 1|Question 1.*Answer 2|Question 2.*Answer 3")})
+             21: re.compile("(?s)Question 3.*Answer 1|Question 1.*Answer 2|Question 2.*Answer 3|❓❕")})
 
     def test_asynchronous_game(self):
         # Create new game in "Funny Group" chat (chat_id=21)
@@ -153,7 +153,7 @@ class FullGameTests(unittest.TestCase):
         # Start game
         self.game_server.start_game(21)
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
-                                   {21: re.compile("ok"),
+                                   {21: re.compile("📝|Let's go!"),
                                     **{i: re.compile("ask a question") for i in (11, 12, 13)}})
         # Let Michael write question
         self.game_server.submit_text(11, "Question 1")
@@ -187,7 +187,7 @@ class FullGameTests(unittest.TestCase):
         self.message_store.fetch_messages()
         self.game_server.start_game(21)
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
-                                   {21: re.compile("ok"),
+                                   {21: re.compile("📝|Let's go!"),
                                     **{i: re.compile("(?s)ask a question.*?Funny Group") for i in (11, 12, 13)}})
         # Michael writes the first question
         self.game_server.submit_text(11, "Question A1")
@@ -203,7 +203,7 @@ class FullGameTests(unittest.TestCase):
         # Only Michael and Jannik should be asked for a question, Lukas is still working on a question for the first
         # game
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
-                                   {22: re.compile("ok"),
+                                   {22: re.compile("📝|Let's go!"),
                                     **{i: re.compile("(?s)ask a question.*?Serious Group") for i in (11, 14)}})
         # We now have the following Sheets:
         #   Michael: {G2: }
@@ -264,7 +264,7 @@ class FullGameTests(unittest.TestCase):
         self.assertMessagesCorrect(
             self.message_store.fetch_messages(),
             {13: re.compile(r"(?s)answer.*Question A2|" + self.TEXT_SUBMIT_RESPONSE),
-             22: re.compile("(?s)Question B3.*Answer B4|Question B1.*Answer B3|Question B4.*Answer B1")})
+             22: re.compile("(?s)Question B3.*Answer B4|Question B1.*Answer B3|Question B4.*Answer B1|❓❕")})
         self.game_server.submit_text(13, "Answer A3")
         self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(r"(?s)ask.*?Answer A3"),
                                                                          12: re.compile(r"(?s)ask.*?Answer A1"),
