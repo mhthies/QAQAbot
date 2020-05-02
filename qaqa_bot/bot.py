@@ -108,6 +108,7 @@ class Frontend:
             BotCommand(game.COMMAND_NEW_GAME,
                        "Spawns a game.Default settings: asynchronous, number of rounds is the number of players."),
             BotCommand(game.COMMAND_JOIN_GAME, "Join the current game."),
+            BotCommand(game.COMMAND_LEAVE_GAME, "Leave the current game."),
             BotCommand(game.COMMAND_START_GAME, "Start the game.This does only work if a game has been spawned."),
             BotCommand(game.COMMAND_SET_ROUNDS, "Defines the number of rounds for the actual game."),
             BotCommand(game.COMMAND_SET_SYNC, "Choose between synchronous mode (pass all sheets at once and "
@@ -170,7 +171,11 @@ class Frontend:
             self.gs.send_messages([game.Message(chat_id, GetText("Games can only be joined in group chats."))])
 
     def leave_game(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
-        self.gs.leave_game(update.message.chat.id, update.message.from_user.id)
+        if update.message.chat.type == "group" or update.message.chat.type == "supergroup":
+            self.gs.leave_game(update.message.chat.id, update.message.from_user.id)
+        else:
+            self.gs.send_messages([game.Message(update.message.chat.id,
+                                                GetText("Games can only be left in group chats."))])
 
     def incoming_message(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Parse a text-message that was send to the bot in a private chat."""
@@ -273,7 +278,6 @@ class Frontend:
                 query.edit_message_text(text="Oh no! 😱 There's a problem!")
         else:
             query.edit_message_text(text="Oh no! 😱 There's a problem!")
-
 
     def help(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Print explanation of the game and commands."""
