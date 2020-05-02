@@ -150,7 +150,7 @@ class GameServer:
         return _get_translations([message], session)[0]
 
     @with_session
-    def set_chat_locale(self, session: Session, chat_id: int, locale: str) -> None:
+    def set_chat_locale(self, session: Session, chat_id: int, locale: str, override: bool = False) -> None:
         """
         Set the target locale for outgoing messages for a specific chat id.
 
@@ -160,7 +160,12 @@ class GameServer:
         l = model.SelectedLocale()
         l.chat_id = chat_id
         l.locale = locale
-        session.merge(l)
+        if override:
+            session.merge(l)
+        elif session.query(model.SelectedLocale.chat_id)\
+                .filter(model.SelectedLocale.chat_id == chat_id)\
+                .scalar() is not None:
+            session.add(l)
 
     @with_session
     def register_user(self, session: Session, chat_id: int, user_id: int, user_name: str) -> None:

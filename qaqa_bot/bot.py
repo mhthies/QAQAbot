@@ -238,7 +238,7 @@ class Frontend:
         if command == f'/{game.COMMAND_SET_LANGUAGE}@qaqagamebot' or \
                 command == f'/{game.COMMAND_SET_LANGUAGE}':
             query.edit_message_text(text="Chosen language: {}".format(LANGUAGES.get(query.data, '–')))
-            self.gs.set_chat_locale(query.message.chat.id, query.data)
+            self.gs.set_chat_locale(query.message.chat.id, query.data, override=True)
         elif command == f"/{game.COMMAND_SET_DISPLAY_NAME}@qaqagamebot" or \
                 command == f"/{game.COMMAND_SET_DISPLAY_NAME}":
             query.edit_message_text(text="Display the names: {}".format(BOOL.get(query.data, '–')))
