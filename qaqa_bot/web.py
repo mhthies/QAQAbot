@@ -1,7 +1,9 @@
 import os
+from typing import Dict, Any
 
 import cherrypy
 import mako.lookup
+import markupsafe
 
 from .game import GameServer
 
@@ -13,10 +15,24 @@ class WebEnvironment:
     explicitly to the single CherryPy controller objects. It contains the Mako template lookup thing and our application
     backend, the `GameServer`."""
 
-    def __init__(self, game_server: GameServer):
-        self.template_lookup = mako.lookup.TemplateLookup(
-            directories=[os.path.join(os.path.dirname(__file__), 'templates')])
+    def __init__(self, config: Dict[str, Any], game_server: GameServer):
         self.game_server = game_server
+        self.config = config
+        self.template_lookup = mako.lookup.TemplateLookup(
+            directories=[os.path.join(os.path.dirname(__file__), 'templates')],
+            default_filters=['h'])
+        self.template_globals = {
+            'safe': self._safe,
+            'base_url': config['web']['base_url'],
+        }
+
+    def render_template(self, template_name: str, params: Dict[str, Any]) -> str:
+        template = self.template_lookup.get_template(template_name)
+        return template.render(**self.template_globals, **params)
+
+    @staticmethod
+    def _safe(text: str) -> markupsafe.Markup:
+        return markupsafe.Markup(text)
 
 
 class WebRoot:
