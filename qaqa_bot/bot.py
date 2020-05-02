@@ -126,7 +126,9 @@ class Frontend:
     def start(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Send a friendly welcome message with language set to locale."""
         chat_id: int = update.effective_chat.id
-        self.gs.set_chat_locale(chat_id, update.message.from_user.language_code)
+        lang = update.message.from_user.language_code
+        if lang is not None:
+            self.gs.set_chat_locale(chat_id, update.message.from_user.language_code)
         if update.message.chat.type == "private":
             name = (f"@{update.message.from_user.username}"
                     if update.message.from_user.username is not None

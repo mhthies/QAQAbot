@@ -138,4 +138,4 @@ class Entry(Base):
 class SelectedLocale(Base):
     __tablename__ = 'selected_locales'
     chat_id = Column(BigInteger, nullable=False, primary_key=True, autoincrement=False)
-    locale = Column(String(length=20))
+    locale = Column(String(length=20), nullable=False)
