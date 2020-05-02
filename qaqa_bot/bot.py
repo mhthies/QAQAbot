@@ -59,6 +59,8 @@ class Frontend:
         new_game_handler = CommandHandler(game.COMMAND_NEW_GAME, self.new_game, filters=~Filters.update.edited_message)
         join_game_handler = CommandHandler(game.COMMAND_JOIN_GAME, self.join_game,
                                            filters=~Filters.update.edited_message)
+        leave_game_handler = CommandHandler(game.COMMAND_LEAVE_GAME, self.leave_game,
+                                           filters=~Filters.update.edited_message)
         stop_game_handler = CommandHandler(game.COMMAND_STOP_GAME, self.stop_game,
                                            filters=~Filters.update.edited_message)
         stop_game_immediately_handler = CommandHandler(game.COMMAND_STOP_GAME_IMMEDIATELY, self.stop_game_immediately,
@@ -72,6 +74,7 @@ class Frontend:
         self.dispatcher.add_handler(start_game_handler)
         self.dispatcher.add_handler(new_game_handler)
         self.dispatcher.add_handler(join_game_handler)
+        self.dispatcher.add_handler(leave_game_handler)
         self.dispatcher.add_handler(stop_game_handler)
         self.dispatcher.add_handler(stop_game_immediately_handler)
         self.dispatcher.add_handler(set_rounds_handler)
@@ -100,6 +103,7 @@ class Frontend:
 
         commands: List[BotCommand] = [
             BotCommand(game.COMMAND_HELP, "Explains the commands."),
+            BotCommand(game.COMMAND_STATUS, "Displays status information about your games."),
             BotCommand(game.COMMAND_REGISTER, "Let the bot talk to you. Necessary for playing the game."),
             BotCommand(game.COMMAND_NEW_GAME,
                        "Spawns a game.Default settings: asynchronous, number of rounds is the number of players."),
@@ -157,13 +161,16 @@ class Frontend:
         else:
             self.gs.send_messages([game.Message(chat_id, GetText("Games can only be started in group chats."))])
 
-    def join_game(self, update: telegram.Update, _context: telegram.ext.CallbackContext):
+    def join_game(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         chat_id: int = update.effective_chat.id
         if update.message.chat.type == "group" or update.message.chat.type == "supergroup":
             logger.info(msg=f"{update.message.from_user} tries to join a game in {chat_id}")
             self.gs.join_game(chat_id=chat_id, user_id=update.message.from_user.id)
         else:
             self.gs.send_messages([game.Message(chat_id, GetText("Games can only be joined in group chats."))])
+
+    def leave_game(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
+        self.gs.leave_game(update.message.chat.id, update.message.from_user.id)
 
     def incoming_message(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Parse a text-message that was send to the bot in a private chat."""
