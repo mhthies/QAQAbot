@@ -53,8 +53,8 @@ class Game:
 
     @cherrypy.expose
     def index(self, game_id):
-        template = self._env.template_lookup.get_template('game_result.mako.html')
-        return template.render(game_id=game_id, game_result=self._data.game_server.get_game_result(game_id))
+        game = self._env.game_server.get_game_result(game_id)
+        return self._env.render_template('game_result.mako.html', {'game': game})
 
 
 @cherrypy.popargs('sheet_id')

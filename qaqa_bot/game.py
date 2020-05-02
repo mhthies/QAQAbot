@@ -33,7 +33,7 @@ from typing import NamedTuple, List, Optional, Iterable, Dict, Any, Callable, Mu
 
 import sqlalchemy
 from sqlalchemy import func, and_
-from sqlalchemy.orm import Session, joinedload, selectinload
+from sqlalchemy.orm import Session, joinedload, selectinload, defaultload, raiseload
 
 from . import model
 from .util import LazyGetTextBase, GetText, NGetText, GetNoText
@@ -165,16 +165,16 @@ class GameServer:
         return self._get_translations([message], session)[0]
 
     @with_session
-    def get_game_result(self, session: Session, game_id: int) -> Optional[List[List[str]]]:
+    def get_game_result(self, session: Session, game_id: int) -> model.Game:
         game = session.query(model.Game)\
             .filter(model.Game.id == game_id, model.Game.is_finished == True)\
-            .options(selectinload(model.Game.sheets.entries))\
+            .options(raiseload('*'),
+                     selectinload(model.Game.sheets)
+                     .selectinload(model.Sheet.entries))\
             .one_or_none()
 
-        if game is None:
-            return None
-
-        return [[e.text for e in s.entries] for s in game.sheets]
+        session.expunge_all()
+        return game
 
     @with_session
     def set_chat_locale(self, session: Session, chat_id: int, locale: str, override: bool = False) -> None:
