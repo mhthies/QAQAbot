@@ -94,8 +94,10 @@ class Frontend:
 
     def set_commands(self):
         """Sends the commands to the BotFather."""
-        actual: List[(str,str)] = (self.updater.bot.getMyCommands())
-        print(actual[0].command)
+        ## debug
+        # actual: List[(str,str)] = (self.updater.bot.getMyCommands())
+        # print(actual[0].command)
+
         commands: List[BotCommand] = [
             BotCommand(game.COMMAND_HELP, "Explains the commands."),
             BotCommand(game.COMMAND_REGISTER, "Let the bot talk to you. Necessary for playing the game."),
