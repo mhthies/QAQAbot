@@ -26,10 +26,10 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
-LANGUAGES = {'de': '🇩🇪',
-             'en': '🇬🇧'}
-BOOL = {"True": "Yes 👍", "False": "No 👎"}
-SYNC = {"True": "Synchronous mode", "False": "Asynchronous mode"}
+LANGUAGES = {'lan_de': '🇩🇪',
+             'lan_en': '🇬🇧'}
+BOOLDIS = {"dis_yes": "Yes 👍", "dis_no": "No 👎"}
+SYNC = {"syn_syn": "Synchronous mode", "syn_asyn": "Asynchronous mode"}
 
 class Frontend:
     def __init__(self, config):
@@ -218,7 +218,7 @@ class Frontend:
                 self.gs.set_rounds(chat_id, rounds)
             except ValueError:
                 self.gs.send_messages([game.Message(chat_id, GetText("‘{arg}’ is not a number of rounds!").
-                                                 format(arg=context.args[0]))])
+                                                    format(arg=context.args[0]))])
         elif len(context.args) == 0:
             self.gs.send_messages([game.Message(chat_id, GetText("Please specify the number of rounds."))])
         else:
@@ -226,7 +226,7 @@ class Frontend:
 
     def set_display_name(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         if update.message.chat.type == "group" or update.message.chat.type == "supergroup":
-            keyboard = [[InlineKeyboardButton(v, callback_data=k) for k, v in BOOL.items()]]
+            keyboard = [[InlineKeyboardButton(v, callback_data=k) for k, v in BOOLDIS.items()]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             update.message.reply_text('Do you want to see the authors names in the result?', reply_markup=reply_markup)
         else:
@@ -250,34 +250,33 @@ class Frontend:
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text('Please choose:', reply_markup=reply_markup)
 
-    def button(self, update, context):
+    def button(self, update, _context):
         query = update.callback_query
+        chat_id = update.effective_chat.id
         print(query)
-        command = query.message.reply_to_message.text
-        if command == f'/{game.COMMAND_SET_LANGUAGE}@qaqagamebot' or \
-                command == f'/{game.COMMAND_SET_LANGUAGE}':
-            query.edit_message_text(text="Chosen language: {}".format(LANGUAGES.get(query.data, '–')))
-            self.gs.set_chat_locale(query.message.chat.id, query.data, override=True)
-        elif command == f"/{game.COMMAND_SET_DISPLAY_NAME}@qaqagamebot" or \
-                command == f"/{game.COMMAND_SET_DISPLAY_NAME}":
-            query.edit_message_text(text="Display the names: {}".format(BOOL.get(query.data, '–')))
-            if query.data == "True":
-                self.gs.set_show_result_names(query.message.chat.id, True)
-            elif query.data == "False":
-                self.gs.set_show_result_names(query.message.chat.id, False)
+        button = query.data
+        print("Button pressed: " + button)
+        if button in LANGUAGES:
+            query.edit_message_text(text="Chosen language: {}".format(LANGUAGES.get(button, '–')))
+            self.gs.set_chat_locale(chat_id, button[4:], override=True)
+        elif button in BOOLDIS:
+            query.edit_message_text(text="Display the names: {}".format(BOOLDIS.get(button, '–')))
+            if button == "dis_yes":
+                self.gs.set_show_result_names(chat_id, True)
+            elif query.data == "dis_no":
+                self.gs.set_show_result_names(chat_id, False)
             else:
-                query.edit_message_text(text="Oh no! 😱 There's a problem!")
-        elif command == f"/{game.COMMAND_SET_SYNC}@qaqagamebot" or \
-                command == f"/{game.COMMAND_SET_SYNC}":
-            query.edit_message_text(text="Chosen mode: {}".format(SYNC.get(query.data, '–')))
-            if query.data == "True":
-                self.gs.set_synchronous(query.message.chat.id, True)
-            elif query.data == "False":
-                self.gs.set_synchronous(query.message.chat.id, False)
+                query.edit_message_text(text="Oh no! 😱 There's a problem choosing a language!")
+        elif button in SYNC:
+            query.edit_message_text(text="Chosen mode: {}".format(SYNC.get(button, '–')))
+            if query.data == "syn_syn":
+                self.gs.set_synchronous(chat_id, True)
+            elif query.data == "syn_asyn":
+                self.gs.set_synchronous(chat_id, False)
             else:
-                query.edit_message_text(text="Oh no! 😱 There's a problem!")
+                query.edit_message_text(text="Oh no! 😱 There's a problem choosing a mode!")
         else:
-            query.edit_message_text(text="Oh no! 😱 There's a problem!")
+            query.edit_message_text(text="Oh no! 😱 There's a problem! I don't know this button *️⃣? ")
 
     def help(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Print explanation of the game and commands."""
