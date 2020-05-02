@@ -61,6 +61,36 @@ class FullGameTests(unittest.TestCase):
 
     TEXT_SUBMIT_RESPONSE = r"ok"
 
+    def test_leave_game(self) -> None:
+        # Create new game in "Funny Group" chat (chat_id=21)
+        self.game_server.new_game(21, "Funny Group")
+        # Let all users join
+        self.game_server.join_game(21, 1)
+        self.game_server.join_game(21, 2)
+        self.game_server.join_game(21, 3)
+        self.game_server.join_game(21, 4)
+        # Set rounds
+        self.game_server.set_rounds(21, 2)
+        self.message_store.fetch_messages()
+        # Lukas leaves the game
+        self.game_server.leave_game(21, 3)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(),
+                                   {21: re.compile("ok")})
+        # Start game
+        self.game_server.start_game(21)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(),
+                                   {21: re.compile("ok"),
+                                    **{i: re.compile("ask a question") for i in (11, 12, 14)}})
+        # Jannik leaves the game
+        self.game_server.leave_game(21, 4)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(),
+                                   {21: re.compile("ok"),
+                                    14: re.compile("No answer required")})
+        # Jenny cannot leave the game
+        self.game_server.leave_game(21, 4)
+        self.assertMessagesCorrect(self.message_store.fetch_messages(),
+                                   {21: re.compile("one of the last two participants")})
+
     def test_simple_game(self) -> None:
         # Create new game in "Funny Group" chat (chat_id=21)
         self.game_server.new_game(21, "Funny Group")

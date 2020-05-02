@@ -366,10 +366,22 @@ class GameServer:
                                          GetText("There is currently no running or pending game in this Chat."))],
                                 session)
             return
-        user = session.query(model.User).filter(model.User.api_id == user_id).one()
+        num_participants = session.query(func.count(model.Participant.user_id))\
+            .filter(model.Participant.game == game)\
+            .scalar()
+
+        if num_participants <= 2:
+            logger.debug("Cannot remove user from game %s, since they are one of 2 or less remaining participants",
+                         game.id)
+            self._send_messages([Message(chat_id, GetText("You are one of the last two participants of this game. Thus,"
+                                                          " you cannot leave."))], session)
+            return
 
         # Remove user as participant from game
-        participation = session.query(model.Participant).filter(user=user, game=game).one_or_none()
+        user = session.query(model.User).filter(model.User.api_id == user_id).one_or_none()
+        participation = session.query(model.Participant)\
+            .filter(model.Participant.user == user, model.Participant.game == game)\
+            .one_or_none()
         if participation is None:
             logger.debug("Cannot remove user %s from game %s, since they do not participate", user.id, game.id)
             self._send_messages([Message(chat_id, GetText("You didn't participate in this game."))], session)
@@ -388,9 +400,9 @@ class GameServer:
                            for sheet in user.pending_sheets
                            if sheet.game_id == game.id]
         logger.debug("Passing sheets %s from user %s, who left the game.",
-                     ",".join(s.id for s in obsolete_sheets), user.id)
+                     ",".join(str(s.id) for s in obsolete_sheets), user.id)
         _assign_sheet_to_next(obsolete_sheets, game, session)
-        result.extend(_next_sheet([sheet.current_user for sheet in obsolete_sheets], session))
+        result.extend(_next_sheet([sheet.current_user for sheet in obsolete_sheets if sheet.current_user], session))
         self._send_messages(result, session)
 
     @with_session
@@ -754,6 +766,12 @@ def _assign_sheet_to_next(sheets: List[model.Sheet], game: model.Game, session: 
     for sheet in sheets:
         sheet.current_user = None
         sheet.pending_position = None
+        if last_entry_by_sheet_id[sheet.id] is None:
+            # Passing on an empty sheet, means something unusual happend (e.g. the user left the game before writing
+            # something). Let's get rid of those sheets.
+            session.delete(sheet)
+            continue
+
         next_user = next_mapping[last_entry_by_sheet_id[sheet.id].user_id]
         logger.debug("Assigning sheet %s to user %s ...", sheet.id, next_user.id)
         next_user.pending_sheets.append(sheet)
