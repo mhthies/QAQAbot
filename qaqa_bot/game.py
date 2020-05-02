@@ -195,6 +195,7 @@ class GameServer:
         else:
             user = model.User(api_id=user_id, chat_id=chat_id, name=user_name)
             session.add(user)
+            session.flush()
             logger.info("Created new user %s (%s)", user.id, user_name)
             self._send_messages([Message(chat_id, GetText(
                 "Hi! I am your friendly qaqa-bot 🤖. \n"
@@ -218,8 +219,9 @@ class GameServer:
             return
         game = model.Game(name=name, chat_id=chat_id, is_finished=False, is_started=False, is_waiting_for_finish=False,
                           is_synchronous=True, is_showing_result_names=False)
-        logger.info("Created new game %s in chat %s (%s)", game.id, chat_id, name)
         session.add(game)
+        session.flush()
+        logger.info("Created new game %s in chat %s (%s)", game.id, chat_id, name)
         self._send_messages([Message(chat_id,
                                      GetText("✅ New game created. Use /{command} to join the game.")  # TODO UX: more info
                                      .format(command=COMMAND_JOIN_GAME))], session)
