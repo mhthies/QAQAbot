@@ -6,3 +6,8 @@ owner_username = "Noone"
 
 [database]
 connection = "sqlite:///:memory:"
+
+[web]
+base_url = "http://localhost:9090"     # External URL of the HTTP server
+"server.socket_port" = 9090            # HTTP listening port
+"server.socket_host" = "127.0.0.1"     # HTTP listening interface
