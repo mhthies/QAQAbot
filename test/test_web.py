@@ -8,8 +8,9 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
-
+import re
 import unittest
+from typing import List, Optional
 
 import sqlalchemy
 import sqlalchemy.orm
@@ -17,7 +18,7 @@ import cherrypy
 from webtest import TestApp
 
 from qaqa_bot import model, game, web
-from .util import CONFIG, create_sample_users
+from .util import CONFIG, create_sample_users, OutgoingMessageStore
 
 
 class TestWeb(unittest.TestCase):
@@ -27,7 +28,8 @@ class TestWeb(unittest.TestCase):
         model.Base.metadata.create_all(engine)
         create_sample_users(engine)
 
-        self.game_server = game.GameServer(CONFIG, lambda x: None, engine)
+        self.message_store = OutgoingMessageStore()
+        self.game_server = game.GameServer(CONFIG, self.message_store.send_message, engine)
 
         cherrypy.config.update({'engine.autoreload.on': False})
         cherrypy.server.unsubscribe()
@@ -39,7 +41,7 @@ class TestWeb(unittest.TestCase):
     def tearDown(self) -> None:
         cherrypy.engine.exit()
 
-    def _simple_sample_game(self) -> None:
+    def _simple_sample_game(self) -> List[game.TranslatedMessage]:
         self.game_server.new_game(21, "Funny Group")
         self.game_server.join_game(21, 1)
         self.game_server.join_game(21, 2)
@@ -53,12 +55,25 @@ class TestWeb(unittest.TestCase):
         self.game_server.submit_text(11, "Answer 1")
         self.game_server.submit_text(13, "Answer 3")
         self.game_server.get_group_status(21)
+        self.message_store.fetch_messages()
         self.game_server.submit_text(12, "Answer 2")
+        return self.message_store.fetch_messages()
+
+    @staticmethod
+    def _find_result_url(messages: List[game.TranslatedMessage], chat_id: int) -> Optional[str]:
+        re_url = re.compile(re.escape(CONFIG['web']['base_url']) + r"(\/\S+)")
+        for message in messages:
+            if message.chat_id == chat_id:
+                match = re_url.search(message.text)
+                if match:
+                    return match[1]
+        return None
 
     def test_simple_result(self) -> None:
-        self._simple_sample_game()
+        finalize_messages = self._simple_sample_game()
+        result_path = self._find_result_url(finalize_messages, 21)
+        self.assertIsNotNone(result_path)
 
-        resp = self.app.get("/game/1")
-        resp = resp.follow()
+        resp = self.app.get(result_path)
         self.assertEqual(200, resp.status_int)
         resp.mustcontain("Question 1")

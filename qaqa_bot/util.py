@@ -9,10 +9,12 @@
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 import abc
+import base64
 import gettext
+import hashlib
 import os.path
 from contextlib import contextmanager
-from typing import Dict, Any, Iterable, List, Union
+from typing import Dict, Any, Iterable, List, Union, Optional
 
 import alembic
 import alembic.config
@@ -66,6 +68,49 @@ def run_migrations(engine: sqlalchemy.engine.Engine):
 
         with context.begin_transaction():
             context.run_migrations()
+
+
+def encode_secure_id(value: int, secret: str) -> str:
+    """
+    Secure an integer id from manipulation/bruteforce testing, by hashing it together with a salt and a given secret
+    string. The id, the salt and the hash are encoded into an url-safe base64 string.
+
+    :param value: The id to be secured
+    :param secret: A secret string
+    :return: The base64-encoded id with hash
+    """
+    value_bytes = value.to_bytes(8, byteorder='big')
+    salt = os.urandom(16)
+    m = hashlib.sha256()
+    m.update(salt)
+    m.update(value_bytes)
+    m.update(secret.encode('utf-8'))
+    digest = m.digest()
+    return base64.urlsafe_b64encode(value_bytes + salt + digest).decode('utf-8')
+
+
+def decode_secure_id(secure_id: str, secret: str) -> Optional[int]:
+    """
+    Decode a secured id, generated with `encode_secure_id()` and check the included hash with the given secret.
+
+    :param secure_id: The base64-encoded string from `encode_secure_id()`.
+    :param secret: The known secret, that was used to create the secure id
+    :return: None if the secure id is invalid (hash does not match, etc.)
+    """
+    if len(secure_id) < 24:
+        return None
+    secure_id_bytes = base64.urlsafe_b64decode(secure_id)
+    value_bytes = secure_id_bytes[0:8]
+    salt = secure_id_bytes[8:24]
+    given_digest = secure_id_bytes[24:]
+    m = hashlib.sha256()
+    m.update(salt)
+    m.update(value_bytes)
+    m.update(secret.encode('utf-8'))
+    check_digest = m.digest()
+    if check_digest != given_digest:
+        return None
+    return int.from_bytes(value_bytes, 'big')
 
 
 class LazyGetTextBase(metaclass=abc.ABCMeta):

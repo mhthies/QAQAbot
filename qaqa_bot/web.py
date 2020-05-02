@@ -32,6 +32,7 @@ import mako.lookup
 import markupsafe
 
 from .game import GameServer
+from .util import decode_secure_id
 
 
 class WebEnvironment:
@@ -79,7 +80,12 @@ class Game:
 
     @cherrypy.expose
     def index(self, game_id):
-        game = self._env.game_server.get_game_result(game_id)
+        game_id_decoded = decode_secure_id(game_id, self._env.config['secret'])
+        if game_id_decoded is None:
+            raise cherrypy.HTTPError(404, "Invalid game id string")
+        game = self._env.game_server.get_game_result(game_id_decoded)
+        if game is None:
+            raise cherrypy.HTTPError(404, "Game with given id not found")
         return self._env.render_template('game_result.mako.html', {'game': game})
 
 

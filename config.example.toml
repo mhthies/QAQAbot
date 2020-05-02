@@ -1,4 +1,6 @@
 
+secret = ""
+
 [bot]
 username = "the_bots_username"
 api_key = ""
@@ -7,3 +9,8 @@ owner_username = "@your_telegram_username"
 [database]
 # For more info about SQLAlchemy connect strings, see https://docs.sqlalchemy.org/en/13/dialects/index.html
 connection = "mysql+mysqldb://qaqabot:TODO@localhost/qaqabot"
+
+[web]
+base_url = "https://example.com:9090"     # External URL of the HTTP server
+"server.socket_port" = 9090            # HTTP listening port
+"server.socket_host" = "0.0.0.0"       # HTTP listening interface

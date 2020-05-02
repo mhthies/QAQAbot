@@ -1,4 +1,6 @@
 
+secret = "abcde"
+
 [bot]
 username = "testbot"
 api_key = ""
@@ -8,6 +10,6 @@ owner_username = "Noone"
 connection = "sqlite:///:memory:"
 
 [web]
-base_url = "http://localhost:9090"     # External URL of the HTTP server
+base_url = "https://example.com:9090"   # External URL of the HTTP server
 "server.socket_port" = 9090            # HTTP listening port
 "server.socket_host" = "127.0.0.1"     # HTTP listening interface

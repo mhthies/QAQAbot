@@ -36,7 +36,7 @@ from sqlalchemy import func, and_
 from sqlalchemy.orm import Session, joinedload, selectinload, defaultload, raiseload
 
 from . import model
-from .util import LazyGetTextBase, GetText, NGetText, GetNoText
+from .util import LazyGetTextBase, GetText, NGetText, GetNoText, encode_secure_id
 
 COMMAND_HELP = "help"
 COMMAND_STATUS = "status"
@@ -849,10 +849,11 @@ class GameServer:
                     users_to_update.add(sheet_user)
         messages.extend(self._next_sheet(list(users_to_update), session))
 
-        # Generate result messages
-        for sheet in sheets:
-            if sheet.entries:
-                messages.extend(Message(game.chat_id, text) for text in self._format_result(game, sheet))
+        # Generate result URL message
+        messages.append(
+            Message(game.chat_id, GetText("Game finished. View results at {url} .").format(
+                url="{}/game/{}/".format(self.config['web']['base_url'],
+                                         encode_secure_id(game.id, self.config['secret'])))))
         game.is_finished = True
         return messages
 
