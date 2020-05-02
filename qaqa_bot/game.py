@@ -164,7 +164,7 @@ class GameServer:
             session.merge(l)
         elif session.query(model.SelectedLocale.chat_id)\
                 .filter(model.SelectedLocale.chat_id == chat_id)\
-                .scalar() is not None:
+                .scalar() is None:
             session.add(l)
 
     @with_session
