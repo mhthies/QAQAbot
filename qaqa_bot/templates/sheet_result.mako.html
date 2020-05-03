@@ -1,16 +1,11 @@
 <%inherit file="base.mako.html" />
+<%namespace name="util" file="util.mako.html"/>
 
-<p>
-    Sheet id: ${sheet.id}<br />
-    Game id: ${sheet.game.id}
-</p>
+## TODO add date
+<%block name="title">Sheet from Game in ${sheet.game.name} | QAQA Game Bot</%block>
 
-<section class="sheet">
-    <ol>
-% for entry in sheet.entries:
-        <li>
-            ${entry.text |n}
-        </li>
-% endfor
-    </ol>
-</section>
+
+## TODO add date
+<h1>Sheet from Game in ${sheet.game.name}</h1>
+
+${util.print_sheet(sheet=sheet)}

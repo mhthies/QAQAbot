@@ -1,0 +1,15 @@
+
+<%def name="print_sheet(sheet)">
+    <section class="sheet">
+        <ol>
+% for entry in sheet.entries:
+            <li class="${entry.type.name.lower()}">
+                ${entry.text |n}
+            </li>
+% endfor
+        </ol>
+        <footer>
+            <a href="${base_url}/sheet/${encode_id(sheet.id)}/">Permalink</a>
+        </footer>
+    </section>
+</%def>

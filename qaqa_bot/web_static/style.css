@@ -18,7 +18,16 @@ body {
 }
 .sheet ol {
     margin: 0;
+    padding: 0;
+    list-style: none;
 }
+.sheet ol>li {
+    margin-bottom: 10px;
+}
+.sheet ol>li.question {
+    text-shadow: 0 0 3px rgba(0,87,127,.7);
+}
+
 
 .sheet footer {
     margin: 10px 0 -10px 0;
