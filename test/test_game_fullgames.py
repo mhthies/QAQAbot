@@ -108,7 +108,7 @@ class FullGameTests(unittest.TestCase):
         self.assertMessagesCorrect(
             self.message_store.fetch_messages(),
             {12: re.compile(self.TEXT_SUBMIT_RESPONSE),
-             21: re.compile("(?s)Question 3.*Answer 1|Question 1.*Answer 2|Question 2.*Answer 3|❓❕")})
+             21: re.compile("example.com:9090/game/")})
 
     def test_asynchronous_game(self):
         # Create new game in "Funny Group" chat (chat_id=21)
@@ -235,7 +235,7 @@ class FullGameTests(unittest.TestCase):
         self.assertMessagesCorrect(
             self.message_store.fetch_messages(),
             {13: re.compile(r"(?s)answer.*Question A2|" + self.TEXT_SUBMIT_RESPONSE),
-             22: re.compile("(?s)Question B3.*Answer B4|Question B1.*Answer B3|Question B4.*Answer B1|❓❕")})
+             22: re.compile("example.com:9090/game/")})
         self.game_server.submit_text(13, "Answer A3")
         self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(r"(?s)ask.*?Answer A3"),
                                                                          12: re.compile(r"(?s)ask.*?Answer A1"),
