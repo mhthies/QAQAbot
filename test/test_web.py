@@ -77,3 +77,6 @@ class TestWeb(unittest.TestCase):
         resp = self.app.get(result_path)
         self.assertEqual(200, resp.status_int)
         resp.mustcontain("Question 1")
+        resp = resp.click(href=re.compile(r'/sheet/'), index=0)
+        self.assertEqual(200, resp.status_int)
+        self.assertRegex(resp.text, r".*Question [1-3].*")
