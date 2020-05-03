@@ -82,7 +82,7 @@ class WebEnvironment:
             'safe': self._safe,
             'base_url': config['web']['base_url'],
             'static_url': lambda file_name: "{}/static/{}".format(config['web']['base_url'], file_name),  # TODO add version to control caching
-            'encode_id': lambda val: encode_secure_id(val, config['secret']),
+            'encode_id': lambda realm, val: encode_secure_id(val, config['secret'], realm),
         }
 
     def render_template(self, template_name: str, params: Dict[str, Any]) -> str:
@@ -112,7 +112,7 @@ class Game:
 
     @cherrypy.expose
     def index(self, game_id):
-        game_id_decoded = decode_secure_id(game_id, self._env.config['secret'])
+        game_id_decoded = decode_secure_id(game_id, self._env.config['secret'], b'game')
         if game_id_decoded is None:
             raise cherrypy.HTTPError(404, "Invalid game id string")
         game = self._env.game_server.get_game_result(game_id_decoded)
@@ -128,7 +128,7 @@ class Sheet:
 
     @cherrypy.expose
     def index(self, sheet_id):
-        sheet_id_decoded = decode_secure_id(sheet_id, self._env.config['secret'])
+        sheet_id_decoded = decode_secure_id(sheet_id, self._env.config['secret'], b'sheet')
         if sheet_id_decoded is None:
             raise cherrypy.HTTPError(404, "Invalid sheet id string")
         sheet = self._env.game_server.get_game_result_sheet(sheet_id_decoded)

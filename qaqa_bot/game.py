@@ -867,7 +867,7 @@ class GameServer:
         messages.append(
             Message(game.chat_id, GetText("Game finished. View results at {url} .").format(
                 url="{}/game/{}/".format(self.config['web']['base_url'],
-                                         encode_secure_id(game.id, self.config['secret'])))))
+                                         encode_secure_id(game.id, self.config['secret'], b'game')))))
         game.is_finished = True
         return messages
 
