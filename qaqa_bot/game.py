@@ -174,11 +174,25 @@ class GameServer:
             .filter(model.Game.id == game_id, model.Game.is_finished == True)\
             .options(raiseload('*'),
                      selectinload(model.Game.sheets)
-                     .selectinload(model.Sheet.entries))\
+                     .selectinload(model.Sheet.entries)
+                     .joinedload(model.Entry.user))\
             .one_or_none()
 
         session.expunge_all()
         return game
+
+    @with_session
+    def get_game_result_sheet(self, session: Session, sheet_id: int) -> model.Game:
+        sheet = session.query(model.Sheet)\
+            .filter(model.Sheet.id == sheet_id, model.Game.is_finished == True)\
+            .options(raiseload('*'),
+                     joinedload(model.Sheet.game),
+                     selectinload(model.Sheet.entries)
+                     .joinedload(model.Entry.user))\
+            .one_or_none()
+
+        session.expunge_all()
+        return sheet
 
     @with_session
     def set_chat_locale(self, session: Session, chat_id: int, locale: str, override: bool = False) -> None:
