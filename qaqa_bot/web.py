@@ -22,6 +22,9 @@ object of the class `WebRoot`, which can be registered with the CherryPy engine:
 Since I don't like global (or magic thread-local) data, all global (i.e. application-local) data for the frontend
 methods (esp. the GameServer object as a backend, the config and the template rendering engine) are encapsulated in an
 `WebEnvironment` object and explicitly passed to the Controller's init methods.
+
+To simplify setup of the cherrypy engine (including the WebRoot Controller, HTTP server config, no autoreload and custom
+error page), the `setup_cherrypy_engine()` function is provided.
 """
 
 import os
@@ -33,6 +36,30 @@ import markupsafe
 
 from .game import GameServer
 from .util import decode_secure_id
+
+
+def setup_cherrypy_engine(env: "WebEnvironment", config: Dict[str, Any]) -> None:
+    """
+    Setup the CherryPy global app tree and engine for usage in the Telegram bot.
+
+    This method:
+    * disabled CherryPy's autoreload feature
+    * Passes all options from the `[web]` config section to CherryPy's global config
+    * Mounts an instance of the `WebRoot` Controller class with the given WebEnvironment to  `/`, with static files
+      served from `web_static/`.
+    * Register a `before_finalize` CherryPy tool to add a Content-Security-Policy header.
+    """
+    cherrypy.config.update({'engine.autoreload.on': False})
+    cherrypy.config.update(config['web'])
+    cherrypy.tree.mount(WebRoot(env), '/', {
+        '/static': {'tools.staticdir.on': True,
+                    'tools.staticdir.dir': os.path.join(os.path.dirname(__file__), 'web_static')}
+    })
+
+    @cherrypy.tools.register('before_finalize', priority=60)
+    def secure_headers():
+        headers = cherrypy.response.headers
+        headers['Content-Security-Policy'] = "default-src 'self';"
 
 
 class WebEnvironment:

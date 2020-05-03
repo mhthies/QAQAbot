@@ -15,7 +15,7 @@ import toml
 
 from .bot import Frontend
 from .game import GameServer
-from .web import WebRoot, WebEnvironment
+from .web import WebEnvironment, setup_cherrypy_engine
 from .util import run_migrations
 import argparse
 
@@ -46,9 +46,7 @@ def main():
 
     if not args.init_only:
         # Configure and start CherryPy engine and HTTP webserver
-        cherrypy.config.update(config['web'])
-        cherrypy.config.update({'engine.autoreload.on': False})
-        cherrypy.tree.mount(WebRoot(web_data), '/')
+        setup_cherrypy_engine(web_data, config)
         cherrypy.engine.start()
         # Start Telegram Bot Updater
         frontend.start_bot()
