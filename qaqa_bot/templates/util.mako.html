@@ -1,15 +1,19 @@
-
 <%def name="print_sheet(sheet)">
     <section class="sheet">
         <ol>
 % for entry in sheet.entries:
+            <%
+                from qaqa_bot.model import EntryType
+                is_question = entry.type == EntryType.QUESTION
+            %>
             <li class="${entry.type.name.lower()}">
+                ${gettext("Q:") if is_question else gettext("A:")}
                 ${entry.text |n}
             </li>
 % endfor
         </ol>
         <footer>
-            <a href="${base_url}/sheet/${encode_id(b'sheet', sheet.id)}/">Permalink</a>
+            <a href="${base_url}/sheet/${encode_id(b'sheet', sheet.id)}/">${gettext("Permalink")}</a>
         </footer>
     </section>
 </%def>

@@ -2,10 +2,10 @@
 <%namespace name="util" file="util.mako.html"/>
 
 ## TODO add date
-<%block name="title">Game in ${game.name} | QAQA Game Bot</%block>
+<%block name="title">${gettext("Game in {game_name}").format(game_name=game.name)} | QAQA Game Bot</%block>
 
 ## TODO add date
-<h1>Game in ${game.name}</h1>
+<h1>${gettext("Game in {game_name}").format(game_name=game.name)}</h1>
 
 % for sheet in game.sheets:
     ${util.print_sheet(sheet=sheet)}

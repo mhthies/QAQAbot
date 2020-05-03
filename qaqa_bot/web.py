@@ -26,7 +26,7 @@ methods (esp. the GameServer object as a backend, the config and the template re
 To simplify setup of the cherrypy engine (including the WebRoot Controller, HTTP server config, no autoreload and custom
 error page), the `setup_cherrypy_engine()` function is provided.
 """
-
+import gettext
 import os
 from typing import Dict, Any
 
@@ -78,11 +78,14 @@ class WebEnvironment:
         self.template_lookup = mako.lookup.TemplateLookup(
             directories=[os.path.join(os.path.dirname(__file__), 'templates')],
             default_filters=['h'])
+        translations = gettext.NullTranslations()
         self.template_globals = {
             'safe': self._safe,
             'base_url': config['web']['base_url'],
             'static_url': lambda file_name: "{}/static/{}".format(config['web']['base_url'], file_name),  # TODO add version to control caching
             'encode_id': lambda realm, val: encode_secure_id(val, config['secret'], realm),
+            'gettext': translations.gettext,
+            'ngettext': translations.ngettext,
         }
 
     def render_template(self, template_name: str, params: Dict[str, Any]) -> str:
