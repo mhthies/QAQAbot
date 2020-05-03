@@ -28,13 +28,13 @@ error page), the `setup_cherrypy_engine()` function is provided.
 """
 import gettext
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 import cherrypy
 import mako.lookup
 import markupsafe
 
-from .game import GameServer
+from .game import GameServer, LOCALE_DIR
 from .util import decode_secure_id, encode_secure_id
 
 
@@ -78,19 +78,21 @@ class WebEnvironment:
         self.template_lookup = mako.lookup.TemplateLookup(
             directories=[os.path.join(os.path.dirname(__file__), 'templates')],
             default_filters=['h'])
-        translations = gettext.NullTranslations()
         self.template_globals = {
             'safe': self._safe,
             'base_url': config['web']['base_url'],
             'static_url': lambda file_name: "{}/static/{}".format(config['web']['base_url'], file_name),  # TODO add version to control caching
             'encode_id': lambda realm, val: encode_secure_id(val, config['secret'], realm),
-            'gettext': translations.gettext,
-            'ngettext': translations.ngettext,
         }
 
-    def render_template(self, template_name: str, params: Dict[str, Any]) -> str:
+    def render_template(self, template_name: str, params: Dict[str, Any], locale: Optional[str] = None) -> str:
+        if locale is None:
+            translations = gettext.NullTranslations()
+        else:
+            translations = gettext.translation('qaqa_bot', LOCALE_DIR, (locale,), fallback=True)
         template = self.template_lookup.get_template(template_name)
-        return template.render(**self.template_globals, **params)
+        return template.render(**self.template_globals, **params,
+                               gettext=translations.gettext, ngettext=translations.ngettext)
 
     @staticmethod
     def _safe(text: str) -> markupsafe.Markup:
@@ -104,8 +106,8 @@ class WebRoot:
         self.sheet = Sheet(env)
 
     @cherrypy.expose
-    def index(self):
-        return self._env.render_template('index.mako.html', {})
+    def index(self, lang='en'):
+        return self._env.render_template('index.mako.html', {}, lang)
 
 
 @cherrypy.popargs('game_id')
@@ -114,14 +116,16 @@ class Game:
         self._env = env
 
     @cherrypy.expose
-    def index(self, game_id):
+    def index(self, game_id, lang='en'):
+        if '/' in lang:
+            raise cherrypy.HTTPError(422, "Invalid language code")
         game_id_decoded = decode_secure_id(game_id, self._env.config['secret'], b'game')
         if game_id_decoded is None:
             raise cherrypy.HTTPError(404, "Invalid game id string")
         game = self._env.game_server.get_game_result(game_id_decoded)
         if game is None:
             raise cherrypy.HTTPError(404, "Game with given id not found")
-        return self._env.render_template('game_result.mako.html', {'game': game})
+        return self._env.render_template('game_result.mako.html', {'game': game}, lang)
 
 
 @cherrypy.popargs('sheet_id')
@@ -130,11 +134,13 @@ class Sheet:
         self._env = env
 
     @cherrypy.expose
-    def index(self, sheet_id):
+    def index(self, sheet_id, lang='en'):
+        if '/' in lang:
+            raise cherrypy.HTTPError(422, "Invalid language code")
         sheet_id_decoded = decode_secure_id(sheet_id, self._env.config['secret'], b'sheet')
         if sheet_id_decoded is None:
             raise cherrypy.HTTPError(404, "Invalid sheet id string")
         sheet = self._env.game_server.get_game_result_sheet(sheet_id_decoded)
         if sheet is None:
             raise cherrypy.HTTPError(404, "Sheet with given sheet id not found")
-        return self._env.render_template('sheet_result.mako.html', {'sheet': sheet})
+        return self._env.render_template('sheet_result.mako.html', {'sheet': sheet}, lang)

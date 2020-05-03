@@ -155,7 +155,7 @@ git add qaqa_bot/model.py qaqa_bot/database_versions
 
 Updating i18n translation files:
 ```bash
-pybabel extract -k "GetText" -k "NGetText" -o qaqa_bot.pot qaqa_bot/
+pybabel extract -F babel.cfg -k "GetText" -k "NGetText" -o qaqa_bot.pot .
 pybabel update -i qaqa_bot.pot -d qaqa_bot/i18n/ -D qaqa_bot
 ```
 
