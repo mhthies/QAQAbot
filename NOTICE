@@ -1,2 +1,7 @@
 QAQAbot – A Telegram bot for playing the question-answer-question-answer party game, implemented in in Python 3
 Copyright 2020 Michael Thies, Jennifer Krieger
+
+This software contains a font derived from the Caroni font family by Franzi Draws (http://franzidraws.com/freebie.html).
+It has been processed by the fontsquirrel.com Webfont Generator to be available in different font file formats.
+It is licensed under the SIL Open Font License. See qaqa_bot/web_static/fonts/SIL Open Font License.txt for a copy of
+this license.

@@ -1,7 +1,22 @@
+body {
+    font-family: 'caroniregular', sans-serif;
+    font-size: 20px;
+}
 
-.container{
+.container {
     width: 100%;
     max-width: 600px;
     margin: 0 auto;
 }
 
+@font-face {
+    font-family: 'caroniregular';
+    src: url('fonts/caroni-regular-webfont.eot');
+    src: url('fonts/caroni-regular-webfont.eot?#iefix') format('embedded-opentype'),
+         url('fonts/caroni-regular-webfont.woff2') format('woff2'),
+         url('fonts/caroni-regular-webfont.woff') format('woff'),
+         url('fonts/caroni-regular-webfont.ttf') format('truetype'),
+         url('fonts/caroni-regular-webfont.svg#caroniregular') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
