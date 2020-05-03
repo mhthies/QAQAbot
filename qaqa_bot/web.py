@@ -35,7 +35,7 @@ import mako.lookup
 import markupsafe
 
 from .game import GameServer
-from .util import decode_secure_id
+from .util import decode_secure_id, encode_secure_id
 
 
 def setup_cherrypy_engine(env: "WebEnvironment", config: Dict[str, Any]) -> None:
@@ -78,7 +78,8 @@ class WebEnvironment:
         self.template_globals = {
             'safe': self._safe,
             'base_url': config['web']['base_url'],
-            'static_url': lambda file_name: "{}/static/{}".format(config['web']['base_url'], file_name)  # TODO add version to control caching
+            'static_url': lambda file_name: "{}/static/{}".format(config['web']['base_url'], file_name),  # TODO add version to control caching
+            'encode_id': lambda val: encode_secure_id(val, config['secret']),
         }
 
     def render_template(self, template_name: str, params: Dict[str, Any]) -> str:
@@ -94,6 +95,7 @@ class WebRoot:
     def __init__(self, env: WebEnvironment):
         self._env = env
         self.game = Game(env)
+        self.sheet = Sheet(env)
 
     @cherrypy.expose
     def index(self):
@@ -104,7 +106,6 @@ class WebRoot:
 class Game:
     def __init__(self, env: WebEnvironment):
         self._env = env
-        self.sheet = Sheet(env)
 
     @cherrypy.expose
     def index(self, game_id):
@@ -124,4 +125,10 @@ class Sheet:
 
     @cherrypy.expose
     def index(self, sheet_id):
-        return f"Sheet:  {sheet_id}"
+        sheet_id_decoded = decode_secure_id(sheet_id, self._env.config['secret'])
+        if sheet_id_decoded is None:
+            raise cherrypy.HTTPError(404, "Invalid sheet id string")
+        sheet = self._env.game_server.get_game_result_sheet(sheet_id_decoded)
+        if sheet is None:
+            raise cherrypy.HTTPError(404, "Sheet with given sheet id not found")
+        return self._env.render_template('sheet_result.mako.html', {'sheet': sheet})

@@ -1,0 +1,14 @@
+<%inherit file="base.mako.html" />
+
+<p>
+    Sheet id: ${sheet.id}<br />
+    Game id: ${sheet.game.id}
+</p>
+
+<ol>
+% for entry in sheet.entries:
+    <li>
+        ${entry.text}
+    </li>
+% endfor
+</ol>

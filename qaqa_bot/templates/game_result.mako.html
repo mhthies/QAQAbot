@@ -5,6 +5,7 @@ Game id: ${game.id}
 <ul>
 % for sheet in game.sheets:
     <li>
+        <a href="${base_url}/sheet/${encode_id(sheet.id)}/">Link</a>
         <ol>
 % for entry in sheet.entries:
         <li>
