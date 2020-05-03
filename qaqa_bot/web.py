@@ -53,7 +53,10 @@ def setup_cherrypy_engine(env: "WebEnvironment", config: Dict[str, Any]) -> None
     cherrypy.config.update(config['web'])
     cherrypy.tree.mount(WebRoot(env), '/', {
         '/static': {'tools.staticdir.on': True,
-                    'tools.staticdir.dir': os.path.join(os.path.dirname(__file__), 'web_static')}
+                    'tools.staticdir.dir': os.path.join(os.path.dirname(__file__), 'web_static')},
+        '/favicon.ico': {'tools.staticfile.on': True,
+                         'tools.staticfile.filename': os.path.join(os.path.dirname(__file__), 'web_static',
+                                                                   'favicon.ico')},
     })
 
     @cherrypy.tools.register('before_finalize', priority=60)
