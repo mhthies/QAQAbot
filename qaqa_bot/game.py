@@ -864,10 +864,16 @@ class GameServer:
         messages.extend(self._next_sheet(list(users_to_update), session))
 
         # Generate result URL message
+        locale = session.query(model.SelectedLocale.locale)\
+            .filter(model.SelectedLocale.chat_id == game.chat_id)\
+            .scalar()
+        locale = locale or 'en'
         messages.append(
             Message(game.chat_id, GetText("Game finished. View results at {url} .").format(
-                url="{}/game/{}/".format(self.config['web']['base_url'],
-                                         encode_secure_id(game.id, self.config['secret'], b'game')))))
+                url="{}/game/{}/?lang={}".format(
+                    self.config['web']['base_url'],
+                    encode_secure_id(game.id, self.config['secret'], b'game'),
+                    locale))))
         game.is_finished = True
         return messages
 
