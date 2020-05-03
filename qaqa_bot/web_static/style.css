@@ -9,6 +9,25 @@ body {
     margin: 0 auto;
 }
 
+.sheet {
+    display: block;
+    margin: 20px 0;
+    border: solid 1px #eee;
+    padding: 20px;
+    box-shadow: 0 0 15px rgba(0,0,0,.3);
+}
+.sheet ol {
+    margin: 0;
+}
+
+.sheet footer {
+    margin: 10px 0 -10px 0;
+    display: block;
+    font-size: 10px;
+    color: #aaa;
+    text-align: right;
+}
+
 @font-face {
     font-family: 'caroniregular';
     src: url('fonts/caroni-regular-webfont.eot');

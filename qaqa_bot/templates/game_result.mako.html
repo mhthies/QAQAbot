@@ -2,17 +2,17 @@
 
 Game id: ${game.id}
 
-<ul>
 % for sheet in game.sheets:
-    <li>
-        <a href="${base_url}/sheet/${encode_id(sheet.id)}/">Link</a>
-        <ol>
+<section class="sheet">
+    <ol>
 % for entry in sheet.entries:
         <li>
-            ${entry.text}
+            ${entry.text |n}
         </li>
 % endfor
-        </ol>
-    </li>
+    </ol>
+    <footer>
+        <a href="${base_url}/sheet/${encode_id(sheet.id)}/">Permalink</a>
+    </footer>
+</section>
 % endfor
-</ul>

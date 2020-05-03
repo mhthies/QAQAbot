@@ -5,10 +5,12 @@
     Game id: ${sheet.game.id}
 </p>
 
-<ol>
+<section class="sheet">
+    <ol>
 % for entry in sheet.entries:
-    <li>
-        ${entry.text}
-    </li>
+        <li>
+            ${entry.text |n}
+        </li>
 % endfor
-</ol>
+    </ol>
+</section>
