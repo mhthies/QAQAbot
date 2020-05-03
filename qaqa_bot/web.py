@@ -78,6 +78,7 @@ class WebEnvironment:
         self.template_globals = {
             'safe': self._safe,
             'base_url': config['web']['base_url'],
+            'static_url': lambda file_name: "{}/static/{}".format(config['web']['base_url'], file_name)  # TODO add version to control caching
         }
 
     def render_template(self, template_name: str, params: Dict[str, Any]) -> str:
@@ -96,7 +97,7 @@ class WebRoot:
 
     @cherrypy.expose
     def index(self):
-        return "hello world"
+        return self._env.render_template('index.mako.html', {})
 
 
 @cherrypy.popargs('game_id')
