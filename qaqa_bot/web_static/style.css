@@ -14,7 +14,7 @@ body {
     margin: 20px 0;
     border: solid 1px #eee;
     padding: 20px;
-    box-shadow: 0 0 15px rgba(0,0,0,.3);
+    box-shadow: 0 0 10px rgba(0,0,0,.25);
 }
 .sheet ol {
     margin: 0;
@@ -25,7 +25,7 @@ body {
     margin-bottom: 10px;
 }
 .sheet ol>li.question {
-    text-shadow: 0 0 3px rgba(0,87,127,.7);
+    text-shadow: 0 0 6px rgba(0,87,127,.7);
 }
 
 
