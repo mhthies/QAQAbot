@@ -688,6 +688,9 @@ class GameServer:
                     .format(command=COMMAND_START_GAME, players=players, configuration=configuration)
         self._send_messages([Message(chat_id, status)], session)
 
+    # ###########################################################################
+    # Helper methods for translating and sending messages
+
     def _send_messages(self, messages: List[Message], session: Session) -> None:
         self._send_callback(self._get_translations(messages, session))
 
@@ -704,6 +707,9 @@ class GameServer:
                                                                              (locales.get(m.chat_id, 'en'),),
                                                                              fallback=True)))
                 for m in messages]
+
+    # ###########################################################################
+    # Helper methods for managing sheets
 
     def _game_sheet_infos(self, game: model.Game, session: Session) -> List[SheetProgressInfo]:
         """ Helper function to get the `SheetProgressInfo` for all sheets of a given Game.
@@ -778,6 +784,23 @@ class GameServer:
                     user.current_sheet_id is not None)))
         return result
 
+    def _format_for_next(self, sheet_info: SheetProgressInfo, repeat: bool) -> LazyGetTextBase:
+        """ Create the message content for showing a sheet to a user and ask them for their next submission. The message
+        contains the last entry of the sheet or a request to write the initial question if the sheet is empty.
+
+        :param repeat: True, if this a repeated message for the same sheet and user"""
+        if sheet_info.num_entries == 0:
+            return GetText("Please ask a question to begin a new sheet for game {game_name}.")\
+                .format(game_name=sheet_info.sheet.game.name)
+        else:
+            assert(sheet_info.last_entry is not None)
+            if sheet_info.last_entry.type == model.EntryType.ANSWER:
+                return GetText("Please ask a question that may be answered with:\n“{text}”")\
+                    .format(text=sheet_info.last_entry.text)
+            else:
+                return GetText("Please answer the following question:\n“{text}”")\
+                    .format(text=sheet_info.last_entry.text)
+
     def _assign_sheet_to_next(self, sheets: List[model.Sheet], game: model.Game, session: Session):
         """ Assign a list of sheets of a single game to the next user according the game's participant order
 
@@ -814,6 +837,9 @@ class GameServer:
             next_user = next_mapping[last_entry_by_sheet_id[sheet.id].user_id]
             logger.debug("Assigning sheet %s to user %s ...", sheet.id, next_user.id)
             next_user.pending_sheets.append(sheet)
+
+    # ###########################################################################
+    # Helper methods for ending the game
 
     def _finish_if_complete(self, game: model.Game, sheet_infos: Iterable[SheetProgressInfo],
                             session: Session) -> List[Message]:
@@ -902,20 +928,3 @@ class GameServer:
         messages.append(GetNoText(msg))
         return messages
         # TODO UX: improve
-
-    def _format_for_next(self, sheet_info: SheetProgressInfo, repeat: bool) -> LazyGetTextBase:
-        """ Create the message content for showing a sheet to a user and ask them for their next submission. The message
-        contains the last entry of the sheet or a request to write the initial question if the sheet is empty.
-
-        :param repeat: True, if this a repeated message for the same sheet and user"""
-        if sheet_info.num_entries == 0:
-            return GetText("Please ask a question to begin a new sheet for game {game_name}.")\
-                .format(game_name=sheet_info.sheet.game.name)
-        else:
-            assert(sheet_info.last_entry is not None)
-            if sheet_info.last_entry.type == model.EntryType.ANSWER:
-                return GetText("Please ask a question that may be answered with:\n“{text}”")\
-                    .format(text=sheet_info.last_entry.text)
-            else:
-                return GetText("Please answer the following question:\n“{text}”")\
-                    .format(text=sheet_info.last_entry.text)
