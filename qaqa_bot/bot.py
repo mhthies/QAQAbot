@@ -16,7 +16,8 @@ import datetime
 
 import telegram
 from telegram import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler)
+from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler, messagequeue)
+from telegram.utils import promise
 
 from . import game
 from .util import GetText
@@ -95,6 +96,9 @@ class Frontend:
 
         # Gameserver
         self.gs = game.GameServer(config=config, send_callback=self.send_messages)
+
+        # Flood limits avoiding delay queue
+        self._message_queue = messagequeue.MessageQueue()
 
     def set_commands(self):
         """Sends the commands to the BotFather."""
@@ -295,7 +299,10 @@ class Frontend:
         """Send the messages to the corporated chat ids."""
         for msg in messages:
             chat_id, text = msg
-            self.updater.bot.send_message(chat_id=chat_id, text=text, parse_mode=telegram.ParseMode.HTML)
+            prom = promise.Promise(self.updater.bot.send_message, (),
+                                   {'chat_id': chat_id, 'text': text, 'parse_mode': telegram.ParseMode.HTML})
+            self._message_queue(prom, False)
+            # TODO add limiting of group chat messages, as soon as MessageQueue supports per-group limits
 
     def error(self, update, context) -> None:
         """Log errors caused by updates."""
