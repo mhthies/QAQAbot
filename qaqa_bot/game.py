@@ -426,7 +426,7 @@ class GameServer:
             .filter(model.Participant.game == game)\
             .scalar()
 
-        if num_participants <= 2:
+        if num_participants <= 2 and game.is_started:
             logger.debug("Cannot remove user from game %s, since they are one of 2 or less remaining participants",
                          game.id)
             self._send_messages([Message(chat_id, GetText("You are one of the last two participants of this game. Thus,"
