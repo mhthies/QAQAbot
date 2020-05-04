@@ -80,6 +80,7 @@ class WebEnvironment:
             directories=[os.path.join(os.path.dirname(__file__), 'templates')],
             default_filters=['h'])
         self.template_globals = {
+            'bot_username': config['bot']['username'],
             'base_url': config['web']['base_url'],
             'static_url': lambda file_name: "{}/static/{}".format(config['web']['base_url'], file_name),  # TODO add version to control caching
             'encode_id': lambda realm, val: encode_secure_id(val, config['secret'], realm),
