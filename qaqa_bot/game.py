@@ -33,10 +33,10 @@ from typing import NamedTuple, List, Optional, Iterable, Dict, Any, Callable, Mu
 
 import sqlalchemy
 from sqlalchemy import func, and_
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload, defaultload, raiseload
 
 from . import model
-from .util import LazyGetTextBase, GetText, NGetText, GetNoText
+from .util import LazyGetTextBase, GetText, NGetText, GetNoText, encode_secure_id
 
 COMMAND_HELP = "help"
 COMMAND_STATUS = "status"
@@ -114,8 +114,12 @@ class GameServer:
     messages (which are triggered by incoming events depending on the game state). For this purpose, it is initialized
     with a callback function to be used for sending messages.
 
-    The available game actions are provided as methods of the GameState object. They should be called by the appropriate
-    handlers of the Telegram Bot frontend.
+    The available game actions are provided as methods of the GameServer object. They should be called by the
+    appropriate handlers of the Telegram Bot frontend.
+
+    The GameServer itself is stateless. Since all it member fields are either static (config) or thread-safe
+    (_send_callback, session_maker), it is considered to be thread-safe and may be used from thread-pool-executed
+    handlers of the Telegram and Web frontends.
     """
     def __init__(self, config: MutableMapping[str, Any],
                  send_callback: Callable[[List[TranslatedMessage]], None],
@@ -163,6 +167,32 @@ class GameServer:
         sending messages) with translated strings.
         """
         return self._get_translations([message], session)[0]
+
+    @with_session
+    def get_game_result(self, session: Session, game_id: int) -> model.Game:
+        game = session.query(model.Game)\
+            .filter(model.Game.id == game_id, model.Game.is_finished == True)\
+            .options(raiseload('*'),
+                     selectinload(model.Game.sheets)
+                     .selectinload(model.Sheet.entries)
+                     .joinedload(model.Entry.user))\
+            .one_or_none()
+
+        session.expunge_all()
+        return game
+
+    @with_session
+    def get_game_result_sheet(self, session: Session, sheet_id: int) -> model.Game:
+        sheet = session.query(model.Sheet)\
+            .filter(model.Sheet.id == sheet_id, model.Game.is_finished == True)\
+            .options(raiseload('*'),
+                     joinedload(model.Sheet.game),
+                     selectinload(model.Sheet.entries)
+                     .joinedload(model.Entry.user))\
+            .one_or_none()
+
+        session.expunge_all()
+        return sheet
 
     @with_session
     def set_chat_locale(self, session: Session, chat_id: int, locale: str, override: bool = False) -> None:
@@ -833,10 +863,17 @@ class GameServer:
                     users_to_update.add(sheet_user)
         messages.extend(self._next_sheet(list(users_to_update), session))
 
-        # Generate result messages
-        for sheet in sheets:
-            if sheet.entries:
-                messages.extend(Message(game.chat_id, text) for text in self._format_result(game, sheet))
+        # Generate result URL message
+        locale = session.query(model.SelectedLocale.locale)\
+            .filter(model.SelectedLocale.chat_id == game.chat_id)\
+            .scalar()
+        locale = locale or 'en'
+        messages.append(
+            Message(game.chat_id, GetText("Game finished. View results at {url} .").format(
+                url="{}/game/{}/?lang={}".format(
+                    self.config['web']['base_url'],
+                    encode_secure_id(game.id, self.config['secret'], b'game'),
+                    locale))))
         game.is_finished = True
         return messages
 

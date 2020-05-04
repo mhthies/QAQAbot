@@ -11,32 +11,13 @@
 
 import unittest
 import re
-import os.path
 from typing import Pattern, Dict, List
 
 import sqlalchemy
 import sqlalchemy.orm
-import toml
 
 from qaqa_bot import model, game
-from qaqa_bot.util import session_scope
-
-
-CONFIG = toml.load(os.path.join(os.path.dirname(__file__), "test_config.toml"))
-
-
-class OutgoingMessageStore:
-    """ A Mock class to test the message sending of a GameServer """
-    def __init__(self):
-        self.messages = []
-
-    def send_message(self, messages: List[game.Message]) -> None:
-        self.messages.extend(messages)
-
-    def fetch_messages(self) -> List[game.Message]:
-        current_messages = self.messages
-        self.messages = []
-        return current_messages
+from .util import CONFIG, OutgoingMessageStore, create_sample_users
 
 
 class FullGameTests(unittest.TestCase):
@@ -44,20 +25,10 @@ class FullGameTests(unittest.TestCase):
         # Setup database schema
         engine = sqlalchemy.create_engine(CONFIG['database']['connection'], echo=True)
         model.Base.metadata.create_all(engine)
+        create_sample_users(engine)
 
         self.message_store = OutgoingMessageStore()
         self.game_server = game.GameServer(CONFIG, self.message_store.send_message, engine)
-
-        # Use
-        users = [model.User(api_id=1, chat_id=11, name="Michael"),
-                      model.User(api_id=2, chat_id=12, name="Jenny"),
-                      model.User(api_id=3, chat_id=13, name="Lukas"),
-                      model.User(api_id=4, chat_id=14, name="Jannik")]
-
-        Session = sqlalchemy.orm.sessionmaker(bind=engine)
-        with session_scope(Session) as session:
-            for user in users:
-                session.add(user)
 
     TEXT_SUBMIT_RESPONSE = r"🆗"
 
@@ -137,7 +108,7 @@ class FullGameTests(unittest.TestCase):
         self.assertMessagesCorrect(
             self.message_store.fetch_messages(),
             {12: re.compile(self.TEXT_SUBMIT_RESPONSE),
-             21: re.compile("(?s)Question 3.*Answer 1|Question 1.*Answer 2|Question 2.*Answer 3|❓❕")})
+             21: re.compile("example.com:9090/game/")})
 
     def test_asynchronous_game(self):
         # Create new game in "Funny Group" chat (chat_id=21)
@@ -264,7 +235,7 @@ class FullGameTests(unittest.TestCase):
         self.assertMessagesCorrect(
             self.message_store.fetch_messages(),
             {13: re.compile(r"(?s)answer.*Question A2|" + self.TEXT_SUBMIT_RESPONSE),
-             22: re.compile("(?s)Question B3.*Answer B4|Question B1.*Answer B3|Question B4.*Answer B1|❓❕")})
+             22: re.compile("example.com:9090/game/")})
         self.game_server.submit_text(13, "Answer A3")
         self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(r"(?s)ask.*?Answer A3"),
                                                                          12: re.compile(r"(?s)ask.*?Answer A1"),

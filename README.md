@@ -1,7 +1,7 @@
 
 # Telegram Question-Answer-Question-Answer game bot
 
-A Telegram bot for playing the question-answer-question-answer party game, written in Python 3 and based on the *Python Telegram Bot* and *SQLAlchemy* libraries.
+A Telegram bot for playing the question-answer-question-answer party game, written in Python 3 and based on the *Python Telegram Bot*, *SQLAlchemy* and *CherryPy* libraries.
 
 ## The Game / Features
 
@@ -29,7 +29,7 @@ The bot supports synchronous and asynchronous games:
 In a synchronous game (default and `/set_synchronous`), the sheets are not passed on to the next player until all players have finished writing their question/answer.
 In an asynchronous game, the sheets are immediately passed on to the next player—as long as they are not busy with another sheet.
 
-When the game is finished—either when the target number of rounds (number of players or `/set_rounds`) is reached or when manually stopped (`/stop_game`, `/immediately_stop_game`)—, the virtual sheets are presented in the group chat.
+When the game is finished—either when the target number of rounds (number of players or `/set_rounds`) is reached or when manually stopped (`/stop_game`, `/immediately_stop_game`)—, the virtual sheets are presented via a web server.
 
 ## Architecture
 
@@ -43,6 +43,12 @@ It provides specific methods for all interaction events that update the game sta
 The interaction with Telegram is provided by the `quqa_bot.bot` module, using the *Python Telegram Bot* library.
 Instances of its `Frontend` class hold an `Updater` object to interact with the Telegram API and an `GameServer` object to do the game logic.
 The class has different handlers for any kind of Telegram update (esp. commands and text messages), that are automatically registered with the *Updater* on initialization and use the *GameServer's* interaction methods to carry out the actions.
+
+In addition, a web server is included for serving the resulting sheets of finished games.
+(We first tried to deliver them as messages to the group chat, which unfortunately triggered Telegrams flood prevention reproducibly.)
+The web frontend is built with the CherryPy web framework and its included WSGI web server.
+In the `qaqa_bot.web` module, the Controller classes with endpoint handlers are defined.
+The HTML templates are rendered with *Mako* and are located in `qaqa_bot/templates/`.
 
 Incoming updates from the Telegram API (esp. incoming messages) are handled either by the Frontend on its own or with help of the GameServer: Typically, response messages that do not require interaction with the database, are sent by the Frontend immediately. In the other case, the Frontend's handler method identifies the correct game action, determines the action's arguments from the update data, and calls the respective method of the GameServer. The response message/s are sent by the GameServer.
 
@@ -60,10 +66,13 @@ It is recommended to use a virtualenv environment for easier management and upda
 
 Additionally, a database in one of the DBMS supported by SQLAlchemy is required, including the appropriate Python driver library. 
 See https://docs.sqlalchemy.org/en/13/dialects/index.html for a list of supported database systems and instructions.
- 
+
 For a small installation, development and testing, an SQLite database is sufficient, which can be run with Python's integrated SQLite support.
 For this purpose, use `sqlite:////path/to/your/database.db` as database connection string in the bot's `config.toml`.
 However, we recommend to use a proper™ database server for production use.
+
+For the web frontend, an HTTP reverse proxy with HTTPS support should be configured, which makes the internal HTTP port publicly available.
+Typically, one would chose Apache (with a `ProxyPass` directive) or Nginx (with a `proxy_pass` command) and configure a Let's Encrypt TLS certificate.
 
 
 ### Setup
@@ -95,6 +104,8 @@ We may add proper Python packaging later, to make installation via pip possible.
    * the bot's API token (recived from the BotFather),
    * your personal Telegram username (will be used in the bot's description and help texts), and
    * the connection URL of your database.
+   * the public base URL of your web server (virtual host), which is used for links to the web frontend
+   * the internal HTTP listening port
 6. compile i18n message catalouges
    ```bash
    pybabel compile -d qaqa_bot/i18n/ -D qaqa_bot
@@ -144,7 +155,7 @@ git add qaqa_bot/model.py qaqa_bot/database_versions
 
 Updating i18n translation files:
 ```bash
-pybabel extract -k "GetText" -k "NGetText" -o qaqa_bot.pot qaqa_bot/
+pybabel extract -F babel.cfg -k "GetText" -k "NGetText" -o qaqa_bot.pot .
 pybabel update -i qaqa_bot.pot -d qaqa_bot/i18n/ -D qaqa_bot
 ```
 

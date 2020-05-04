@@ -1,0 +1,12 @@
+<%inherit file="base.mako.html" />
+<%namespace name="util" file="util.mako.html"/>
+
+## TODO add date
+<%block name="title">${gettext("Game in {game_name}").format(game_name=game.name)} | QAQA Game Bot</%block>
+
+## TODO add date
+<h1>${gettext("Game in {game_name}").format(game_name=game.name)}</h1>
+
+% for sheet in game.sheets:
+    ${util.print_sheet(sheet=sheet)}
+% endfor

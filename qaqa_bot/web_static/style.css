@@ -1,0 +1,50 @@
+body {
+    font-family: 'caroniregular', sans-serif;
+    font-size: 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.sheet {
+    display: block;
+    margin: 20px 0;
+    border: solid 1px #eee;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0,0,0,.25);
+}
+.sheet ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.sheet ol>li {
+    margin-bottom: 10px;
+}
+.sheet ol>li.question {
+    text-shadow: 0 0 6px rgba(0,87,127,.7);
+}
+
+
+.sheet footer {
+    margin: 10px 0 -10px 0;
+    display: block;
+    font-size: 10px;
+    color: #aaa;
+    text-align: right;
+}
+
+@font-face {
+    font-family: 'caroniregular';
+    src: url('fonts/caroni-regular-webfont.eot');
+    src: url('fonts/caroni-regular-webfont.eot?#iefix') format('embedded-opentype'),
+         url('fonts/caroni-regular-webfont.woff2') format('woff2'),
+         url('fonts/caroni-regular-webfont.woff') format('woff'),
+         url('fonts/caroni-regular-webfont.ttf') format('truetype'),
+         url('fonts/caroni-regular-webfont.svg#caroniregular') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}

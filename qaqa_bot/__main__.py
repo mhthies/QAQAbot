@@ -10,9 +10,12 @@
 # specific language governing permissions and limitations under the License.
 import logging
 
+import cherrypy
 import toml
 
 from .bot import Frontend
+from .game import GameServer
+from .web import WebEnvironment, setup_cherrypy_engine
 from .util import run_migrations
 import argparse
 
@@ -34,13 +37,20 @@ def main():
     logging.basicConfig(level=30 - 10 * args.verbose + 10 * args.quiet)
     config = toml.load(args.config)
     frontend = Frontend(config)
+    web_data = WebEnvironment(config, frontend.gs)
 
+    # Run initialization (migrate database and set Telegram Bot configuration)
     if not args.no_init:
         run_migrations(frontend.gs.database_engine)  # TODO make this better in terms of sensible architecture
         frontend.set_commands()
 
     if not args.init_only:
+        # Configure and start CherryPy engine and HTTP webserver
+        setup_cherrypy_engine(web_data, config)
+        cherrypy.engine.start()
+        # Start Telegram Bot Updater
         frontend.start_bot()
+        cherrypy.engine.exit()
 
 
 if __name__ == '__main__':

@@ -9,10 +9,13 @@
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 import abc
+import base64
+import binascii
 import gettext
+import hashlib
 import os.path
 from contextlib import contextmanager
-from typing import Dict, Any, Iterable, List, Union
+from typing import Dict, Any, Iterable, List, Union, Optional
 
 import alembic
 import alembic.config
@@ -66,6 +69,53 @@ def run_migrations(engine: sqlalchemy.engine.Engine):
 
         with context.begin_transaction():
             context.run_migrations()
+
+
+def encode_secure_id(value: int, secret: str, realm: bytes = b"") -> str:
+    """
+    Secure a (postive 32-bit) integer id from manipulation/bruteforce testing, by hashing it together with a
+    given secret string. The id and the hash are encoded into an url-safe base64 string.
+
+    :param value: The id to be secured
+    :param secret: A secret string
+    :param realm: A static byte array to be included in the hash, to create different hashes for the same id in
+        different realms (e.g. Game id 1 and Sheet id 1).
+    :return: The base64-encoded id with hash
+    """
+    value_bytes = value.to_bytes(4, byteorder='big')
+    m = hashlib.sha256()
+    m.update(value_bytes)
+    m.update(secret.encode('utf-8'))
+    m.update(realm)
+    digest = m.digest()
+    return base64.urlsafe_b64encode(value_bytes + digest).decode('utf-8')
+
+
+def decode_secure_id(secure_id: str, secret: str, realm: bytes = b"") -> Optional[int]:
+    """
+    Decode a secured id, generated with `encode_secure_id()` and check the included hash with the given secret.
+
+    :param secure_id: The base64-encoded string from `encode_secure_id()`.
+    :param secret: The known secret, that was used to create the secure id
+    :param realm: The `realm` the secure_id has been created in
+    :return: None if the secure id is invalid (invalid base64, hash does not match, etc.)
+    """
+    if len(secure_id) < 5:
+        return None
+    try:
+        secure_id_bytes = base64.urlsafe_b64decode(secure_id)
+    except binascii.Error:
+        return None
+    value_bytes = secure_id_bytes[0:4]
+    given_digest = secure_id_bytes[4:]
+    m = hashlib.sha256()
+    m.update(value_bytes)
+    m.update(secret.encode('utf-8'))
+    m.update(realm)
+    check_digest = m.digest()
+    if check_digest != given_digest:
+        return None
+    return int.from_bytes(value_bytes, 'big')
 
 
 class LazyGetTextBase(metaclass=abc.ABCMeta):

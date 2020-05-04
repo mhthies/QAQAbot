@@ -47,7 +47,9 @@ setup(
     url='https://gitea.nephos.link/michael/QAQABot',
     packages=['qaqa_bot'],
     package_data={'qaqa_bot': ['i18n/*/LC_MESSAGES/*.mo',
-                               'database_versions/*.py']},
+                               'database_versions/*.py',
+                               'templates/*',
+                               'web_static/*']},
     cmdclass={
         "build_l10n": BuildLocalization,
         "build": build_with_l10n
@@ -58,6 +60,7 @@ setup(
         'python-telegram-bot>=12.2',
         'toml>=0.10',
         'alembic>=1.0',
+        'cherrypy',
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
