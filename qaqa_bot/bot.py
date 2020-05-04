@@ -16,7 +16,8 @@ import datetime
 
 import telegram
 from telegram import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler, messagequeue)
+from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, CallbackQueryHandler, messagequeue,
+                          run_async)
 from telegram.utils import promise
 
 from . import game
@@ -136,6 +137,7 @@ class Frontend:
         self.updater.idle()
         self._message_queue.stop()
 
+    @run_async
     def start(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Send a friendly welcome message with language set to locale."""
         chat_id: int = update.effective_chat.id
@@ -151,6 +153,7 @@ class Frontend:
         else:
             logger.debug(msg=f"Chat {chat_id} sends start-commands")
 
+    @run_async
     def new_game(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         chat_id: int = update.effective_chat.id
         if update.message.chat.type == "group" or update.message.chat.type == "supergroup":
@@ -159,6 +162,7 @@ class Frontend:
         else:
             self.gs.send_messages([game.Message(chat_id, GetText("Games can only be spawned in group chats."))])
 
+    @run_async
     def start_game(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Start game in current chat."""
         chat_id: int = update.effective_chat.id
@@ -168,6 +172,7 @@ class Frontend:
         else:
             self.gs.send_messages([game.Message(chat_id, GetText("Games can only be started in group chats."))])
 
+    @run_async
     def join_game(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         chat_id: int = update.effective_chat.id
         if update.message.chat.type == "group" or update.message.chat.type == "supergroup":
@@ -176,6 +181,7 @@ class Frontend:
         else:
             self.gs.send_messages([game.Message(chat_id, GetText("Games can only be joined in group chats."))])
 
+    @run_async
     def leave_game(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         if update.message.chat.type == "group" or update.message.chat.type == "supergroup":
             self.gs.leave_game(update.message.chat.id, update.message.from_user.id)
@@ -183,6 +189,7 @@ class Frontend:
             self.gs.send_messages([game.Message(update.message.chat.id,
                                                 GetText("Games can only be left in group chats."))])
 
+    @run_async
     def incoming_message(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Parse a text-message that was send to the bot in a private chat."""
         text = update.message.text
@@ -200,17 +207,21 @@ class Frontend:
                                                     GetText("Sorry, I do not understand. Please use a command to "
                                                             "communicate with me."))])
 
+    @run_async
     def edited_message(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         logger.info(msg=f"Message edited!")
 
+    @run_async
     def stop_game(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Stop the game after the current round."""
         self.gs.stop_game(chat_id=update.message.chat.id)
 
+    @run_async
     def stop_game_immediately(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Stop the game without awaiting the end of the current round."""
         self.gs.immediately_stop_game(chat_id=update.message.chat.id)
 
+    @run_async
     def set_rounds(self, update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
         """Set the number of rounds"""
         chat_id: int = update.effective_chat.id
@@ -230,6 +241,7 @@ class Frontend:
         else:
             self.gs.send_messages([game.Message(chat_id, GetText("Don't you think these are too many parameters?"))])
 
+    @run_async
     def set_display_name(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         if update.message.chat.type == "group" or update.message.chat.type == "supergroup":
             keyboard = [[InlineKeyboardButton(v, callback_data=k) for k, v in BOOLDIS.items()]]
@@ -239,6 +251,7 @@ class Frontend:
             self.gs.send_messages([game.Message(update.message.chat.id,
                                                 GetText("Games can only be edited in group chats."))])
 
+    @run_async
     def set_sync(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         if update.message.chat.type == "private":
             self.gs.send_messages([game.Message(update.message.chat.id,
@@ -250,12 +263,14 @@ class Frontend:
             reply_markup = InlineKeyboardMarkup(keyboard)
             update.message.reply_text('Please choose:', reply_markup=reply_markup)
 
+    @run_async
     def set_language(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         keyboard = [[InlineKeyboardButton(v, callback_data=k)
                      for k, v in LANGUAGES.items()]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         update.message.reply_text('Please choose:', reply_markup=reply_markup)
 
+    @run_async
     def button(self, update, _context):
         query = update.callback_query
         chat_id = update.effective_chat.id
@@ -284,10 +299,12 @@ class Frontend:
         else:
             query.edit_message_text(text="Oh no! 😱 There's a problem! I don't know this button *️⃣? ")
 
+    @run_async
     def help(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Print explanation of the game and commands."""
         pass  # TODO implement
 
+    @run_async
     def status(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Print info about game states and sheets."""
         chat_id: int = update.effective_chat.id
