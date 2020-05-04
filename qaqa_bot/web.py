@@ -93,7 +93,7 @@ class WebEnvironment:
             translations = gettext.translation('qaqa_bot', LOCALE_DIR, (locale,), fallback=True)
         template = self.template_lookup.get_template(template_name)
         return template.render(**self.template_globals, **params,
-                               gettext=translations.gettext, ngettext=translations.ngettext)
+                               gettext=translations.gettext, ngettext=translations.ngettext, lang=locale or 'en')
 
     @staticmethod
     def _safe(text: str) -> markupsafe.Markup:
