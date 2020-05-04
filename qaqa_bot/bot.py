@@ -98,7 +98,7 @@ class Frontend:
         self.gs = game.GameServer(config=config, send_callback=self.send_messages)
 
         # Flood limits avoiding delay queue
-        self._message_queue = messagequeue.MessageQueue()
+        self._message_queue = messagequeue.MessageQueue(autostart=False)
 
     def set_commands(self):
         """Sends the commands to the BotFather."""
@@ -126,14 +126,15 @@ class Frontend:
                        "Stops the game without waiting for the round to be finished.")]
         self.updater.bot.set_my_commands(commands)
 
-    def start_bot(self):
-        """Starts polling for user interaction.
+    def run_bot(self):
+        """Starts polling for user interaction and blocks until stopped by an interrupt signal.
 
-        This method is blocking: It blocks the calling thread until an interrupt signal is received, using
-        `Updater.idle()`.
+        This method also cares about starting the (delaying) MessageQueue and stopping it on shutdown.
         """
+        self._message_queue.start()
         self.updater.start_polling()
         self.updater.idle()
+        self._message_queue.stop()
 
     def start(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Send a friendly welcome message with language set to locale."""

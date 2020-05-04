@@ -49,7 +49,7 @@ def main():
         setup_cherrypy_engine(web_data, config)
         cherrypy.engine.start()
         # Start Telegram Bot Updater
-        frontend.start_bot()
+        frontend.run_bot()
         cherrypy.engine.exit()
 
 
