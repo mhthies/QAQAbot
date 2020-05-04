@@ -155,18 +155,22 @@ class GameServer:
 
         This message can be used by the `Frontend` to send a direct response message (without further interaction with
         the GameServer) in the correct language.
+
+        This is basically a session-managing wrapper for calling the internal `_send_messages()` from a fontend.
         """
         self._send_messages(messages, session)
 
     @with_session
-    def get_translation(self, session: Session, message: Message) -> TranslatedMessage:
+    def get_translation(self, session: Session, message: LazyGetTextBase, chat_id: int) -> str:
         """
-        Translate a translatable `Message` into the correct language for the target chat.
+        Translate a translatable string into the correct language for given chat.
 
         This message can be used by the `Frontend` to update messages and do other fancy Telegram stuff (which is not
         sending messages) with translated strings.
+
+        This is basically a session-managing wrapper for calling the internal `get_translations()` method a frontend.
         """
-        return self._get_translations([message], session)[0]
+        return self._get_translations([Message(chat_id, message)], session)[0].text
 
     @with_session
     def get_game_result(self, session: Session, game_id: int) -> model.Game:
