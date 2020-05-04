@@ -188,7 +188,7 @@ class Frontend:
                                                 GetText("Sorry, this is not a valid command. 🧐"))])
         else:
             if update.message.chat.type == "private":
-                submitted_text = update.message.text_html_urled.replace('\n', ' ‖ ')
+                submitted_text = update.message.text_html_urled
                 self.gs.submit_text(update.message.chat.id, submitted_text)
             else:
                 self.gs.send_messages([game.Message(update.message.chat.id,
