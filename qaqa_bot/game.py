@@ -899,7 +899,7 @@ class GameServer:
             .scalar()
         locale = locale or 'en'
         messages.append(
-            Message(game.chat_id, GetText("Game finished. View results at {url} .").format(
+            Message(game.chat_id, GetText("Game finished. View results at <a href=\"{url}\">{url}</a>.").format(
                 url="{}/game/{}/?lang={}".format(
                     self.config['web']['base_url'],
                     encode_secure_id(game.id, self.config['secret'], b'game'),
