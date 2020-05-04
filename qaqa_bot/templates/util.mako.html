@@ -1,3 +1,10 @@
+<%!
+    import markupsafe
+
+    def br(text):
+        return text.replace("\n",markupsafe.Markup("<br />\n"))
+%>
+
 <%def name="print_sheet(sheet)">
     <section class="sheet">
         <ol>
@@ -8,7 +15,7 @@
             %>
             <li class="${entry.type.name.lower()}">
                 ${gettext("Q:") if is_question else gettext("A:")}
-                ${entry.text |n}
+                ${entry.text |n,br}
             </li>
 % endfor
         </ol>

@@ -80,7 +80,6 @@ class WebEnvironment:
             directories=[os.path.join(os.path.dirname(__file__), 'templates')],
             default_filters=['h'])
         self.template_globals = {
-            'safe': self._safe,
             'base_url': config['web']['base_url'],
             'static_url': lambda file_name: "{}/static/{}".format(config['web']['base_url'], file_name),  # TODO add version to control caching
             'encode_id': lambda realm, val: encode_secure_id(val, config['secret'], realm),
@@ -94,10 +93,6 @@ class WebEnvironment:
         template = self.template_lookup.get_template(template_name)
         return template.render(**self.template_globals, **params,
                                gettext=translations.gettext, ngettext=translations.ngettext, lang=locale or 'en')
-
-    @staticmethod
-    def _safe(text: str) -> markupsafe.Markup:
-        return markupsafe.Markup(text)
 
 
 class WebRoot:
