@@ -10,7 +10,7 @@
 # specific language governing permissions and limitations under the License.
 
 import logging
-from typing import List
+from typing import List, Type
 import re
 import datetime
 
@@ -33,6 +33,7 @@ LANGUAGES = {'lan_de': '🇩🇪',
              'lan_en': '🇬🇧'}
 BOOLDIS = {"dis_yes": "Yes 👍", "dis_no": "No 👎"}
 SYNC = {"syn_syn": "Synchronous mode", "syn_asyn": "Asynchronous mode"}
+
 
 class Frontend:
     def __init__(self, config):
@@ -63,7 +64,7 @@ class Frontend:
         join_game_handler = CommandHandler(game.COMMAND_JOIN_GAME, self.join_game,
                                            filters=~Filters.update.edited_message)
         leave_game_handler = CommandHandler(game.COMMAND_LEAVE_GAME, self.leave_game,
-                                           filters=~Filters.update.edited_message)
+                                            filters=~Filters.update.edited_message)
         stop_game_handler = CommandHandler(game.COMMAND_STOP_GAME, self.stop_game,
                                            filters=~Filters.update.edited_message)
         stop_game_immediately_handler = CommandHandler(game.COMMAND_STOP_GAME_IMMEDIATELY, self.stop_game_immediately,
@@ -144,7 +145,7 @@ class Frontend:
         lang = update.message.from_user.language_code
         if lang is not None:
             self.gs.set_chat_locale(chat_id, update.message.from_user.language_code)
-        if update.message.chat.type == "private":
+        if update.message.chat.type == telegram.Chat.PRIVATE:
             name = (f"@{update.message.from_user.username}"
                     if update.message.from_user.username is not None
                     else update.message.from_user.first_name)
@@ -156,7 +157,8 @@ class Frontend:
     @run_async
     def new_game(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         chat_id: int = update.effective_chat.id
-        if update.message.chat.type == "group" or update.message.chat.type == "supergroup":
+        if update.message.chat.type == telegram.Chat.GROUP \
+                or update.message.chat.type == telegram.Chat.SUPERGROUP:
             logger.debug(msg=f"Try to spawn a game in {chat_id}")
             self.gs.new_game(chat_id=chat_id, name=update.message.chat.title)
         else:
@@ -166,7 +168,8 @@ class Frontend:
     def start_game(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Start game in current chat."""
         chat_id: int = update.effective_chat.id
-        if update.message.chat.type == "group" or update.message.chat.type == "supergroup":
+        if update.message.chat.type == telegram.Chat.GROUP \
+                or update.message.chat.type == telegram.Chat.SUPERGROUP:
             logger.debug(msg=f"Try to start a game in {chat_id}")
             self.gs.start_game(chat_id)
         else:
@@ -175,7 +178,8 @@ class Frontend:
     @run_async
     def join_game(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         chat_id: int = update.effective_chat.id
-        if update.message.chat.type == "group" or update.message.chat.type == "supergroup":
+        if update.message.chat.type == telegram.Chat.GROUP \
+                or update.message.chat.type == telegram.Chat.SUPERGROUP:
             logger.info(msg=f"{update.message.from_user} tries to join a game in {chat_id}")
             self.gs.join_game(chat_id=chat_id, user_id=update.message.from_user.id)
         else:
@@ -183,7 +187,8 @@ class Frontend:
 
     @run_async
     def leave_game(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
-        if update.message.chat.type == "group" or update.message.chat.type == "supergroup":
+        if update.message.chat.type == telegram.Chat.GROUP \
+                or update.message.chat.type == telegram.Chat.SUPERGROUP:
             self.gs.leave_game(update.message.chat.id, update.message.from_user.id)
         else:
             self.gs.send_messages([game.Message(update.message.chat.id,
@@ -199,7 +204,7 @@ class Frontend:
             self.gs.send_messages([game.Message(update.message.chat.id,
                                                 GetText("Sorry, this is not a valid command. 🧐"))])
         else:
-            if update.message.chat.type == "private":
+            if update.message.chat.type == telegram.Chat.PRIVATE:
                 submitted_text = update.message.text_html_urled
                 self.gs.submit_text(update.message.chat.id, submitted_text)
             else:
@@ -225,7 +230,7 @@ class Frontend:
     def set_rounds(self, update: telegram.Update, context: telegram.ext.CallbackContext) -> None:
         """Set the number of rounds"""
         chat_id: int = update.effective_chat.id
-        if update.message.chat.type == "private":
+        if update.message.chat.type == telegram.Chat.PRIVATE:
             self.gs.send_messages([game.Message(chat_id, GetText("Games can only edited in group chats."))])
             return
         # Accept just one parameter and when given more or less
@@ -243,18 +248,19 @@ class Frontend:
 
     @run_async
     def set_display_name(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
-        if update.message.chat.type == "group" or update.message.chat.type == "supergroup":
+        if update.message.chat.type == telegram.Chat.GROUP \
+                or update.message.chat.type == telegram.Chat.SUPERGROUP:
             keyboard = [[InlineKeyboardButton(v, callback_data=k) for k, v in BOOLDIS.items()]]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            msg = game.Message(update.effective_chat.id, GetText("Do you want to see the authors names in the result?"))
-            update.message.reply_text(self.gs.get_translation(msg).text, reply_markup=reply_markup)
+            msg = GetText("Do you want to see the authors names in the result?")
+            update.message.reply_text(self.gs.get_translation(msg, update.effective_chat.id), reply_markup=reply_markup)
         else:
             self.gs.send_messages([game.Message(update.message.chat.id,
                                                 GetText("Games can only be edited in group chats."))])
 
     @run_async
     def set_sync(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
-        if update.message.chat.type == "private":
+        if update.message.chat.type == telegram.Chat.PRIVATE:
             self.gs.send_messages([game.Message(update.message.chat.id,
                                                 GetText("Games can only be edited in group chats."))])
             return
@@ -262,14 +268,17 @@ class Frontend:
             keyboard = [[InlineKeyboardButton(v, callback_data=k)
                          for k, v in SYNC.items()]]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            update.message.reply_text(GetText("Please choose:"), reply_markup=reply_markup)
+            update.message.reply_text(self.gs.get_translation
+                (GetText("Please choose:"), update.effective_chat.id), reply_markup=reply_markup)
 
     @run_async
     def set_language(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         keyboard = [[InlineKeyboardButton(v, callback_data=k)
                      for k, v in LANGUAGES.items()]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        update.message.reply_text(GetText("Please choose:"), reply_markup=reply_markup)
+        update.message.reply_text(
+            self.gs.get_translation(GetText("Please choose:"), update.effective_chat.id),
+            reply_markup=reply_markup)
 
     @run_async
     def button(self, update, _context):
@@ -280,25 +289,31 @@ class Frontend:
         print("Button pressed: " + button)
         if button in LANGUAGES:
             self.gs.set_chat_locale(chat_id, button[4:], override=True)
-            query.edit_message_text(text=GetText("Chosen language: {}".format(LANGUAGES.get(button, '–'))))
+            query.edit_message_text(text=self.gs.get_translation(
+                GetText("Chosen language: {}".format(LANGUAGES.get(button, '–'))), chat_id))
         elif button in BOOLDIS:
             if button == "dis_yes":
                 self.gs.set_show_result_names(chat_id, True)
             elif query.data == "dis_no":
                 self.gs.set_show_result_names(chat_id, False)
             else:
-                query.edit_message_text(text=GetText("Oh no! 😱 There's a problem choosing a language!"))
-            query.edit_message_text(text=GetText("Display the names: {}".format(BOOLDIS.get(button, '–'))))
+                query.edit_message_text(text=self.gs.get_translation
+                (GetText("Oh no! 😱 There's a problem choosing a language!"), chat_id))
+            query.edit_message_text(text=self.gs.get_translation
+            (GetText("Display the names: {}".format(BOOLDIS.get(button, '–'))), chat_id))
         elif button in SYNC:
             if query.data == "syn_syn":
                 self.gs.set_synchronous(chat_id, True)
             elif query.data == "syn_asyn":
                 self.gs.set_synchronous(chat_id, False)
             else:
-                query.edit_message_text(text=GetText("Oh no! 😱 There's a problem choosing a mode!"))
-            query.edit_message_text(text=GetText("Chosen mode: {}".format(SYNC.get(button, '–'))))
+                query.edit_message_text(self.gs.get_translation
+                (GetText("Oh no! 😱 There's a problem choosing a mode!")), chat_id)
+            query.edit_message_text(self.gs.get_translation
+            (GetText("Chosen mode: {}".format(SYNC.get(button, '–'))), chat_id))
         else:
-            query.edit_message_text(text=GetText("Oh no! 😱 There's a problem! I don't know this button *️⃣? "))
+            query.edit_message_text(self.gs.get_translation
+            (GetText("Oh no! 😱 There's a problem! I don't know this button *️⃣? "), chat_id))
 
     @run_async
     def help(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
@@ -309,7 +324,7 @@ class Frontend:
     def status(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Print info about game states and sheets."""
         chat_id: int = update.effective_chat.id
-        if update.message.chat.type == "private":
+        if update.message.chat.type == telegram.Chat.PRIVATE:
             self.gs.get_user_status(chat_id)
         else:
             self.gs.get_group_status(chat_id)

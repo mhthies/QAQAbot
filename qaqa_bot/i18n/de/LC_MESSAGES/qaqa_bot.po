@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  QAQABot\n"
 "Report-Msgid-Bugs-To: mail@mhthies.de\n"
-"POT-Creation-Date: 2020-05-05 22:08+0200\n"
+"POT-Creation-Date: 2020-05-05 22:54+0200\n"
 "PO-Revision-Date: 2020-04-22 21:32+0200\n"
 "Last-Translator: Michael Thies <mail@mhthies.de>\n"
 "Language: de\n"
@@ -18,89 +18,90 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.8.0\n"
 
-#: qaqa_bot/bot.py:164
+#: qaqa_bot/bot.py:165
 msgid "Games can only be spawned in group chats."
 msgstr "Spiele können nur in Gruppenchats erstellt werden."
 
-#: qaqa_bot/bot.py:175
+#: qaqa_bot/bot.py:176
 msgid "Games can only be started in group chats."
 msgstr "Spiele können nur in Gruppenchats gestartet werden."
 
-#: qaqa_bot/bot.py:185
+#: qaqa_bot/bot.py:186
 msgid "Games can only be joined in group chats."
 msgstr "Du kannst Spielen nur in Gruppenchats beitreten."
 
-#: qaqa_bot/bot.py:194
+#: qaqa_bot/bot.py:195
 msgid "Games can only be left in group chats."
 msgstr "Du kannst Spiele nur in den dazugehörigen Chats verlassen."
 
-#: qaqa_bot/bot.py:204
+#: qaqa_bot/bot.py:205
 msgid "Sorry, this is not a valid command. 🧐"
 msgstr "Sorry, dieses Kommando verstehe ich leider nicht. 🧐"
 
-#: qaqa_bot/bot.py:211
+#: qaqa_bot/bot.py:212
 msgid "Sorry, I do not understand. Please use a command to communicate with me."
 msgstr ""
 "Entschuldigung, ich verstehe nicht. Bitte benutze Kommandos, um mit mirzu"
 " kommunizieren."
 
-#: qaqa_bot/bot.py:233
+#: qaqa_bot/bot.py:234
 msgid "Games can only edited in group chats."
 msgstr "Spiele können nur in Gruppen-Chats gestartet werden."
 
-#: qaqa_bot/bot.py:241
+#: qaqa_bot/bot.py:242
 msgid "‘{arg}’ is not a number of rounds!"
 msgstr "‚{arg}‘ ist keine Rundenzahl!"
 
-#: qaqa_bot/bot.py:244
+#: qaqa_bot/bot.py:245
 msgid "Please specify the number of rounds."
 msgstr "Bitte gib eine Rundenzahl an."
 
-#: qaqa_bot/bot.py:246
+#: qaqa_bot/bot.py:247
 msgid "Don't you think these are too many parameters?"
 msgstr "Glaubst Du nicht, dass das zu viele Parameter sind?"
 
-#: qaqa_bot/bot.py:254
+#: qaqa_bot/bot.py:255
 msgid "Do you want to see the authors names in the result?"
 msgstr "Möchtet ihr die Namen der AutorInnen in den Resultaten sehen?"
 
-#: qaqa_bot/bot.py:258 qaqa_bot/bot.py:264
+#: qaqa_bot/bot.py:259 qaqa_bot/bot.py:265
 msgid "Games can only be edited in group chats."
 msgstr "Spiele können nur in Gruppenchats bearbeitet werden."
 
-#: qaqa_bot/bot.py:270 qaqa_bot/bot.py:277
+#: qaqa_bot/bot.py:272 qaqa_bot/bot.py:280
 msgid "Please choose:"
 msgstr "Bitte wähle:"
 
-#: qaqa_bot/bot.py:288
+#: qaqa_bot/bot.py:293
 msgid "Chosen language: {}"
 msgstr "Ausgewählte Sprache: {}"
 
-#: qaqa_bot/bot.py:295
+#: qaqa_bot/bot.py:301
 msgid "Oh no! 😱 There's a problem choosing a language!"
 msgstr "Oh nein! 😱 Es ist ein Fehler beim Auswählen der Sprache aufgetreten."
 
-#: qaqa_bot/bot.py:296
+#: qaqa_bot/bot.py:303
 msgid "Display the names: {}"
 msgstr "Namen anzeigen: {}"
 
-#: qaqa_bot/bot.py:303
+#: qaqa_bot/bot.py:311
 msgid "Oh no! 😱 There's a problem choosing a mode!"
 msgstr "Oh nein! 😱 Es ist ein Fehler beim Auswählen des Modus aufgetreten."
 
-#: qaqa_bot/bot.py:304
+#: qaqa_bot/bot.py:313
 msgid "Chosen mode: {}"
 msgstr "Ausgewählter Modus: {}"
 
-#: qaqa_bot/bot.py:306
+#: qaqa_bot/bot.py:316
 msgid "Oh no! 😱 There's a problem! I don't know this button *️⃣? "
 msgstr "Oh nein! 😱 Es gibt ein Problem! Ich kenne diesen Knopf nicht.*️⃣ "
 
-#: qaqa_bot/bot.py:335
+#: qaqa_bot/bot.py:346
 msgid ""
 "Oh no! 😱 A problem occured at {time}! \n"
 " Please forward this message to {owner} for help."
-msgstr "Oh nein! 😱 Um {time} ist ein Problem aufgetreten!\n"
+msgstr ""
+"Oh nein! 😱 Um {time} ist ein Problem aufgetreten!\n"
 "Bitte leite diese Nachricht an {owner} weiter, um Hilfe zu bekommen."
 
 #: qaqa_bot/game.py:239
@@ -197,8 +198,9 @@ msgstr "In diesem Chat gibt es zur Zeit kein laufendes oder wartendes Spiel."
 msgid ""
 "You are one of the last two participants of this game. Thus, you cannot "
 "leave."
-msgstr "Außer dir ist nur noch eine oder weniger Personen im Spiel!"
-"Lass sie nicht allein."
+msgstr ""
+"Außer dir ist nur noch eine oder weniger Personen im Spiel!Lass sie nicht"
+" allein."
 
 #: qaqa_bot/game.py:443
 msgid "You didn't participate in this game."
@@ -389,8 +391,9 @@ msgstr "Das Spiel wurde beendet. Du brauchst deshalb nicht mehr zu antworten."
 
 #: qaqa_bot/game.py:902
 msgid "Game finished. View results at <a href=\"{url}\">{url}</a>."
-msgstr "Das Spiel ist zu Ende. Schaut euch die Resultite unter "
-"<a href=\"{url}\">{url}</a> an."
+msgstr ""
+"Das Spiel ist zu Ende. Schaut euch die Resultite unter <a "
+"href=\"{url}\">{url}</a> an."
 
 #~ msgid ""
 #~ "Hi! I am your friendly qaqa-bot 🤖. \n"
@@ -424,3 +427,4 @@ msgstr "Das Spiel ist zu Ende. Schaut euch die Resultite unter "
 
 #~ msgid "Sheet from Game in {game_name}"
 #~ msgstr "Blatt aus Spiel in {game_name}"
+
