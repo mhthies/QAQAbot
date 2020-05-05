@@ -790,7 +790,7 @@ class GameServer:
 
         :param repeat: True, if this a repeated message for the same sheet and user"""
         if sheet_info.num_entries == 0:
-            return GetText("Please ask a question to begin a new sheet for game {game_name}.")\
+            return GetText("Please ask a question to begin a new sheet for game <i>{game_name}</i>.")\
                 .format(game_name=sheet_info.sheet.game.name)
         else:
             assert(sheet_info.last_entry is not None)

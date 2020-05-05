@@ -335,10 +335,10 @@ msgid "Game finished. View results at {url} ."
 msgstr ""
 
 #: qaqa_bot/game.py:902
-msgid "Please ask a question to begin a new sheet for game {game_name}."
+msgid "Please ask a question to begin a new sheet for game <i>{game_name}</i>."
 msgstr ""
-"Bitte stelle eine Frage, um eine neues Blatt für das Spiel {game_name} zu"
-" beginnen."
+"Bitte stelle eine Frage, um eine neues Blatt für das Spiel <i>{game_name}</i>"
+" zu beginnen."
 
 #: qaqa_bot/game.py:907
 msgid ""
