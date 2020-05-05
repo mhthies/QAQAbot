@@ -246,7 +246,8 @@ class Frontend:
         if update.message.chat.type == "group" or update.message.chat.type == "supergroup":
             keyboard = [[InlineKeyboardButton(v, callback_data=k) for k, v in BOOLDIS.items()]]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            update.message.reply_text('Do you want to see the authors names in the result?', reply_markup=reply_markup)
+            msg = game.Message(update.effective_chat.id, GetText("Do you want to see the authors names in the result?"))
+            update.message.reply_text(self.gs.get_translation(msg).text, reply_markup=reply_markup)
         else:
             self.gs.send_messages([game.Message(update.message.chat.id,
                                                 GetText("Games can only be edited in group chats."))])
@@ -261,14 +262,14 @@ class Frontend:
             keyboard = [[InlineKeyboardButton(v, callback_data=k)
                          for k, v in SYNC.items()]]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            update.message.reply_text('Please choose:', reply_markup=reply_markup)
+            update.message.reply_text(GetText("Please choose:"), reply_markup=reply_markup)
 
     @run_async
     def set_language(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         keyboard = [[InlineKeyboardButton(v, callback_data=k)
                      for k, v in LANGUAGES.items()]]
         reply_markup = InlineKeyboardMarkup(keyboard)
-        update.message.reply_text('Please choose:', reply_markup=reply_markup)
+        update.message.reply_text(GetText("Please choose:"), reply_markup=reply_markup)
 
     @run_async
     def button(self, update, _context):
@@ -278,26 +279,26 @@ class Frontend:
         button = query.data
         print("Button pressed: " + button)
         if button in LANGUAGES:
-            query.edit_message_text(text="Chosen language: {}".format(LANGUAGES.get(button, '–')))
             self.gs.set_chat_locale(chat_id, button[4:], override=True)
+            query.edit_message_text(text=GetText("Chosen language: {}".format(LANGUAGES.get(button, '–'))))
         elif button in BOOLDIS:
-            query.edit_message_text(text="Display the names: {}".format(BOOLDIS.get(button, '–')))
             if button == "dis_yes":
                 self.gs.set_show_result_names(chat_id, True)
             elif query.data == "dis_no":
                 self.gs.set_show_result_names(chat_id, False)
             else:
-                query.edit_message_text(text="Oh no! 😱 There's a problem choosing a language!")
+                query.edit_message_text(text=GetText("Oh no! 😱 There's a problem choosing a language!"))
+            query.edit_message_text(text=GetText("Display the names: {}".format(BOOLDIS.get(button, '–'))))
         elif button in SYNC:
-            query.edit_message_text(text="Chosen mode: {}".format(SYNC.get(button, '–')))
             if query.data == "syn_syn":
                 self.gs.set_synchronous(chat_id, True)
             elif query.data == "syn_asyn":
                 self.gs.set_synchronous(chat_id, False)
             else:
-                query.edit_message_text(text="Oh no! 😱 There's a problem choosing a mode!")
+                query.edit_message_text(text=GetText("Oh no! 😱 There's a problem choosing a mode!"))
+            query.edit_message_text(text=GetText("Chosen mode: {}".format(SYNC.get(button, '–'))))
         else:
-            query.edit_message_text(text="Oh no! 😱 There's a problem! I don't know this button *️⃣? ")
+            query.edit_message_text(text=GetText("Oh no! 😱 There's a problem! I don't know this button *️⃣? "))
 
     @run_async
     def help(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
