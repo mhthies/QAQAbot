@@ -23,15 +23,13 @@ def upgrade():
                     sa.Column('sheet_id', sa.Integer(), nullable=True),
                     sa.Column('position', sa.Integer(), nullable=True),
                     sa.Column('user_id', sa.Integer(), nullable=True),
-                    sa.Column('text', sa.String(), nullable=True),
+                    sa.Column('text', sa.String(4096), nullable=True),
                     sa.Column('type', sa.Enum('QUESTION', 'ANSWER', name='entrytype'), nullable=True),
-                    sa.ForeignKeyConstraint(['sheet_id'], ['sheets.id'], ),
-                    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
                     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('games',
                     sa.Column('id', sa.Integer(), nullable=False),
-                    sa.Column('name', sa.String(), nullable=True),
+                    sa.Column('name', sa.String(512), nullable=True),
                     sa.Column('chat_id', sa.BigInteger(), nullable=True),
                     sa.Column('is_started', sa.Boolean(), nullable=True),
                     sa.Column('is_waiting_for_finish', sa.Boolean(), nullable=True),
@@ -46,16 +44,14 @@ def upgrade():
                     sa.Column('user_id', sa.Integer(), nullable=False),
                     sa.Column('game_order', sa.Integer(), nullable=True),
                     sa.ForeignKeyConstraint(['game_id'], ['games.id'], ),
-                    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
                     sa.PrimaryKeyConstraint('game_id', 'user_id')
     )
     op.create_table('sheets',
                     sa.Column('id', sa.Integer(), nullable=False),
                     sa.Column('game_id', sa.Integer(), nullable=True),
-                    sa.Column('hint', sa.String(), nullable=True),
+                    sa.Column('hint', sa.String(4096), nullable=True),
                     sa.Column('current_user_id', sa.Integer(), nullable=True),
                     sa.Column('pending_position', sa.Integer(), nullable=True),
-                    sa.ForeignKeyConstraint(['current_user_id'], ['users.id'], ),
                     sa.ForeignKeyConstraint(['game_id'], ['games.id'], ),
                     sa.PrimaryKeyConstraint('id')
     )
@@ -63,12 +59,16 @@ def upgrade():
                     sa.Column('id', sa.Integer(), nullable=False),
                     sa.Column('api_id', sa.Integer(), nullable=True),
                     sa.Column('chat_id', sa.BigInteger(), nullable=True),
-                    sa.Column('name', sa.String(), nullable=True),
+                    sa.Column('name', sa.String(512), nullable=True),
                     sa.Column('current_sheet_id', sa.Integer(), nullable=True),
                     sa.ForeignKeyConstraint(['current_sheet_id'], ['sheets.id'], ),
                     sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###
+    op.create_foreign_key("fk_entries_sheet_id", 'entries', 'sheets', ['sheet_id'], ['id'])
+    op.create_foreign_key("fk_entries_user_id", 'entries', 'users', ['user_id'], ['id'])
+    op.create_foreign_key("fk_participants_user_id", 'participants', 'users', ['user_id'], ['id'])
+    op.create_foreign_key("fk_sheets_current_user_id", 'sheets', 'users', ['current_user_id'], ['id'])
 
 
 def downgrade():
