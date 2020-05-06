@@ -290,7 +290,7 @@ class Frontend:
         if button in LANGUAGES:
             self.gs.set_chat_locale(chat_id, button[4:], override=True)
             query.edit_message_text(text=self.gs.get_translation(
-                GetText("Chosen language: {}".format(LANGUAGES.get(button, '–'))), chat_id))
+                GetText("Chosen language: {lang}").format(lang=LANGUAGES.get(button, '–')), chat_id))
         elif button in BOOLDIS:
             if button == "dis_yes":
                 self.gs.set_show_result_names(chat_id, True)
@@ -300,7 +300,7 @@ class Frontend:
                 query.edit_message_text(text=self.gs.get_translation
                 (GetText("Oh no! 😱 There's a problem choosing a language!"), chat_id))
             query.edit_message_text(text=self.gs.get_translation
-            (GetText("Display the names: {}".format(BOOLDIS.get(button, '–'))), chat_id))
+            (GetText("Display the names: {state}").format(state=BOOLDIS.get(button, '–')), chat_id))
         elif button in SYNC:
             if query.data == "syn_syn":
                 self.gs.set_synchronous(chat_id, True)
@@ -310,7 +310,7 @@ class Frontend:
                 query.edit_message_text(self.gs.get_translation
                 (GetText("Oh no! 😱 There's a problem choosing a mode!")), chat_id)
             query.edit_message_text(self.gs.get_translation
-            (GetText("Chosen mode: {}".format(SYNC.get(button, '–'))), chat_id))
+            (GetText("Chosen mode: {mode}").format(mode=SYNC.get(button, '–')), chat_id))
         else:
             query.edit_message_text(self.gs.get_translation
             (GetText("Oh no! 😱 There's a problem! I don't know this button *️⃣? "), chat_id))

@@ -73,24 +73,24 @@ msgid "Please choose:"
 msgstr "Bitte wähle:"
 
 #: qaqa_bot/bot.py:293
-msgid "Chosen language: {}"
-msgstr "Ausgewählte Sprache: {}"
+msgid "Chosen language: {lang}"
+msgstr "Ausgewählte Sprache: {lang}"
 
 #: qaqa_bot/bot.py:301
 msgid "Oh no! 😱 There's a problem choosing a language!"
 msgstr "Oh nein! 😱 Es ist ein Fehler beim Auswählen der Sprache aufgetreten."
 
 #: qaqa_bot/bot.py:303
-msgid "Display the names: {}"
-msgstr "Namen anzeigen: {}"
+msgid "Display the names: {state}"
+msgstr "Namen anzeigen: {state}"
 
 #: qaqa_bot/bot.py:311
 msgid "Oh no! 😱 There's a problem choosing a mode!"
 msgstr "Oh nein! 😱 Es ist ein Fehler beim Auswählen des Modus aufgetreten."
 
 #: qaqa_bot/bot.py:313
-msgid "Chosen mode: {}"
-msgstr "Ausgewählter Modus: {}"
+msgid "Chosen mode: {mode}"
+msgstr "Ausgewählter Modus: {mode}"
 
 #: qaqa_bot/bot.py:316
 msgid "Oh no! 😱 There's a problem! I don't know this button *️⃣? "
