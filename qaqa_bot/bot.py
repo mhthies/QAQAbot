@@ -86,8 +86,10 @@ class Frontend:
         self.dispatcher.add_handler(set_display_name_handler)
 
         # Messagehandler
-        message_handler = MessageHandler(filters=telegram.ext.filters.MergedFilter(
-            Filters.text, ~Filters.update.edited_message), callback=self.incoming_message)
+        message_handler = MessageHandler(
+            filters=telegram.ext.filters.MergedFilter(
+                Filters.text, telegram.ext.filters.MergedFilter(~Filters.update.edited_message, ~Filters.command)),
+            callback=self.incoming_message)
         self.dispatcher.add_handler(message_handler)
         message_edit_handler = MessageHandler(filters=telegram.ext.filters.MergedFilter(
             Filters.update.edited_message, Filters.command), callback=self.edited_message)
@@ -200,17 +202,13 @@ class Frontend:
         text = update.message.text
         logger.info(msg=f"Got message from {update.message.from_user.first_name}: {text}")
         logger.info(update)
-        if re.search(r'\/.*', text):
-            self.gs.send_messages([game.Message(update.message.chat.id,
-                                                GetText("Sorry, this is not a valid command. 🧐"))])
+        if update.message.chat.type == telegram.Chat.PRIVATE:
+            submitted_text = update.message.text_html_urled
+            self.gs.submit_text(update.message.chat.id, submitted_text)
         else:
-            if update.message.chat.type == telegram.Chat.PRIVATE:
-                submitted_text = update.message.text_html_urled
-                self.gs.submit_text(update.message.chat.id, submitted_text)
-            else:
-                self.gs.send_messages([game.Message(update.message.chat.id,
-                                                    GetText("Sorry, I do not understand. Please use a command to "
-                                                            "communicate with me."))])
+            self.gs.send_messages([game.Message(update.message.chat.id,
+                                                GetText("Sorry, I do not understand. Please use a command to "
+                                                        "communicate with me."))])
 
     @run_async
     def edited_message(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
