@@ -61,7 +61,7 @@ class TestWeb(unittest.TestCase):
 
     @staticmethod
     def _find_result_url(messages: List[game.TranslatedMessage], chat_id: int) -> Optional[str]:
-        re_url = re.compile(re.escape(CONFIG['web']['base_url']) + r"(\/\S+)")
+        re_url = re.compile(re.escape(CONFIG['web']['base_url']) + r"(\/[^\s\"]+)")
         for message in messages:
             if message.chat_id == chat_id:
                 match = re_url.search(message.text)
