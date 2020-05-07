@@ -525,7 +525,7 @@ class GameServer:
         self._send_messages(self._finalize_game(game, session), session)
 
     @with_session
-    def submit_text(self, session: Session, chat_id: int, text: str) -> None:
+    def submit_text(self, session: Session, chat_id: int, message_id: int, text: str) -> None:
         """
         Process a message send by a user in their private chat.
 
@@ -556,7 +556,8 @@ class GameServer:
         entry_type = (model.EntryType.QUESTION
                       if not current_sheet.entries or current_sheet.entries[-1].type == model.EntryType.ANSWER
                       else model.EntryType.ANSWER)
-        current_sheet.entries.append(model.Entry(user=user, text=text, type=entry_type,
+        current_sheet.entries.append(model.Entry(user=user, text=text, type=entry_type, chat_id=chat_id,
+                                                 message_id=message_id,
                                                  timestamp=datetime.datetime.now(datetime.timezone.utc)))
         result.append(Message(chat_id, GetNoText("🆗")))
         user.current_sheet = None

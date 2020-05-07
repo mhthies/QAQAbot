@@ -206,7 +206,7 @@ class Frontend:
         else:
             if update.message.chat.type == telegram.Chat.PRIVATE:
                 submitted_text = update.message.text_html_urled
-                self.gs.submit_text(update.message.chat.id, submitted_text)
+                self.gs.submit_text(update.message.chat.id, update.message.message_id, submitted_text)
             else:
                 self.gs.send_messages([game.Message(update.message.chat.id,
                                                     GetText("Sorry, I do not understand. Please use a command to "
