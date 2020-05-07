@@ -90,7 +90,7 @@ class Frontend:
             Filters.text, ~Filters.update.edited_message), callback=self.incoming_message)
         self.dispatcher.add_handler(message_handler)
         message_edit_handler = MessageHandler(filters=telegram.ext.filters.MergedFilter(
-            Filters.update.edited_message, Filters.command), callback=self.edited_message)
+            Filters.update.edited_message, ~Filters.command), callback=self.edited_message)
         self.dispatcher.add_handler(message_edit_handler)
 
         # Errorhandling
@@ -214,7 +214,10 @@ class Frontend:
 
     @run_async
     def edited_message(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
-        logger.info(msg=f"Message edited!")
+        if update.edited_message.chat.type == telegram.Chat.PRIVATE:
+            self.gs.edit_submitted_message(update.edited_message.chat.id,
+                                           update.edited_message.message_id,
+                                           update.edited_message.text)
 
     @run_async
     def stop_game(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
