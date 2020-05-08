@@ -84,13 +84,19 @@ class FullGameTests(unittest.TestCase):
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
                                    {21: re.compile("Welcome Lukas"),
                                     13: re.compile("ask a question")})
-        self.game_server.submit_text(13, 7, "Question 3")
+        self.game_server.submit_text(13, 7, "Quetsion 3")
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {13: re.compile(self.TEXT_SUBMIT_RESPONSE)})
+        self.game_server.edit_submitted_message(13, 7, "Quetion 3")
         self.assertMessagesCorrect(self.message_store.fetch_messages(), {13: re.compile(self.TEXT_SUBMIT_RESPONSE)})
         self.game_server.submit_text(12, 8, "Question 2")
-        self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(r"(?s)answer.*?Question 3"),
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(r"(?s)answer.*?Quetion 3"),
                                                                          12: re.compile(r"(?s)answer.*?Question 1|"
                                                                                         + self.TEXT_SUBMIT_RESPONSE),
                                                                          13: re.compile(r"(?s)answer.*?Question 2")})
+        self.game_server.edit_submitted_message(13, 7, "Question 3")
+        self.assertMessagesCorrect(self.message_store.fetch_messages(),
+                                   {11: re.compile(r"Question 3|updated"),
+                                    13: re.compile(self.TEXT_SUBMIT_RESPONSE)})
         # Jannik wants to join too, but it's too late
         self.game_server.join_game(21, 4)
         self.assertMessagesCorrect(self.message_store.fetch_messages(),
@@ -98,6 +104,8 @@ class FullGameTests(unittest.TestCase):
         # Write answers
         self.game_server.submit_text(11, 9, "Answer 1")
         self.assertMessagesCorrect(self.message_store.fetch_messages(), {11: re.compile(self.TEXT_SUBMIT_RESPONSE)})
+        self.game_server.edit_submitted_message(13, 7, "Question Q3")
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {13: re.compile(r"not accepted")})
         self.game_server.submit_text(13, 10, "Answer 3")
         self.assertMessagesCorrect(self.message_store.fetch_messages(), {13: re.compile(self.TEXT_SUBMIT_RESPONSE)})
         self.game_server.get_group_status(21)
@@ -109,6 +117,8 @@ class FullGameTests(unittest.TestCase):
             self.message_store.fetch_messages(),
             {12: re.compile(self.TEXT_SUBMIT_RESPONSE),
              21: re.compile("example.com:9090/game/")})
+        self.game_server.edit_submitted_message(13, 10, "Answer A3")
+        self.assertMessagesCorrect(self.message_store.fetch_messages(), {13: re.compile(r"not accepted")})
 
     def test_asynchronous_game(self):
         # Create new game in "Funny Group" chat (chat_id=21)
