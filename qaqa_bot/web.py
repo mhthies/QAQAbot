@@ -49,7 +49,13 @@ def setup_cherrypy_engine(env: "WebEnvironment", config: Dict[str, Any]) -> None
       served from `web_static/`.
     * Register a `before_finalize` CherryPy tool to add a Content-Security-Policy header.
     """
-    cherrypy.config.update({'engine.autoreload.on': False})
+    cherrypy.config.update({'engine.autoreload.on': False,
+                            'checker.on': False,
+                            'tools.log_headers.on': False,
+                            'request.show_tracebacks': False,
+                            'request.show_mismatched_params': False,
+                            'log.screen': False,
+                            })
     cherrypy.config.update(config['web'])
     cherrypy.tree.mount(WebRoot(env), '/', {
         '/': {'tools.secure_headers.on': True},
