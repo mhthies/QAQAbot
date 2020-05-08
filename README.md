@@ -128,9 +128,10 @@ You may also run database migrations with Alembic for full control: `alembic upg
 
 ### Updating
 
-Simply update the git repository and restart the bot for updating:
+Simply update the git repository, comple the new translations and restart the bot for updating:
 ```bash
 git pull
+venv/bin/pybabel compile -d qaqa_bot/i18n/ -D qaqa_bot
 venv/bin/python -m qaqa_bot
 ```
 As explained above, the database and Telegram bot settings will be updated automatically at startup.
