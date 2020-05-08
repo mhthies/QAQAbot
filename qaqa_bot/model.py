@@ -36,7 +36,7 @@ directory. Use `alembic upgrade head` on the CLI or `util.run_migrations()`.
 
 import enum
 
-from sqlalchemy import Column, Integer, BigInteger, String, Boolean, Enum, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, BigInteger, String, Boolean, Enum, ForeignKey, DateTime, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.orderinglist import ordering_list
@@ -130,9 +130,15 @@ class Entry(Base):
     text = Column(String(4096), nullable=False)
     type = Column(Enum(EntryType), nullable=False)
     timestamp = Column(DateTime, nullable=False)
+    # Telegram chat- and message ids to
+    chat_id = Column(BigInteger)
+    message_id = Column(Integer)
 
     sheet = relationship('Sheet', back_populates='entries')
     user = relationship('User')
+
+
+Index('idx_chat_message_id', Entry.chat_id, Entry.message_id, unique=True)
 
 
 class SelectedLocale(Base):

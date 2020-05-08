@@ -525,7 +525,7 @@ class GameServer:
         self._send_messages(self._finalize_game(game, session), session)
 
     @with_session
-    def submit_text(self, session: Session, chat_id: int, text: str) -> None:
+    def submit_text(self, session: Session, chat_id: int, message_id: int, text: str) -> None:
         """
         Process a message send by a user in their private chat.
 
@@ -556,7 +556,8 @@ class GameServer:
         entry_type = (model.EntryType.QUESTION
                       if not current_sheet.entries or current_sheet.entries[-1].type == model.EntryType.ANSWER
                       else model.EntryType.ANSWER)
-        current_sheet.entries.append(model.Entry(user=user, text=text, type=entry_type,
+        current_sheet.entries.append(model.Entry(user=user, text=text, type=entry_type, chat_id=chat_id,
+                                                 message_id=message_id,
                                                  timestamp=datetime.datetime.now(datetime.timezone.utc)))
         result.append(Message(chat_id, GetNoText("🆗")))
         user.current_sheet = None
@@ -588,6 +589,46 @@ class GameServer:
         result.extend(self._next_sheet([user], session))
         self._send_messages(result, session)
 
+    @with_session
+    def edit_submitted_message(self, session: Session, chat_id: int, message_id: int, new_text: str) -> None:
+        entry = session.query(model.Entry)\
+            .filter(model.Entry.chat_id == chat_id, model.Entry.message_id == message_id)\
+            .options(joinedload(model.Entry.sheet).joinedload(model.Sheet.game))\
+            .one_or_none()
+
+        if entry is None:
+            # TODO message?
+            return
+
+        if entry.sheet.game.is_finished:
+            self._send_messages([Message(chat_id, GetText("Changing message “{old_text}” is not accepted, because the "
+                                                          "relevant game is already finished.")
+                                         .format(old_text=truncate_string(entry.text)))], session)
+            return
+
+        last_entry_pos = session.query(func.max(model.Entry.position))\
+            .filter(model.Entry.sheet_id == entry.sheet_id)\
+            .scalar()
+        if entry.position < last_entry_pos:
+            self._send_messages([Message(chat_id, GetText("Changing message “{old_text}” is not accepted, because the "
+                                                          "next player already responded to that entry.")
+                                         .format(old_text=truncate_string(entry.text)))], session)
+            return
+
+        result = [Message(chat_id, GetText("🆗 Change to message “{old_text}” was accepted.")
+                          .format(old_text=truncate_string(entry.text, 100)))]
+        entry.text = new_text
+        logger.info("Latest entry on sheet %s was edited.", entry.sheet_id)
+
+        current_user = session.query(model.User).filter(model.User.current_sheet_id == entry.sheet.id).one_or_none()
+        if current_user is not None:
+            logger.debug("Informing user %s about edit on sheet %s.", current_user.id, entry.sheet_id)
+            result.append(Message(current_user.chat_id, GetText("The {type} has been updated by its author:")
+                                  .format(type=(GetText("question")
+                                                if entry.type == model.EntryType.QUESTION
+                                                else GetText("answer")))))
+            result.extend(self._next_sheet([current_user], session, repeat=True))
+        self._send_messages(result, session)
     # TODO resend_current_sheet()
 
     @with_session
@@ -928,3 +969,11 @@ class GameServer:
         messages.append(GetNoText(msg))
         return messages
         # TODO UX: improve
+
+
+def truncate_string(s, length=200, end="…"):
+    """ A simplified version of Jinja2's truncate filter. """
+    if len(s) <= length:
+        return s
+    result = s[: length - len(end)].rsplit(" ", 1)[0]
+    return result + end
