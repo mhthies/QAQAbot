@@ -24,15 +24,18 @@ body {
 .sheet ol>li {
     margin-bottom: 10px;
 }
-.sheet ol>li.question {
+.entry.question {
     text-shadow: 0 0 6px rgba(0,87,127,.7);
 }
-
+.entry .meta {
+    font-size: 12px;
+    float: right;
+}
 
 .sheet footer {
     margin: 10px 0 -10px 0;
     display: block;
-    font-size: 10px;
+    font-size: 12px;
     color: #aaa;
     text-align: right;
 }

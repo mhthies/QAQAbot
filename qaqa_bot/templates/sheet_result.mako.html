@@ -10,3 +10,9 @@
 <h1>${gettext("Sheet from Game in {game_name}").format(game_name=sheet.game.name)}</h1>
 
 ${util.print_sheet(sheet=sheet)}
+
+% if show_authors:
+<footer>
+    <a href="${base_url}/sheet/${encode_id(b'sheet', sheet.id)}/?lang=${lang}">${gettext("Sheet without authors")}</a>
+</footer>
+% endif

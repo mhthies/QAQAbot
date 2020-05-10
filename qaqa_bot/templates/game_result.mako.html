@@ -10,3 +10,9 @@
 % for sheet in game.sheets:
     ${util.print_sheet(sheet=sheet)}
 % endfor
+
+% if show_authors:
+<footer>
+    <a href="${base_url}/game/${encode_id(b'game', game.id)}/?lang=${lang}">${gettext("Results without authors")}</a>
+</footer>
+% endif

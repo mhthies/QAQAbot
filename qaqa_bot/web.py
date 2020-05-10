@@ -119,16 +119,18 @@ class Game:
         self._env = env
 
     @cherrypy.expose
-    def index(self, game_id, lang='en'):
+    def index(self, game_id, lang='en', authors=False):
         if '/' in lang:
             raise cherrypy.HTTPError(422, "Invalid language code")
-        game_id_decoded = decode_secure_id(game_id, self._env.config['secret'], b'game')
+        game_id_decoded = decode_secure_id(game_id, self._env.config['secret'], b'game+' if authors else b'game')
         if game_id_decoded is None:
             raise cherrypy.HTTPError(404, "Invalid game id string")
         game = self._env.game_server.get_game_result(game_id_decoded)
         if game is None:
             raise cherrypy.HTTPError(404, "Game with given id not found")
-        return self._env.render_template('game_result.mako.html', {'game': game}, lang)
+        if authors and not game.is_showing_result_names:
+            raise cherrypy.HTTPError(404, "Game view with authors not available")
+        return self._env.render_template('game_result.mako.html', {'game': game, 'show_authors': authors}, lang)
 
 
 @cherrypy.popargs('sheet_id')
@@ -137,13 +139,15 @@ class Sheet:
         self._env = env
 
     @cherrypy.expose
-    def index(self, sheet_id, lang='en'):
+    def index(self, sheet_id, lang='en', authors=False):
         if '/' in lang:
             raise cherrypy.HTTPError(422, "Invalid language code")
-        sheet_id_decoded = decode_secure_id(sheet_id, self._env.config['secret'], b'sheet')
+        sheet_id_decoded = decode_secure_id(sheet_id, self._env.config['secret'], b'sheet+' if authors else b'sheet')
         if sheet_id_decoded is None:
             raise cherrypy.HTTPError(404, "Invalid sheet id string")
         sheet = self._env.game_server.get_game_result_sheet(sheet_id_decoded)
         if sheet is None:
             raise cherrypy.HTTPError(404, "Sheet with given sheet id not found")
-        return self._env.render_template('sheet_result.mako.html', {'sheet': sheet}, lang)
+        if authors and not sheet.game.is_showing_result_names:
+            raise cherrypy.HTTPError(404, "Sheet view with authors not available")
+        return self._env.render_template('sheet_result.mako.html', {'sheet': sheet, 'show_authors': authors}, lang)
