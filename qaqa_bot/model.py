@@ -51,9 +51,9 @@ class Game(Base):
     name = Column(String(512), nullable=False)
     chat_id = Column(BigInteger, nullable=False, index=True)
     # Game state:
-    is_started = Column(Boolean, nullable=False)
+    started = Column(DateTime)
+    finished = Column(DateTime, index=True)
     is_waiting_for_finish = Column(Boolean, nullable=False)
-    is_finished = Column(Boolean, nullable=False, index=True)
     # Game seetings:
     rounds = Column(Integer)  # May be NULL until game start. In this case it is set to the number of players
     is_synchronous = Column(Boolean, nullable=False)
