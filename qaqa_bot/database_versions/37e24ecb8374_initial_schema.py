@@ -65,10 +65,13 @@ def upgrade():
                     sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###
-    op.create_foreign_key("fk_entries_sheet_id", 'entries', 'sheets', ['sheet_id'], ['id'])
-    op.create_foreign_key("fk_entries_user_id", 'entries', 'users', ['user_id'], ['id'])
-    op.create_foreign_key("fk_participants_user_id", 'participants', 'users', ['user_id'], ['id'])
-    op.create_foreign_key("fk_sheets_current_user_id", 'sheets', 'users', ['current_user_id'], ['id'])
+    with op.batch_alter_table('entries', schema=None) as batch_op:
+        batch_op.create_foreign_key("fk_entries_sheet_id", 'sheets', ['sheet_id'], ['id'])
+        batch_op.create_foreign_key("fk_entries_user_id", 'users', ['user_id'], ['id'])
+    with op.batch_alter_table('participants', schema=None) as batch_op:
+        batch_op.create_foreign_key("fk_participants_user_id", 'users', ['user_id'], ['id'])
+    with op.batch_alter_table('sheets', schema=None) as batch_op:
+        batch_op.create_foreign_key("fk_sheets_current_user_id", 'users', ['current_user_id'], ['id'])
 
 
 def downgrade():
