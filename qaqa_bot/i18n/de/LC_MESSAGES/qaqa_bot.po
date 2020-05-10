@@ -350,7 +350,7 @@ msgstr " Sie haben bislang {min}–{max} (Median: {median}) Einträge."
 msgid ""
 "We are currently waiting for {users} 👀\n"
 "\n"
-msgstr "Aktuell warten wir auf {users} 👀"
+msgstr "Aktuell warten wir auf {users} 👀\n\n"
 
 #: qaqa_bot/game.py:715
 msgid ""
