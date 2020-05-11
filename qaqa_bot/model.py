@@ -36,7 +36,7 @@ directory. Use `alembic upgrade head` on the CLI or `util.run_migrations()`.
 
 import enum
 
-from sqlalchemy import Column, Integer, BigInteger, String, Boolean, Enum, ForeignKey, DateTime, Index
+from sqlalchemy import Column, Integer, BigInteger, String, Boolean, Enum, ForeignKey, DateTime, Index, Unicode
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.orderinglist import ordering_list
@@ -48,7 +48,7 @@ Base = declarative_base()
 class Game(Base):
     __tablename__ = 'games'
     id = Column(Integer, primary_key=True)
-    name = Column(String(512), nullable=False)
+    name = Column(Unicode(512), nullable=False)
     chat_id = Column(BigInteger, nullable=False, index=True)
     # Game state:
     started = Column(DateTime)
@@ -69,7 +69,7 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     api_id = Column(Integer, nullable=False)
     chat_id = Column(BigInteger, nullable=False, unique=True, index=True)
-    name = Column(String(512), nullable=False)
+    name = Column(Unicode(512), nullable=False)
     # The sheet on which the user is currently working, i.e. which they were requested to add an entry to. Or NULL, if
     # they are not currently working on a sheet. If not NULL, this should always correspond the first entry of
     # `User.pending_sheets`.
@@ -101,7 +101,7 @@ class Sheet(Base):
     __tablename__ = 'sheets'
     id = Column(Integer, primary_key=True)
     game_id = Column(Integer, ForeignKey('games.id'), nullable=False, index=True)
-    hint = Column(String(4096))
+    hint = Column(Unicode(4096))
     # In which user's queue (`User.pending_sheets`) does this sheet wait? May be NULL, if the sheet is finished or the
     # game is synchronous and the sheet is waiting for the next round.
     current_user_id = Column(Integer, ForeignKey('users.id'), index=True)
@@ -127,7 +127,7 @@ class Entry(Base):
     position = Column(Integer, nullable=False, index=True)
     # The user, who wrote this entry
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    text = Column(String(4096), nullable=False)
+    text = Column(Unicode(4096), nullable=False)
     type = Column(Enum(EntryType), nullable=False)
     timestamp = Column(DateTime, nullable=False)
     # Telegram chat- and message ids to

@@ -23,13 +23,13 @@ def upgrade():
                     sa.Column('sheet_id', sa.Integer(), nullable=True),
                     sa.Column('position', sa.Integer(), nullable=True),
                     sa.Column('user_id', sa.Integer(), nullable=True),
-                    sa.Column('text', sa.String(4096), nullable=True),
+                    sa.Column('text', sa.Unicode(4096), nullable=True),
                     sa.Column('type', sa.Enum('QUESTION', 'ANSWER', name='entrytype'), nullable=True),
                     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('games',
                     sa.Column('id', sa.Integer(), nullable=False),
-                    sa.Column('name', sa.String(512), nullable=True),
+                    sa.Column('name', sa.Unicode(512), nullable=True),
                     sa.Column('chat_id', sa.BigInteger(), nullable=True),
                     sa.Column('is_started', sa.Boolean(), nullable=True),
                     sa.Column('is_waiting_for_finish', sa.Boolean(), nullable=True),
@@ -49,7 +49,7 @@ def upgrade():
     op.create_table('sheets',
                     sa.Column('id', sa.Integer(), nullable=False),
                     sa.Column('game_id', sa.Integer(), nullable=True),
-                    sa.Column('hint', sa.String(4096), nullable=True),
+                    sa.Column('hint', sa.Unicode(4096), nullable=True),
                     sa.Column('current_user_id', sa.Integer(), nullable=True),
                     sa.Column('pending_position', sa.Integer(), nullable=True),
                     sa.ForeignKeyConstraint(['game_id'], ['games.id'], ),
@@ -59,7 +59,7 @@ def upgrade():
                     sa.Column('id', sa.Integer(), nullable=False),
                     sa.Column('api_id', sa.Integer(), nullable=True),
                     sa.Column('chat_id', sa.BigInteger(), nullable=True),
-                    sa.Column('name', sa.String(512), nullable=True),
+                    sa.Column('name', sa.Unicode(512), nullable=True),
                     sa.Column('current_sheet_id', sa.Integer(), nullable=True),
                     sa.ForeignKeyConstraint(['current_sheet_id'], ['sheets.id'], ),
                     sa.PrimaryKeyConstraint('id')
