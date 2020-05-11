@@ -23,7 +23,7 @@ from .util import CONFIG, create_sample_users
 class FullGameTests(unittest.TestCase):
     def setUp(self) -> None:
         # Setup database schema
-        engine = sqlalchemy.create_engine(CONFIG['database']['connection'], echo=True)
+        engine = sqlalchemy.create_engine(CONFIG['database']['connection'], isolation_level='SERIALIZABLE', echo=True)
         model.Base.metadata.create_all(engine)
         create_sample_users(engine)
 

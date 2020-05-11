@@ -153,14 +153,16 @@ class GameServer:
         :param config: The bot configuration, read from the `config.toml` file
         :param send_callback: A callback function taking a list of `Message` tuples and sending them via the Telegram
             API. It should raise an exception when sending fails to trigger the database rollback.
-        :param database_engine: (optional) Pre-initialized database engine. If not given, a new database engine is
-            created, using the `database.connection` entry in the config.
+        :param database_engine: (optional) Pre-initialized database engine. The engine should be initialized with
+            isolation_level='SERIALIZABLE'. If not given, a new database engine is created, using the
+            `database.connection` entry in the config.
         """
         self.config = config
 
         # database_engine may be given (e.g. for testing purposes). Otherwise, we construct one from the configuration
         if database_engine is None:
-            self.database_engine = sqlalchemy.create_engine(config['database']['connection'])
+            self.database_engine = sqlalchemy.create_engine(config['database']['connection'],
+                                                            isolation_level='SERIALIZABLE')
         else:
             self.database_engine = database_engine
 

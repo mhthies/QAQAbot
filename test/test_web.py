@@ -24,7 +24,7 @@ from .util import CONFIG, create_sample_users
 class TestWeb(unittest.TestCase):
     def setUp(self) -> None:
         # Setup database schema
-        engine = sqlalchemy.create_engine(CONFIG['database']['connection'], echo=False)
+        engine = sqlalchemy.create_engine(CONFIG['database']['connection'], echo=False, isolation_level='SERIALIZABLE')
         model.Base.metadata.create_all(engine)
         create_sample_users(engine)
 
