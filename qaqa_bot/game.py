@@ -32,8 +32,15 @@ import logging
 from typing import NamedTuple, List, Optional, Iterable, Dict, Any, Callable, MutableMapping
 
 import sqlalchemy
+import sqlalchemy.exc
 from sqlalchemy import func, and_
 from sqlalchemy.orm import Session, joinedload, selectinload, defaultload, raiseload
+# We need the MySQLdb driver only to detect Deadlock-Exceptions caused by concurrent modifications.
+try:
+    import MySQLdb._exceptions
+    mysqldb_driver = True
+except ImportError:
+    mysqldb_driver = False
 
 from . import model
 from .util import LazyGetTextBase, GetText, NGetText, GetNoText, encode_secure_id
@@ -89,19 +96,33 @@ def with_session(f):
     This decorator wraps the GameServer method to create a SQLAlchemy database session from the GameServer's
     sessionmaker before entering the original method. The session is passed to the method as second argument, after
     `self`, before the caller's positional and keyword arguments. The session is committed after the successful
-    execution of the method and rolled back in case of an Exception. """
+    execution of the method and rolled back in case of an Exception.
+
+    The decorator also handles retries of failed database transactions due to concurrent modifications to the database:
+    If such an Exception is detected, the function is re-called with the same parameters up to 30 times.
+    """
     @functools.wraps(f)
     def wrapper(self: "GameServer", *args, **kwargs):
         session = self.session_maker()
-        try:
-            result = f(self, session, *args, **kwargs)
-            session.commit()
-            return result
-        except Exception:
-            session.rollback()
-            raise
-        finally:
-            session.close()
+        trys = 0
+        while trys < 30:
+            try:
+                result = f(self, session, *args, **kwargs)
+                session.commit()
+                return result
+            except Exception as e:
+                session.rollback()
+                # If the wrapped function fails with a concurrent database modification, retry the modification.
+                if (isinstance(e, sqlalchemy.exc.OperationalError)
+                        and mysqldb_driver
+                        and isinstance(e.orig, MySQLdb._exceptions.OperationalError)
+                        and e.orig.args[0] == 1213):  # MySQL code for "Deadlock detected"
+                    # TODO detect similar error of other database backends
+                    trys += 1
+                    continue
+                raise
+            finally:
+                session.close()
     return wrapper
 
 
