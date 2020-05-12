@@ -18,7 +18,7 @@ import cherrypy
 from webtest import TestApp
 
 from qaqa_bot import model, game, web
-from .util import CONFIG, create_sample_users, OutgoingMessageStore
+from .util import CONFIG, create_sample_users
 
 
 class TestWeb(unittest.TestCase):
@@ -28,8 +28,7 @@ class TestWeb(unittest.TestCase):
         model.Base.metadata.create_all(engine)
         create_sample_users(engine)
 
-        self.message_store = OutgoingMessageStore()
-        self.game_server = game.GameServer(CONFIG, self.message_store.send_message, engine)
+        self.game_server = game.GameServer(CONFIG, engine)
 
         cherrypy.config.update({'engine.autoreload.on': False})
         cherrypy.server.unsubscribe()
@@ -55,9 +54,7 @@ class TestWeb(unittest.TestCase):
         self.game_server.submit_text(11, 4, "Answer 1")
         self.game_server.submit_text(13, 5, "Answer 3")
         self.game_server.get_group_status(21)
-        self.message_store.fetch_messages()
-        self.game_server.submit_text(12, 6, "Answer 2")
-        return self.message_store.fetch_messages()
+        return self.game_server.submit_text(12, 6, "Answer 2")
 
     @staticmethod
     def _find_result_url(messages: List[game.TranslatedMessage], chat_id: int) -> Optional[str]:

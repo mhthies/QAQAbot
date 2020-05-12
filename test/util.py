@@ -21,20 +21,6 @@ from qaqa_bot.util import session_scope
 CONFIG = toml.load(os.path.join(os.path.dirname(__file__), "test_config.toml"))
 
 
-class OutgoingMessageStore:
-    """ A Mock class to test the message sending of a GameServer """
-    def __init__(self):
-        self.messages = []
-
-    def send_message(self, messages: List[game.TranslatedMessage]) -> None:
-        self.messages.extend(messages)
-
-    def fetch_messages(self) -> List[game.TranslatedMessage]:
-        current_messages = self.messages
-        self.messages = []
-        return current_messages
-
-
 def create_sample_users(engine):
     users = [model.User(api_id=1, chat_id=11, name="Michael"),
              model.User(api_id=2, chat_id=12, name="Jenny"),

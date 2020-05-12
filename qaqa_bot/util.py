@@ -123,7 +123,7 @@ class LazyGetTextBase(metaclass=abc.ABCMeta):
     Abstract base class for the lazy GNU gettext implementation.
 
     Instances of this class contain a translatable string, that may be translated with a given gettext `Translations`
-    environment, as soon as the target locale is known, using `get_translation()`. Additionally, they may contain
+    environment, as soon as the target locale is known, using `translate_string()`. Additionally, they may contain
     formatting parameters to fill into the translated strings afterwards.
     """
     @abc.abstractmethod

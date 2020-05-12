@@ -143,7 +143,6 @@ class GameServer:
     handlers of the Telegram and Web frontends.
     """
     def __init__(self, config: MutableMapping[str, Any],
-                 send_callback: Callable[[List[TranslatedMessage]], None],
                  database_engine: Optional[sqlalchemy.engine.Engine] = None):
         """
         Initialize a new
@@ -155,7 +154,6 @@ class GameServer:
             created, using the `database.connection` entry in the config.
         """
         self.config = config
-        self._send_callback = send_callback
 
         # database_engine may be given (e.g. for testing purposes). Otherwise, we construct one from the configuration
         if database_engine is None:
@@ -167,22 +165,7 @@ class GameServer:
         self.session_maker = sqlalchemy.orm.sessionmaker(bind=self.database_engine)
 
     @with_session
-    def send_messages(self, session: Session, messages: List[Message]) -> None:
-        """
-        Send a list of translatable messages.
-
-        For each message, the target locale is looked up in the database according to the target chat_id, and the
-        message is translated for that locale and sent to the chat.
-
-        This message can be used by the `Frontend` to send a direct response message (without further interaction with
-        the GameServer) in the correct language.
-
-        This is basically a session-managing wrapper for calling the internal `_send_messages()` from a fontend.
-        """
-        self._send_messages(messages, session)
-
-    @with_session
-    def get_translation(self, session: Session, message: LazyGetTextBase, chat_id: int) -> str:
+    def translate_string(self, session: Session, message: LazyGetTextBase, chat_id: int) -> str:
         """
         Translate a translatable string into the correct language for given chat.
 
@@ -192,6 +175,15 @@ class GameServer:
         This is basically a session-managing wrapper for calling the internal `get_translations()` method a frontend.
         """
         return self._get_translations([Message(chat_id, message)], session)[0].text
+
+    @with_session
+    def get_translations(self, session: Session, messages: List[Message]) -> List[TranslatedMessage]:
+        """
+        Translate a list of messages for the locale of their respective chat_ids.
+
+        This is basically a session-managing wrapper for calling the internal `get_translations()` method a frontend.
+        """
+        return self._get_translations(messages, session)
 
     @with_session
     def get_game_result(self, session: Session, game_id: int) -> model.Game:
@@ -238,7 +230,7 @@ class GameServer:
             session.add(l)
 
     @with_session
-    def register_user(self, session: Session, chat_id: int, user_id: int, user_name: str) -> None:
+    def register_user(self, session: Session, chat_id: int, user_id: int, user_name: str) -> List[TranslatedMessage]:
         """
         Register a new user and its private chat_id in the database, when they begin a private chat with the
         COMMAND_REGISTER.
@@ -257,7 +249,7 @@ class GameServer:
             existing_user.chat_id = chat_id
             existing_user.name = user_name
             logger.info("Updating user %s (%s)", existing_user.id, user_name)
-            self._send_messages([Message(chat_id, GetText(
+            return self._get_translations([Message(chat_id, GetText(
                 "You are already registered. If you want to start a game, head over to a group chat and spawn a game "
                 "with /{cmd}").format(cmd=COMMAND_NEW_GAME))]  # TODO UX
                                 + self._next_sheet([existing_user], session, repeat=True), session)
@@ -266,14 +258,14 @@ class GameServer:
             session.add(user)
             session.flush()
             logger.info("Created new user %s (%s)", user.id, user_name)
-            self._send_messages([Message(chat_id, GetText(
+            return self._get_translations([Message(chat_id, GetText(
                 "Hi! I am your friendly qaqa-bot 🤖. \n"
                 "I will guide you through hopefully many games of the question-answer-question-answer party game. "
                 "Thanks for joining! Now head to the group you want to play the game with and spawn, join and "
                 "start a game."))], session)  # TODO UX: return explanation
 
     @with_session
-    def new_game(self, session: Session, chat_id: int, name: str) -> None:
+    def new_game(self, session: Session, chat_id: int, name: str) -> List[TranslatedMessage]:
         """
         Create a new game in the given group chat and inform the group about success or cause of failure of this action.
 
@@ -284,88 +276,80 @@ class GameServer:
         running_games = session.query(model.Game).filter(model.Game.chat_id == chat_id,
                                                          model.Game.finished == None).count()
         if running_games:
-            self._send_messages([Message(chat_id, GetText("Already a running or pending game in this chat"))], session)  # TODO UX: Add hint to COMMAND_STATUS
-            return
+            return self._get_translations([Message(chat_id, GetText("Already a running or pending game in this chat"))],
+                                          session)  # TODO UX: Add hint to COMMAND_STATUS
         game = model.Game(name=name, chat_id=chat_id, finished=None, started=None, is_waiting_for_finish=False,
                           is_synchronous=True, is_showing_result_names=False)
         session.add(game)
         session.flush()
         logger.info("Created new game %s in chat %s (%s)", game.id, chat_id, name)
-        self._send_messages([Message(chat_id,
+        return self._get_translations([Message(chat_id,
                                      GetText("✅ New game created. Use /{command} to join the game.")  # TODO UX: more info
                                      .format(command=COMMAND_JOIN_GAME))], session)
 
     @with_session
-    def set_rounds(self, session: Session, chat_id: int, rounds: int) -> None:
+    def set_rounds(self, session: Session, chat_id: int, rounds: int) -> List[TranslatedMessage]:
         game = session.query(model.Game).filter(model.Game.chat_id == chat_id,
                                                 model.Game.finished == None).one_or_none()
         if game is None:
-            self._send_messages([Message(chat_id, GetText("❌ No game to configure in this chat"))], session)  # TODO UX: Add hint to COMMAND_NEW_GAME
-            return
+            return self._get_translations([Message(chat_id, GetText("❌ No game to configure in this chat"))], session)  # TODO UX: Add hint to COMMAND_NEW_GAME
         if game.started is not None:
-            self._send_messages([Message(chat_id, GetText("❌ Sorry, I can only configure a game before its start. ⏳"))], session)
-            return
+            return self._get_translations(
+                [Message(chat_id, GetText("❌ Sorry, I can only configure a game before its start. ⏳"))], session)
             # TODO allow rounds change for running games (unless a sheet has > rounds * entries). In this case, sheets with
             #  len(entries) = old_rounds may require to be newly assigned
         if rounds < 1:
-            self._send_messages([Message(chat_id, GetText("invalid rounds number. Must be &gt;= 1"))], session)
-            return
+            return self._get_translations([Message(chat_id, GetText("invalid rounds number. Must be &gt;= 1"))], session)
         logger.info("Setting rounds of game %s to %s", game.id, rounds)
         game.rounds = rounds
-        self._send_messages([Message(chat_id, GetText(
+        return self._get_translations([Message(chat_id, GetText(
             "Number of rounds set: {number_rounds}").format(number_rounds=game.rounds))], session)  # TODO UX
 
     @with_session
-    def set_synchronous(self, session: Session, chat_id: int, state: bool) -> None:
+    def set_synchronous(self, session: Session, chat_id: int, state: bool) -> List[TranslatedMessage]:
         game = session.query(model.Game).filter(model.Game.chat_id == chat_id,
                                                 model.Game.finished == None).one_or_none()
         if game is None:
-            self._send_messages([Message(chat_id, GetText("No game to configure in this chat"))], session)  # TODO UX
-            return
+            return self._get_translations([Message(chat_id, GetText("No game to configure in this chat"))], session)  # TODO UX
         if game.started is not None:
-            self._send_messages([Message(chat_id, GetText(
+            return self._get_translations([Message(chat_id, GetText(
                 "❌ Sorry, I can only configure a game before its start. ⏳"))], session)  # TODO UX
-            return
             # TODO allow mode change for running games (requires passing of waiting sheets for sync → unsync)
         logger.info("Setting game %s to %s", game.id, "synchronous" if state else "asynchronous")
         game.is_synchronous = state
-        self._send_messages([Message(chat_id, GetText(f"✅ Set game mode."))], session)
+        return self._get_translations([Message(chat_id, GetText(f"✅ Set game mode."))], session)
 
     @with_session
-    def set_show_result_names(self, session: Session, chat_id: int, state: bool) -> None:
+    def set_show_result_names(self, session: Session, chat_id: int, state: bool) -> List[TranslatedMessage]:
         game = session.query(model.Game).filter(model.Game.chat_id == chat_id,
                                                 model.Game.finished == None).one_or_none()
         if game is None:
-            self._send_messages([Message(chat_id, GetText("❌ No game to configure in this chat"))], session)  # TODO UX
-            return
+            return self._get_translations([Message(chat_id, GetText("❌ No game to configure in this chat"))], session)  # TODO UX
         if game.started is not None:
-            self._send_messages([Message(chat_id, GetText(
+            return self._get_translations([Message(chat_id, GetText(
                 "❌ Sorry, I can only configure a game before its start. ⏳"))], session)  # TODO UX
             # TODO should this be possible?
-            return
         logger.info("Setting game %s to %s", game.id, "show result names" if state else "not show result names")
         game.is_showing_result_names = state
-        self._send_messages([Message(chat_id, GetNoText("✅"))], session)  # TODO UX
+        return self._get_translations([Message(chat_id, GetNoText("✅"))], session)  # TODO UX
 
     @with_session
-    def join_game(self, session: Session, chat_id: int, user_id: int) -> None:
+    def join_game(self, session: Session, chat_id: int, user_id: int) -> List[TranslatedMessage]:
         game = session.query(model.Game)\
             .filter(model.Game.chat_id == chat_id, model.Game.finished == None)\
             .one_or_none()
         if game is None:
-            self._send_messages([Message(chat_id,
-                                         GetText("There is currently no pending game in this group. 🙃"
-                                                 "Use /{command} to start one.").format(command=COMMAND_NEW_GAME))],
-                                session)
-            return
+            return self._get_translations(
+                [Message(chat_id, GetText("There is currently no pending game in this group. 🙃 Use /{command} to start "
+                                          "one.").format(command=COMMAND_NEW_GAME))],
+                session)
         user = session.query(model.User).filter(model.User.api_id == user_id).one_or_none()
         if user is None:
-            self._send_messages([Message(chat_id,
-                                         GetText("You must start a chat with the bot first. Use the following link: "
-                                                 "https://t.me/{bot_name}?{command}=now")
-                                         .format(bot_name=self.config['bot']['username'], command=COMMAND_REGISTER))],
-                                session)
-            return
+            return self._get_translations([
+                Message(chat_id, GetText("You must start a chat with the bot first. Use the following link: "
+                                         "https://t.me/{bot_name}?{command}=now")
+                        .format(bot_name=self.config['bot']['username'], command=COMMAND_REGISTER))],
+                session)
 
         new_sheet = False
         if game.started is not None:
@@ -378,9 +362,8 @@ class GameServer:
                     logger.info("User %s joins running synchronous game %s in first round", user.id, game.id)
                 else:
                     logger.info("User %s cannot join %s, which is already started synchronously.", user.id, game.id)
-                    self._send_messages([Message(chat_id, GetText("⏳ Oh no! The game has already started! "
-                                                                  "Please join the next game."))], session)
-                    return
+                    return self._get_translations([Message(chat_id, GetText("⏳ Oh no! The game has already started! "
+                                                                            "Please join the next game."))], session)
             else:
                 # Add a new sheet if other sheets have only few entries (< ¼ of target rounds), too.
                 if min((si.num_entries for si in sheet_infos), default=0) < game.rounds // 4:
@@ -395,27 +378,25 @@ class GameServer:
         if new_sheet:
             user.pending_sheets.append(model.Sheet(game=game))
             messages.extend(self._next_sheet([user], session))
-        self._send_messages(messages, session)  # TODO UX
+        return self._get_translations(messages, session)  # TODO UX
 
     @with_session
-    def start_game(self, session: Session, chat_id: int) -> None:
+    def start_game(self, session: Session, chat_id: int) -> List[TranslatedMessage]:
         game = session.query(model.Game)\
             .filter(model.Game.chat_id == chat_id, model.Game.finished == None)\
             .one_or_none()
         if game is None:
-            self._send_messages([Message(chat_id,
-                                         GetText("There is currently no pending game in this Group. "
-                                                 "Use /{command} to start one.").format(command=COMMAND_NEW_GAME))],
-                                session)
-            return
+            return self._get_translations([Message(chat_id,
+                                                   GetText("There is currently no pending game in this Group. "
+                                                           "Use /{command} to start one.")
+                                                   .format(command=COMMAND_NEW_GAME))],
+                                          session)
         elif game.started is not None:
-            self._send_messages([Message(chat_id, GetText("The game is already running"))], session)  # TODO Create status command, refer to it.
-            return
+            return self._get_translations([Message(chat_id, GetText("The game is already running"))], session)  # TODO Create status command, refer to it.
         elif len(game.participants) < 2:
             logger.debug("Game %s has not enough participants to be started", game.id)
-            self._send_messages([Message(chat_id, GetText(
+            return self._get_translations([Message(chat_id, GetText(
                 "No games with less than two participants permitted 🙅‍♀️"))], session)
-            return
 
         # Create sheets and start game
         for participant in game.participants:
@@ -431,18 +412,17 @@ class GameServer:
         # Give sheets to participants
         result = [Message(chat_id, GetNoText("Let's go!")), Message(chat_id, GetNoText("📝"))]
         result.extend(self._next_sheet([p.user for p in game.participants], session))
-        self._send_messages(result, session)
+        return self._get_translations(result, session)
 
     @with_session
-    def leave_game(self, session: Session, chat_id: int, user_id: int) -> None:
+    def leave_game(self, session: Session, chat_id: int, user_id: int) -> List[TranslatedMessage]:
         game = session.query(model.Game)\
             .filter(model.Game.chat_id == chat_id, model.Game.finished == None)\
             .one_or_none()
         if game is None:
-            self._send_messages([Message(chat_id,
-                                         GetText("There is currently no running or pending game in this chat."))],
+            return self._get_translations([Message(chat_id,
+                                           GetText("There is currently no running or pending game in this chat."))],
                                 session)
-            return
         num_participants = session.query(func.count(model.Participant.user_id))\
             .filter(model.Participant.game == game)\
             .scalar()
@@ -450,9 +430,8 @@ class GameServer:
         if num_participants <= 2 and game.started is not None:
             logger.debug("Cannot remove user from game %s, since they are one of 2 or less remaining participants",
                          game.id)
-            self._send_messages([Message(chat_id, GetText("You are one of the last two participants of this game. Thus,"
-                                                          " you cannot leave."))], session)
-            return
+            return self._get_translations([Message(chat_id, GetText("You are one of the last two participants of this "
+                                                                    "game. Thus, you cannot leave."))], session)
 
         # Remove user as participant from game
         user = session.query(model.User).filter(model.User.api_id == user_id).one_or_none()
@@ -461,8 +440,7 @@ class GameServer:
             .one_or_none()
         if participation is None:
             logger.debug("Cannot remove user %s from game %s, since they do not participate. 🤨", user.id, game.id)
-            self._send_messages([Message(chat_id, GetText("You didn't participate in this game."))], session)
-            return
+            return self._get_translations([Message(chat_id, GetText("You didn't participate in this game."))], session)
         session.delete(participation)
 
         result = [Message(chat_id, GetText("👋 Bye!"))]  # TODO
@@ -480,10 +458,10 @@ class GameServer:
                      ",".join(str(s.id) for s in obsolete_sheets), user.id)
         self._assign_sheet_to_next(obsolete_sheets, game, session)
         result.extend(self._next_sheet([sheet.current_user for sheet in obsolete_sheets if sheet.current_user], session))
-        self._send_messages(result, session)
+        return self._get_translations(result, session)
 
     @with_session
-    def stop_game(self, session: Session, chat_id: int) -> None:
+    def stop_game(self, session: Session, chat_id: int) -> List[TranslatedMessage]:
         """
         Handle a request for a normal game stop in the given group chat.
 
@@ -495,9 +473,9 @@ class GameServer:
                                                 model.Game.started != None,
                                                 model.Game.finished == None).one_or_none()
         if game is None:
-            self._send_messages([Message(chat_id, GetText("There is currently no running game in this group."))],
-                                session)
-            return
+            return self._get_translations([Message(chat_id,
+                                                   GetText("There is currently no running game in this group."))],
+                                          session)
 
         logger.info("Marking game %s to stop at next opportunity. ✋", game.id)
         game.is_waiting_for_finish = True
@@ -526,10 +504,10 @@ class GameServer:
                             users_to_update.add(sheet_user)
             messages.extend(self._next_sheet(list(users_to_update), session))
 
-        self._send_messages(messages, session)
+        return self._get_translations(messages, session)
 
     @with_session
-    def immediately_stop_game(self, session: Session, chat_id: int) -> None:
+    def immediately_stop_game(self, session: Session, chat_id: int) -> List[TranslatedMessage]:
         """
         Handle a request for an immediate game stop in the given group chat.
 
@@ -539,14 +517,14 @@ class GameServer:
                                                 model.Game.started != None,
                                                 model.Game.finished == None).one_or_none()
         if game is None:
-            self._send_messages([Message(chat_id, GetText("There is currently no running game in this group."))],
+            return self._get_translations([Message(chat_id,
+                                                   GetText("There is currently no running game in this group."))],
                                 session)
-            return
         logger.info("Immediately stopping game %s.", game.id)
-        self._send_messages(self._finalize_game(game, session), session)
+        return self._get_translations(self._finalize_game(game, session), session)
 
     @with_session
-    def submit_text(self, session: Session, chat_id: int, message_id: int, text: str) -> None:
+    def submit_text(self, session: Session, chat_id: int, message_id: int, text: str) -> List[TranslatedMessage]:
         """
         Process a message send by a user in their private chat.
 
@@ -559,15 +537,14 @@ class GameServer:
         """
         user = session.query(model.User).filter(model.User.chat_id == chat_id).one_or_none()
         if user is None:
-            self._send_messages([Message(chat_id, GetText("Unexpected message. Please use /{command} to register with "
-                                                          "the bot.").format(command=COMMAND_REGISTER))],
-                                session)
-            return
+            return self._get_translations([Message(chat_id,
+                                                   GetText("Unexpected message. Please use /{command} to register with "
+                                                           "the bot.").format(command=COMMAND_REGISTER))],
+                                          session)
         current_sheet = user.current_sheet
         if current_sheet is None:
             logger.debug("Got unexpected text message from user %s (chat_id %s).", user.id, chat_id)
-            self._send_messages([Message(chat_id, GetText("Unexpected message."))], session)
-            return
+            return self._get_translations([Message(chat_id, GetText("Unexpected message."))], session)
 
         result = []
 
@@ -608,10 +585,11 @@ class GameServer:
                 result.extend(self._next_sheet([current_sheet.current_user], session))
 
         result.extend(self._next_sheet([user], session))
-        self._send_messages(result, session)
+        return self._get_translations(result, session)
 
     @with_session
-    def edit_submitted_message(self, session: Session, chat_id: int, message_id: int, new_text: str) -> None:
+    def edit_submitted_message(self, session: Session, chat_id: int, message_id: int, new_text: str) \
+            -> List[TranslatedMessage]:
         entry = session.query(model.Entry)\
             .filter(model.Entry.chat_id == chat_id, model.Entry.message_id == message_id)\
             .options(joinedload(model.Entry.sheet).joinedload(model.Sheet.game))\
@@ -619,22 +597,21 @@ class GameServer:
 
         if entry is None:
             # TODO message?
-            return
+            return []
 
         if entry.sheet.game.finished is not None:
-            self._send_messages([Message(chat_id, GetText("Changing message “{old_text}” is not accepted, because the "
-                                                          "relevant game is already finished.")
-                                         .format(old_text=truncate_string(entry.text)))], session)
-            return
+            return self._get_translations([Message(chat_id, GetText("Changing message “{old_text}” is not accepted,"
+                                                                    "because the relevant game is already finished.")
+                                                   .format(old_text=truncate_string(entry.text)))], session)
 
         last_entry_pos = session.query(func.max(model.Entry.position))\
             .filter(model.Entry.sheet_id == entry.sheet_id)\
             .scalar()
         if entry.position < last_entry_pos:
-            self._send_messages([Message(chat_id, GetText("Changing message “{old_text}” is not accepted, because the "
-                                                          "next player already responded to that entry.")
-                                         .format(old_text=truncate_string(entry.text)))], session)
-            return
+            return self._get_translations([Message(chat_id,
+                                                   GetText("Changing message “{old_text}” is not accepted, "
+                                                           "because the next player already responded to that entry.")
+                                                   .format(old_text=truncate_string(entry.text)))], session)
 
         result = [Message(chat_id, GetText("🆗 Change to message “{old_text}” was accepted.")
                           .format(old_text=truncate_string(entry.text, 100)))]
@@ -649,11 +626,12 @@ class GameServer:
                                                 if entry.type == model.EntryType.QUESTION
                                                 else GetText("answer")))))
             result.extend(self._next_sheet([current_user], session, repeat=True))
-        self._send_messages(result, session)
+        return self._get_translations(result, session)
+
     # TODO resend_current_sheet()
 
     @with_session
-    def get_user_status(self, session: Session, chat_id: int):
+    def get_user_status(self, session: Session, chat_id: int) -> List[TranslatedMessage]:
         """
         Send infos about the current state (games, pending sheets) to a user.
 
@@ -661,11 +639,10 @@ class GameServer:
         """
         user = session.query(model.User).filter(model.User.chat_id == chat_id).one_or_none()
         if user is None:
-            self._send_messages(
+            return self._get_translations(
                 [Message(chat_id, GetText("You are currently not registered for using this bot. Please use "
                                           "/{command} to register with the bot.").format(command=COMMAND_REGISTER))],
                 session)
-            return
 
         # Inform about game participations
         running_games = [p.game for p in user.participations if p.game.started is not None and p.game.finished is None]
@@ -695,10 +672,11 @@ class GameServer:
                 parts.append(GetText("\nYou have currently no pending sheets ✨"))
 
         status = GetNoText("\n").join(parts)
-        self._send_messages([Message(chat_id, status)] + self._next_sheet([user], session, repeat=True), session)
+        return self._get_translations([Message(chat_id, status)] + self._next_sheet([user], session, repeat=True),
+                                      session)
 
     @with_session
-    def get_group_status(self, session: Session, chat_id: int):
+    def get_group_status(self, session: Session, chat_id: int) -> List[TranslatedMessage]:
         """
         Send infos about the current game state (current running/pending game, players, sheets, entries) to a group.
 
@@ -748,13 +726,10 @@ class GameServer:
                                  "{players}\n\n"
                                  "Game configuration:\n{configuration}")\
                     .format(command=COMMAND_START_GAME, players=players, configuration=configuration)
-        self._send_messages([Message(chat_id, status)], session)
+        return self._get_translations([Message(chat_id, status)], session)
 
     # ###########################################################################
-    # Helper methods for translating and sending messages
-
-    def _send_messages(self, messages: List[Message], session: Session) -> None:
-        self._send_callback(self._get_translations(messages, session))
+    # Helper methods for translating messages
 
     def _get_translations(self, messages: List[Message], session: Session) -> List[TranslatedMessage]:
         """
