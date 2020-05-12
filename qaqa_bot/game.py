@@ -345,8 +345,8 @@ class GameServer:
             .one_or_none()
         if game is None:
             return self._get_translations(
-                [Message(chat_id, GetText("There is currently no pending game in this group. 🙃 Use /{command} to start "
-                                          "one.").format(command=COMMAND_NEW_GAME))],
+                [Message(chat_id, GetText("There is currently no pending game in this group. 🙃 Use /{command} to "
+                                          "create one.").format(command=COMMAND_NEW_GAME))],
                 session)
         user = session.query(model.User).filter(model.User.api_id == user_id).one_or_none()
         if user is None:
@@ -607,7 +607,7 @@ class GameServer:
             return []
 
         if entry.sheet.game.finished is not None:
-            return self._get_translations([Message(chat_id, GetText("Changing message “{old_text}” is not accepted,"
+            return self._get_translations([Message(chat_id, GetText("Changing message “{old_text}” is not accepted, "
                                                                     "because the relevant game is already finished.")
                                                    .format(old_text=truncate_string(entry.text)))], session)
 
