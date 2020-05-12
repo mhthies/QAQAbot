@@ -23,11 +23,7 @@ from . import game
 from .game import GameServer
 from .util import GetText
 
-# Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
 logger = logging.getLogger(__name__)
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 LANGUAGES = {'lan_de': '🇩🇪',
              'lan_en': '🇬🇧'}
