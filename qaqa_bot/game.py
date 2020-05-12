@@ -482,7 +482,7 @@ class GameServer:
                                                    GetText("There is currently no running game in this group."))],
                                           session)
 
-        logger.info("Marking game %s to stop at next opportunity. ✋", game.id)
+        logger.info("Marking game %s to stop at next opportunity.", game.id)
         game.is_waiting_for_finish = True
         sheet_infos = list(self._game_sheet_infos(game, session))
 
@@ -577,7 +577,7 @@ class GameServer:
         if game.finished is None and len(current_sheet.entries) < game.rounds:
             # In a synchronous game: Check if the round is finished and pass sheets on
             if game.is_synchronous:
-                logger.info("Checking if new round in synchronous game %s should be triggered.", game.id)
+                logger.debug("Checking if new round in synchronous game %s should be triggered.", game.id)
                 if all(num_entries == len(current_sheet.entries) for sheet, num_entries, last_entry in sheet_infos):
                     logger.info("Triggering new round %s in synchronous game %s.",
                                 len(current_sheet.entries) + 1, game.id)
