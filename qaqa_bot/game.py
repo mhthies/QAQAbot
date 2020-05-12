@@ -60,6 +60,7 @@ COMMAND_SET_DISPLAY_NAME = "set_show_name"
 COMMAND_SET_SYNC = "set_sync"
 
 LOCALE_DIR = os.path.join(os.path.dirname(__file__), 'i18n')
+MAX_TRANSACTION_TRYS = 30
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +107,7 @@ def with_session(f):
     def wrapper(self: "GameServer", *args, **kwargs):
         session = self.session_maker()
         trys = 0
-        while trys < 30:
+        while True:
             try:
                 result = f(self, session, *args, **kwargs)
                 session.commit()
@@ -120,7 +121,8 @@ def with_session(f):
                         and e.orig.args[0] == 1213):  # MySQL code for "Deadlock detected"
                     # TODO detect similar error of other database backends
                     trys += 1
-                    continue
+                    if trys < MAX_TRANSACTION_TRYS:
+                        continue
                 raise
             finally:
                 session.close()
