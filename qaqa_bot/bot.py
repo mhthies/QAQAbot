@@ -199,8 +199,8 @@ class Frontend:
     @run_async
     def incoming_message(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Parse a text-message that was send to the bot in a private chat."""
-        logger.debug("Received text message %s in chat %s from Telegram user %s", update.edited_message.message_id,
-                     update.edited_message.chat.id, update.edited_message.from_user.id)
+        logger.debug("Received text message %s in chat %s from Telegram user %s", update.message.message_id,
+                     update.message.chat.id, update.message.from_user.id)
         if update.message.chat.type == telegram.Chat.PRIVATE:
             submitted_text = update.message.text_html_urled
             self.send_messages(self.gs.submit_text(update.message.chat.id, update.message.message_id, submitted_text))
