@@ -424,7 +424,7 @@ msgstr "Das Spiel wurde beendet. Du brauchst deshalb nicht mehr zu antworten."
 #: qaqa_bot/game.py:943
 msgid "Game finished. View results at <a href=\"{url}\">{url}</a>."
 msgstr ""
-"Das Spiel ist zu Ende. Schaut euch die Resultite unter <a "
+"Das Spiel ist zu Ende. Schaut euch die Resultate unter <a "
 "href=\"{url}\">{url}</a> an."
 
 #: qaqa_bot/templates/game_result.mako.html:5
