@@ -10,7 +10,7 @@
 # specific language governing permissions and limitations under the License.
 
 import logging
-from typing import List
+from typing import List, Dict, Any
 import datetime
 
 import telegram
@@ -20,6 +20,7 @@ from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, Call
 from telegram.utils import promise
 
 from . import game
+from .game import GameServer
 from .util import GetText
 
 # Enable logging
@@ -35,7 +36,7 @@ SYNC = {"syn_syn": "Synchronous mode", "syn_asyn": "Asynchronous mode"}
 
 
 class Frontend:
-    def __init__(self, config):
+    def __init__(self, config: Dict[str, Any], game_server: GameServer):
         self.config = config
         token: str = config["bot"]["api_key"]
 
@@ -98,7 +99,7 @@ class Frontend:
         self.dispatcher.add_error_handler(self.error)
 
         # Gameserver
-        self.gs = game.GameServer(config=config)
+        self.gs = game_server
 
         # Flood limits avoiding delay queue
         self._message_queue = messagequeue.MessageQueue(autostart=False)
