@@ -29,12 +29,12 @@ import math
 import statistics
 import os.path
 import logging
-from typing import NamedTuple, List, Optional, Iterable, Dict, Any, Callable, MutableMapping
+from typing import NamedTuple, List, Optional, Iterable, Dict, Any, MutableMapping
 
 import sqlalchemy
 import sqlalchemy.exc
 from sqlalchemy import func, and_
-from sqlalchemy.orm import Session, joinedload, selectinload, defaultload, raiseload
+from sqlalchemy.orm import Session, joinedload, selectinload, raiseload
 # We need the MySQLdb driver only to detect Deadlock-Exceptions caused by concurrent modifications.
 try:
     import MySQLdb._exceptions
@@ -43,7 +43,7 @@ except ImportError:
     mysqldb_driver = False
 
 from . import model
-from .util import LazyGetTextBase, GetText, NGetText, GetNoText, encode_secure_id
+from .util import LazyGetTextBase, GetText, GetNoText, encode_secure_id
 
 COMMAND_HELP = "help"
 COMMAND_STATUS = "status"
@@ -99,7 +99,8 @@ def with_session(f):
     execution of the method and rolled back in case of an Exception.
 
     The decorator also handles retries of failed database transactions due to concurrent modifications to the database:
-    If such an Exception is detected, the function is re-called with the same parameters up to 30 times.
+    If such an Exception is detected, the function is re-called with the same parameters up to 30 times. For this to
+    work, the wrapped method must be free from side-effects (apart from the changes in the database).
     """
     @functools.wraps(f)
     def wrapper(self: "GameServer", *args, **kwargs):
@@ -533,6 +534,8 @@ class GameServer:
         triggered), and/or the game is finalized and result messages are generated.
 
         :param chat_id: The chat_id in which the message has been received. Should be the private chat with a user.
+        :param message_id: Telegram's message id (within the chat). It is stored in the database and used to identify
+            the message on edits.
         :param text: The messages text.
         """
         user = session.query(model.User).filter(model.User.chat_id == chat_id).one_or_none()

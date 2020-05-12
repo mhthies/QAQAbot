@@ -10,8 +10,7 @@
 # specific language governing permissions and limitations under the License.
 
 import logging
-from typing import List, Type
-import re
+from typing import List
 import datetime
 
 import telegram
