@@ -30,6 +30,7 @@ import gettext
 import os
 from typing import Dict, Any, Optional
 
+import babel.dates
 import cherrypy
 import mako.lookup
 import markupsafe
@@ -90,6 +91,8 @@ class WebEnvironment:
             'base_url': config['web']['base_url'],
             'static_url': lambda file_name: "{}/static/{}".format(config['web']['base_url'], file_name),  # TODO add version to control caching
             'encode_id': lambda realm, val: encode_secure_id(val, config['secret'], realm),
+            'format_date': babel.dates.format_date,
+            'format_datetime': babel.dates.format_datetime,
         }
 
     def render_template(self, template_name: str, params: Dict[str, Any], locale: Optional[str] = None) -> str:

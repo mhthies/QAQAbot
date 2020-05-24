@@ -2,12 +2,15 @@
 <%namespace name="util" file="util.mako.html"/>
 
 ## TODO add date
-<%block name="title">${gettext("Sheet from Game in {game_name}").format(game_name=sheet.game.name)}
+<%block name="title">${gettext("Sheet from {game_name} on {date}")\
+                       .format(game_name=sheet.game.name,\
+                               date=format_date(sheet.game.finished, locale=lang))}
     | QAQA Game Bot</%block>
 
 
 ## TODO add date
-<h1>${gettext("Sheet from Game in {game_name}").format(game_name=sheet.game.name)}</h1>
+<h1>${gettext("Sheet from {game_name}").format(game_name=sheet.game.name)}</h1>
+<div class="subtitle">${format_datetime(sheet.game.finished, locale=lang)}</div>
 
 ${util.print_sheet(sheet=sheet)}
 

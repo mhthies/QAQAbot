@@ -3,6 +3,12 @@ body {
     font-size: 20px;
 }
 
+.subtitle {
+    margin: -1rem 0 2rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
 .container {
     width: 100%;
     max-width: 600px;

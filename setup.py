@@ -60,6 +60,7 @@ setup(
         'python-telegram-bot>=12.2',
         'toml>=0.10',
         'alembic>=1.0',
+        'Babel>=2.8',
         'cherrypy',
     ],
     classifiers=[

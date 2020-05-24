@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  QAQABot\n"
 "Report-Msgid-Bugs-To: mail@mhthies.de\n"
-"POT-Creation-Date: 2020-05-12 22:28+0200\n"
+"POT-Creation-Date: 2020-05-24 21:41+0200\n"
 "PO-Revision-Date: 2020-04-22 21:32+0200\n"
 "Last-Translator: Michael Thies <mail@mhthies.de>\n"
 "Language: de\n"
@@ -116,10 +116,10 @@ msgid ""
 " want to play the game with and spawn, join and start a game."
 msgstr ""
 "Hi! Ich bin der nette QAQA-Bot 🤖. \n"
-"Ich werde dich durch (hoffentlich) viele Runden des Frage-Antwort-"
-"Frage-Antwort-Party-Spiels führen. Danke für's Anmelden! Wechsle nun"
-" in die Gruppe, in der du das Spiel spielen möchtest, tritt dem Spiel"
-" dort bei und starte es."
+"Ich werde dich durch (hoffentlich) viele Runden des Frage-Antwort-Frage-"
+"Antwort-Party-Spiels führen. Danke für's Anmelden! Wechsle nun in die "
+"Gruppe, in der du das Spiel spielen möchtest, tritt dem Spiel dort bei "
+"und starte es."
 
 #: qaqa_bot/game.py:284
 msgid "Already a running or pending game in this chat"
@@ -240,8 +240,8 @@ msgid ""
 "Changing message “{old_text}” is not accepted, because the relevant game "
 "is already finished."
 msgstr ""
-"Die Veränderung der Nachricht „{old_text}“ wurde nicht akzeptiert, da das "
-"zugehörige Spiel bereits beendet ist."
+"Die Veränderung der Nachricht „{old_text}“ wurde nicht akzeptiert, da das"
+" zugehörige Spiel bereits beendet ist."
 
 #: qaqa_bot/game.py:619
 msgid ""
@@ -433,22 +433,28 @@ msgstr ""
 "href=\"{url}\">{url}</a> an."
 
 #: qaqa_bot/templates/game_result.mako.html:5
-#: qaqa_bot/templates/game_result.mako.html:8
+msgid "Game in {game_name} on {date}"
+msgstr "Spiel in {game_name} am {date}"
+
+#: qaqa_bot/templates/game_result.mako.html:10
 msgid "Game in {game_name}"
 msgstr "Spiel in {game_name}"
 
-#: qaqa_bot/templates/game_result.mako.html:16
+#: qaqa_bot/templates/game_result.mako.html:19
 msgid "Results without authors"
 msgstr "Ergebnisse ohne Autoren"
 
 #: qaqa_bot/templates/sheet_result.mako.html:5
-#: qaqa_bot/templates/sheet_result.mako.html:10
-msgid "Sheet from Game in {game_name}"
-msgstr "Blatt aus Spiel in {game_name}"
+msgid "Sheet from {game_name} on {date}"
+msgstr "Blatt aus {game_name} vom {date}"
 
-#: qaqa_bot/templates/sheet_result.mako.html:16
+#: qaqa_bot/templates/sheet_result.mako.html:12
+msgid "Sheet from {game_name}"
+msgstr "Blatt aus {game_name}"
+
+#: qaqa_bot/templates/sheet_result.mako.html:19
 msgid "Sheet without authors"
-msgstr "Blätter ohne Autoren"
+msgstr "Blatt ohne Autoren"
 
 #: qaqa_bot/templates/util.mako.html:17
 msgid "Q:"
