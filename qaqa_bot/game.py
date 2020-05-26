@@ -352,8 +352,10 @@ class GameServer:
         if user is None:
             return self._get_translations([
                 Message(chat_id, GetText("You must start a chat with the bot first. Use the following link: "
-                                         "https://t.me/{bot_name}?{command}=now")
-                        .format(bot_name=self.config['bot']['username'], command=COMMAND_REGISTER))],
+                                         "https://t.me/{bot_name}?{command}=now and click \"START\"\n"
+                                         "Afterwards, come back here and use /{command_join} again.")
+                        .format(bot_name=self.config['bot']['username'], command=COMMAND_REGISTER,
+                                command_join=COMMAND_JOIN_GAME))],
                 session)
 
         new_sheet = False
