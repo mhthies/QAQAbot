@@ -43,7 +43,7 @@ except ImportError:
     mysqldb_driver = False
 
 from . import model
-from .util import LazyGetTextBase, GetText, GetNoText, encode_secure_id
+from .util import LazyGetTextBase, GetText, GetNoText, encode_secure_id, NGetText
 
 COMMAND_HELP = "help"
 COMMAND_STATUS = "status"
@@ -697,7 +697,7 @@ class GameServer:
             status = GetText("There is currently no QAQA-game in this group. Use /{command} to start one.")\
                 .format(command=COMMAND_NEW_GAME)
         else:
-            players = (GetNoText("* ") + GetNoText('\n* ').join(p.user.name for p in current_game.participants)
+            players = (GetNoText("• ") + GetNoText('\n• ').join(p.user.name for p in current_game.participants)
                        if current_game.participants
                        else GetText("– none –"))
             configuration = GetText("Rounds: {num_rounds}\nSynchronous: {synchronous}")\
@@ -716,17 +716,21 @@ class GameServer:
             pending_users = (
                 GetText("We are currently waiting for {users} 👀\n\n")
                 # TODO optimization: access to s.current_user.name with eager loading
-                .format(users=','.join(s.current_user.name for s in pending_sheets))
+                .format(users=', '.join(s.current_user.name for s in pending_sheets))
                 if current_game.is_synchronous or len(pending_sheets) <= len(sheet_infos) / 3
                 else "")
             if current_game.started is not None:
                 status = GetText("The game is on! 👾\n\n"
-                                 "{num_sheets} sheets are in the game.{sheets_stats}\n\n"
+                                 "{trans_num_sheets} in the game.{sheets_stats}\n\n"
                                  "{pending_users}"
-                                 "Registered players:\n"
+                                 "{trans_reg_players}:\n"
                                  "{players}\n\n"
                                  "Game configuration:\n{configuration}")\
-                    .format(num_sheets=len(sheet_infos), sheets_stats=sheets_stats, pending_users=pending_users,
+                    .format(trans_num_sheets=NGetText('One sheet is', '{n} sheets are', len(sheet_infos))
+                            .format(n=len(sheet_infos)),
+                            sheets_stats=sheets_stats, pending_users=pending_users,
+                            trans_reg_players=NGetText('Registered player', 'Registered players',
+                                                       len(current_game.participants)),
                             players=players, configuration=configuration)
             else:
                 status = GetText("The game has been created and waits to be started. 🕰\n"

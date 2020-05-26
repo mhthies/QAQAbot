@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  QAQABot\n"
 "Report-Msgid-Bugs-To: mail@mhthies.de\n"
-"POT-Creation-Date: 2020-05-26 22:02+0200\n"
+"POT-Creation-Date: 2020-05-26 22:25+0200\n"
 "PO-Revision-Date: 2020-04-22 21:32+0200\n"
 "Last-Translator: Michael Thies <mail@mhthies.de>\n"
 "Language: de\n"
@@ -168,8 +168,9 @@ msgid ""
 "Afterwards, come back here and use /{command_join} again."
 msgstr ""
 "Du musst zuerst einen Chat mit dem Bot starten. Verwende dazu den "
-"folgenden Link: https://t.me/{bot_name}?{command}=now und tippe \"STARTEN\" an."
-"\nKomme anschließend hierher zurück and benutze /{command_join} erneut."
+"folgenden Link: https://t.me/{bot_name}?{command}=now und tippe "
+"\"STARTEN\" an.\n"
+"Komme anschließend hierher zurück and benutze /{command_join} erneut."
 
 #: qaqa_bot/game.py:372
 msgid "⏳ Oh no! The game has already started! Please join the next game."
@@ -204,7 +205,7 @@ msgid ""
 "You are one of the last two participants of this game. Thus, you cannot "
 "leave."
 msgstr ""
-"Außer dir ist nur noch eine oder weniger Personen im Spiel!Lass sie nicht"
+"Außer dir ist nur noch eine oder weniger Personen im Spiel! Lass sie nicht"
 " allein."
 
 #: qaqa_bot/game.py:450
@@ -363,9 +364,9 @@ msgstr ""
 msgid ""
 "The game is on! 👾\n"
 "\n"
-"{num_sheets} sheets are in the game.{sheets_stats}\n"
+"{trans_num_sheets} in the game.{sheets_stats}\n"
 "\n"
-"{pending_users}Registered players:\n"
+"{pending_users}{trans_reg_players}:\n"
 "{players}\n"
 "\n"
 "Game configuration:\n"
@@ -373,15 +374,28 @@ msgid ""
 msgstr ""
 "Das Spiel läuft! 👾\n"
 "\n"
-"{num_sheets} Blätter sind im Spiel.{sheets_stats}\n"
+"{trans_num_sheets} im Spiel.{sheets_stats}\n"
 "\n"
-"{pending_users}Registrierte Spieler:\n"
+"{pending_users}{trans_reg_players}:\n"
 "{players}\n"
 "\n"
 "Spiel-Konfiguration:\n"
 "{configuration}"
 
+#: qaqa_bot/game.py:729
+msgid "One sheet is"
+msgid_plural "{n} sheets are"
+msgstr[0] "Ein Blatt ist"
+msgstr[1] "{n} Blätter sind"
+
 #: qaqa_bot/game.py:732
+#, fuzzy
+msgid "Registered player"
+msgid_plural "Registered players"
+msgstr[0] "Registrierter Spieler"
+msgstr[1] "Registrierte Spieler"
+
+#: qaqa_bot/game.py:735
 msgid ""
 "The game has been created and waits to be started. 🕰\n"
 "Use /{command} to start the game.\n"
@@ -401,13 +415,13 @@ msgstr ""
 "Spiel-Konfiguration:\n"
 "{configuration}"
 
-#: qaqa_bot/game.py:839
+#: qaqa_bot/game.py:842
 msgid "Please ask a question to begin a new sheet for game <i>{game_name}</i>."
 msgstr ""
 "Bitte stelle eine Frage, um eine neues Blatt für das Spiel "
 "<i>{game_name}</i> zu beginnen."
 
-#: qaqa_bot/game.py:844
+#: qaqa_bot/game.py:847
 msgid ""
 "Please ask a question that may be answered with:\n"
 "“{text}”"
@@ -416,7 +430,7 @@ msgstr ""
 "\n"
 "„{text}“"
 
-#: qaqa_bot/game.py:847
+#: qaqa_bot/game.py:850
 msgid ""
 "Please answer the following question:\n"
 "“{text}”"
@@ -424,11 +438,11 @@ msgstr ""
 "Bitte beantworte die folgende Frage:\n"
 "„{text}“"
 
-#: qaqa_bot/game.py:938
+#: qaqa_bot/game.py:941
 msgid "Game was ended. No answer required anymore."
 msgstr "Das Spiel wurde beendet. Du brauchst deshalb nicht mehr zu antworten."
 
-#: qaqa_bot/game.py:948
+#: qaqa_bot/game.py:951
 msgid "Game finished. View results at <a href=\"{url}\">{url}</a>."
 msgstr ""
 "Das Spiel ist zu Ende. Schaut euch die Resultate unter <a "
@@ -532,4 +546,3 @@ msgstr "Permalink"
 #~ "Du musst zuerst einen Chat mit dem"
 #~ " Bot starten. Verwende dazu den "
 #~ "folgenden Link: https://t.me/{bot_name}?{command}=now"
-
