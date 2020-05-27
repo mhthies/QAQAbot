@@ -1,7 +1,86 @@
+<%page expression_filter="n"/>
 <%inherit file="base.mako.html" />
-
-Hello!
-
+<%!
+    import qaqa_bot.game
+%>
+<h1>${gettext("The QAQA Game Bot")}</h1>
 <p>
-    Play with this bot, by <a href="https://t.me/${bot_username}?startgroup=now">adding it to a Telegram chat</a>.
+    ${gettext("This bot allows playing the question-answer-question-answer party game.")}
+</p>
+
+<h2>${gettext("The Game")}</h2>
+<p>
+    ${gettext("The original game is played with pen and paper:")}
+</p>
+<p>
+    ${gettext("""Each player gets a sheet of paper and writes down an arbitrary question.
+    Then, they pass the sheet to the next player, who writes down an answer to the question and fold the sheet to hide the original question.
+    The sheet is passed on to the next player, the task of whom is to find a question that is answered by the given answer.
+    It might be the original question or not.
+    Sometimes not even close—nobody knows until the end of the game.
+    The sheet is folded again and the next player has to answer the new question—without knowing the previous questions and answers.""")}
+</p>
+<p>
+    ${gettext("""As soon as one of the sheets is full of questions and answers or the players no longer want to go on, all sheets are finished by making sure they end with an answer.
+    Then, the folding opened up, so everyone can enjoy the amusing chains of questions and answers.""")}
+</p>
+
+<h2 id="how-to">${gettext("How To")}</h2>
+<h3>${gettext("TL;DR")}</h3>
+<ol>
+    <li><a href="https://t.me/${bot_username}?startgroup=now">${gettext("Add this bot to a Telegram group chat")}</a></li>
+    <li><a href="https://t.me/${bot_username}?start=now">${gettext("Start a private chat with the bot")}</a></li>
+    <li>${gettext("Write <code>/{command_new}</code> in the group chat").format(command_new=qaqa_bot.game.COMMAND_NEW_GAME)}</li>
+    <li>${gettext("Write <code>/{command_join}</code> in the group chat").format(command_join=qaqa_bot.game.COMMAND_JOIN_GAME)}</li>
+    <li>${gettext("Write <code>/{command_start}</code> in the group chat").format(command_start=qaqa_bot.game.COMMAND_START_GAME)}</li>
+    <li>${gettext("Follow the bot's instructions")}</li>
+</ol>
+
+<h3>${gettext("Starting a Game")}</h3>
+<p>
+    ${gettext("""To start a game, first <a href="https://t.me/{bot_username}?startgroup=now">add this bot to a Telegram group chat</a>.
+    Then, use <code>/{command_new}</code> to create a new game.
+    In order to join the game, each player must first <a href="https://t.me/{bot_username}?start=now">start a chat with the bot</a> and afterwards use the <code>/{command_join}</code> command in the group chat.
+    When all players have joined the game, it can be started by sending <code>/{command_start}</code> to the group chat.""")\
+    .format(bot_username=bot_username, command_new=qaqa_bot.game.COMMAND_NEW_GAME, command_join=qaqa_bot.game.COMMAND_JOIN_GAME,
+            command_start=qaqa_bot.game.COMMAND_START_GAME)}
+</p>
+<p>
+    ${gettext("Before starting the game, the following options can be set:")}
+</p>
+<ul>
+    <li><code>/${qaqa_bot.game.COMMAND_SET_SYNC}</code>: ${gettext("Enable (default) or disable synchronous mode")}</li>
+    <li><code>/${qaqa_bot.game.COMMAND_SET_ROUNDS} &lt;number&gt;</code>: ${gettext("Set the number of rounds to be played to <code>&lt;number&gt;</code>")}</li>
+    <li><code>/${qaqa_bot.game.COMMAND_SET_DISPLAY_NAME}</code>: ${gettext("Enable or disable (default) displaying of each entry's author on the result page.")}</li>
+</ul>
+
+<h3>${gettext("Playing")}</h3>
+<p>
+    ${gettext("""When the game is started, the bot asks every player privately to a question.
+    The player aks their questions by simply sending it to the bot as a private chat message.
+    The bot passes the question privately to the next player.
+    If the next player is still working on his previous sheet, all incoming questions/answers are queued and presented to the player one after another.
+    This way, a player may also play several games in parallel—they are still always asked for one sheet at a time.""")}
+</p>
+<p>
+    ${gettext("If the game is played in <i>synchronous</i> mode, the question is only passed to next player if each player submitted their question.")}
+</p>
+<p>
+    ${gettext("""A submitted question or answer can be edited as long as the next player didn't submit a follow up answer/question.
+    To change the text, simply edit the relevant Telegram message.
+    The bot will give feedback if the edit is accepted or if it has been too late.
+    If the question/answer has already been passed to the next player, they are noticed about the updated text with a new message.""")}
+</p>
+
+<h3>${gettext("Game End")}</h3>
+<p>${gettext("The Game ends if one of the following conditions is met:")}</p>
+<ul>
+    <li>${gettext("The configured number of rounds has been reached (i.e. each sheet has this number of questions/answers on it)")}</li>
+    <li>${gettext("<code>/{command_stop}</code> has been sent to the group chat and each sheet ends with an answer")\
+          .format(command_stop=qaqa_bot.game.COMMAND_STOP_GAME)}</li>
+    <li>${gettext("<code>/{command_stop_immediately}</code> is sent to the group chat")\
+          .format(command_stop_immediately=qaqa_bot.game.COMMAND_STOP_GAME_IMMEDIATELY)}</li>
+</ul>
+<p>
+    ${gettext("When the game ends, the bot sends a link to the group chat to view the complete sheets with all questions and answers.")}
 </p>

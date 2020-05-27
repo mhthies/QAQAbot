@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  QAQABot\n"
 "Report-Msgid-Bugs-To: mail@mhthies.de\n"
-"POT-Creation-Date: 2020-05-26 22:25+0200\n"
+"POT-Creation-Date: 2020-05-27 22:26+0200\n"
 "PO-Revision-Date: 2020-04-22 21:32+0200\n"
 "Last-Translator: Michael Thies <mail@mhthies.de>\n"
 "Language: de\n"
@@ -92,7 +92,48 @@ msgstr "Ausgewählter Modus: {mode}"
 msgid "Oh no! 😱 There's a problem! I don't know this button *️⃣? "
 msgstr "Oh nein! 😱 Es gibt ein Problem! Ich kenne diesen Knopf nicht.*️⃣ "
 
-#: qaqa_bot/bot.py:363
+#: qaqa_bot/bot.py:335
+msgid ""
+"\n"
+"This bot allows playing the question-answer-question-answer party game.\n"
+"\n"
+"It is played by multiple players in a group chat. Each player thinks of "
+"an arbitrary question and privatly submits it to the bot. The bot passes "
+"the questions to the subsequent players, who will submit an answer to "
+"that question. Again that bot passes on the answers, so the next player "
+"must find a question matching the answer without knowning the original "
+"question, and so on.\n"
+"\n"
+"In the end, each sequence of questions and answers is presented, which is"
+" quite amusing to read.\n"
+msgstr ""
+
+#: qaqa_bot/bot.py:345
+msgid ""
+"\n"
+"To start a game, <a "
+"href=\"https://t.me/{bot_username}?startgroup=now\">add this bot to a "
+"group chat</a> and use <code>/{command_new}</code> in the group chat.\n"
+"Use /{command_status} to get a list of your current games and required "
+"actions.\n"
+msgstr ""
+
+#: qaqa_bot/bot.py:352
+msgid ""
+"\n"
+"Use /{command_status} check if there is a pending or running game in this"
+" group and check the game's status.\n"
+"To start a new game, use /{command_new}. \n"
+msgstr ""
+
+#: qaqa_bot/bot.py:358
+msgid ""
+"\n"
+"\n"
+"See {base_url}/#how-to for a full explanation of the bot's features."
+msgstr ""
+
+#: qaqa_bot/bot.py:388
 msgid ""
 "Oh no! 😱 A problem occured at {time}! \n"
 " Please forward this message to {owner} for help."
@@ -205,8 +246,8 @@ msgid ""
 "You are one of the last two participants of this game. Thus, you cannot "
 "leave."
 msgstr ""
-"Außer dir ist nur noch eine oder weniger Personen im Spiel! Lass sie nicht"
-" allein."
+"Außer dir ist nur noch eine oder weniger Personen im Spiel! Lass sie "
+"nicht allein."
 
 #: qaqa_bot/game.py:450
 msgid "You didn't participate in this game."
@@ -388,14 +429,14 @@ msgid_plural "{n} sheets are"
 msgstr[0] "Ein Blatt ist"
 msgstr[1] "{n} Blätter sind"
 
-#: qaqa_bot/game.py:732
+#: qaqa_bot/game.py:733
 #, fuzzy
 msgid "Registered player"
 msgid_plural "Registered players"
 msgstr[0] "Registrierter Spieler"
 msgstr[1] "Registrierte Spieler"
 
-#: qaqa_bot/game.py:735
+#: qaqa_bot/game.py:736
 msgid ""
 "The game has been created and waits to be started. 🕰\n"
 "Use /{command} to start the game.\n"
@@ -415,13 +456,13 @@ msgstr ""
 "Spiel-Konfiguration:\n"
 "{configuration}"
 
-#: qaqa_bot/game.py:842
+#: qaqa_bot/game.py:843
 msgid "Please ask a question to begin a new sheet for game <i>{game_name}</i>."
 msgstr ""
 "Bitte stelle eine Frage, um eine neues Blatt für das Spiel "
 "<i>{game_name}</i> zu beginnen."
 
-#: qaqa_bot/game.py:847
+#: qaqa_bot/game.py:848
 msgid ""
 "Please ask a question that may be answered with:\n"
 "“{text}”"
@@ -430,7 +471,7 @@ msgstr ""
 "\n"
 "„{text}“"
 
-#: qaqa_bot/game.py:850
+#: qaqa_bot/game.py:851
 msgid ""
 "Please answer the following question:\n"
 "“{text}”"
@@ -438,11 +479,11 @@ msgstr ""
 "Bitte beantworte die folgende Frage:\n"
 "„{text}“"
 
-#: qaqa_bot/game.py:941
+#: qaqa_bot/game.py:942
 msgid "Game was ended. No answer required anymore."
 msgstr "Das Spiel wurde beendet. Du brauchst deshalb nicht mehr zu antworten."
 
-#: qaqa_bot/game.py:951
+#: qaqa_bot/game.py:952
 msgid "Game finished. View results at <a href=\"{url}\">{url}</a>."
 msgstr ""
 "Das Spiel ist zu Ende. Schaut euch die Resultate unter <a "
@@ -459,6 +500,178 @@ msgstr "Spiel in {game_name}"
 #: qaqa_bot/templates/game_result.mako.html:19
 msgid "Results without authors"
 msgstr "Ergebnisse ohne Autoren"
+
+#: qaqa_bot/templates/index.mako.html:6
+msgid "The QAQA Game Bot"
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:8
+msgid "This bot allows playing the question-answer-question-answer party game."
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:11
+msgid "The Game"
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:13
+msgid "The original game is played with pen and paper:"
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:16
+msgid ""
+"Each player gets a sheet of paper and writes down an arbitrary question.\n"
+"    Then, they pass the sheet to the next player, who writes down an "
+"answer to the question and fold the sheet to hide the original question."
+"\n"
+"    The sheet is passed on to the next player, the task of whom is to "
+"find a question that is answered by the given answer.\n"
+"    It might be the original question or not.\n"
+"    Sometimes not even close—nobody knows until the end of the game.\n"
+"    The sheet is folded again and the next player has to answer the new "
+"question—without knowing the previous questions and answers."
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:24
+msgid ""
+"As soon as one of the sheets is full of questions and answers or the "
+"players no longer want to go on, all sheets are finished by making sure "
+"they end with an answer.\n"
+"    Then, the folding opened up, so everyone can enjoy the amusing chains"
+" of questions and answers."
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:28
+msgid "How To"
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:29
+msgid "TL;DR"
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:31
+msgid "Add this bot to a Telegram group chat"
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:32
+msgid "Start a private chat with the bot"
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:33
+msgid "Write <code>/{command_new}</code> in the group chat"
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:34
+msgid "Write <code>/{command_join}</code> in the group chat"
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:35
+msgid "Write <code>/{command_start}</code> in the group chat"
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:36
+msgid "Follow the bot's instructions"
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:39
+msgid "Starting a Game"
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:41
+msgid ""
+"To start a game, first <a "
+"href=\"https://t.me/{bot_username}?startgroup=now\">add this bot to a "
+"Telegram group chat</a>.\n"
+"    Then, use <code>/{command_new}</code> to create a new game.\n"
+"    In order to join the game, each player must first <a "
+"href=\"https://t.me/{bot_username}?start=now\">start a chat with the "
+"bot</a> and afterwards use the <code>/{command_join}</code> command in "
+"the group chat.\n"
+"    When all players have joined the game, it can be started by sending "
+"<code>/{command_start}</code> to the group chat."
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:49
+msgid "Before starting the game, the following options can be set:"
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:52
+msgid "Enable (default) or disable synchronous mode"
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:53
+msgid "Set the number of rounds to be played to <code>&lt;number&gt;</code>"
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:54
+msgid ""
+"Enable or disable (default) displaying of each entry's author on the "
+"result page."
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:57
+msgid "Playing"
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:59
+msgid ""
+"When the game is started, the bot asks every player privately to a "
+"question.\n"
+"    The player aks their questions by simply sending it to the bot as a "
+"private chat message.\n"
+"    The bot passes the question privately to the next player.\n"
+"    If the next player is still working on his previous sheet, all "
+"incoming questions/answers are queued and presented to the player one "
+"after another.\n"
+"    This way, a player may also play several games in parallel—they are "
+"still always asked for one sheet at a time."
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:66
+msgid ""
+"If the game is played in <i>synchronous</i> mode, the question is only "
+"passed to next player if each player submitted their question."
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:69
+msgid ""
+"A submitted question or answer can be edited as long as the next player "
+"didn't submit a follow up answer/question.\n"
+"    To change the text, simply edit the relevant Telegram message.\n"
+"    The bot will give feedback if the edit is accepted or if it has been "
+"too late.\n"
+"    If the question/answer has already been passed to the next player, "
+"they are noticed about the updated text with a new message."
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:75
+msgid "Game End"
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:76
+msgid "The Game ends if one of the following conditions is met:"
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:78
+msgid ""
+"The configured number of rounds has been reached (i.e. each sheet has "
+"this number of questions/answers on it)"
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:79
+msgid ""
+"<code>/{command_stop}</code> has been sent to the group chat and each "
+"sheet ends with an answer"
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:81
+msgid "<code>/{command_stop_immediately}</code> is sent to the group chat"
+msgstr ""
+
+#: qaqa_bot/templates/index.mako.html:85
+msgid ""
+"When the game ends, the bot sends a link to the group chat to view the "
+"complete sheets with all questions and answers."
+msgstr ""
 
 #: qaqa_bot/templates/sheet_result.mako.html:5
 msgid "Sheet from {game_name} on {date}"

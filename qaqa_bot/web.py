@@ -85,7 +85,8 @@ class WebEnvironment:
         self.config = config
         self.template_lookup = mako.lookup.TemplateLookup(
             directories=[os.path.join(os.path.dirname(__file__), 'templates')],
-            default_filters=['h'])
+            default_filters=['h'],
+            input_encoding='utf-8')
         self.template_globals = {
             'bot_username': config['bot']['username'],
             'base_url': config['web']['base_url'],

@@ -331,7 +331,32 @@ class Frontend:
     def help(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
         """Print explanation of the game and commands."""
         logger.debug("Received /%s command in chat %s", game.COMMAND_HELP, update.effective_chat.id)
-        pass  # TODO implement
+        self.send_messages(self.gs.get_translations([game.Message(
+            update.message.chat_id, GetText("""
+This bot allows playing the question-answer-question-answer party game.
+
+It is played by multiple players in a group chat. Each player thinks of an arbitrary question and \
+privatly submits it to the bot. The bot passes the questions to the subsequent players, who will \
+submit an answer to that question. Again that bot passes on the answers, so the next player must find \
+a question matching the answer without knowning the original question, and so on.
+
+In the end, each sequence of questions and answers is presented, which is quite amusing to read.
+""")
+            + (GetText("""
+To start a game, <a href="https://t.me/{bot_username}?startgroup=now">add this bot to a \
+group chat</a> and use <code>/{command_new}</code> in the group chat.
+Use /{command_status} to get a list of your current games and required actions.
+""").format(bot_username=self.config['bot']['username'], command_new=game.COMMAND_NEW_GAME,
+            command_status=game.COMMAND_STATUS)
+               if update.message.chat.type == telegram.Chat.PRIVATE
+               else GetText("""
+Use /{command_status} check if there is a pending or running game in this group and \
+check the game's status.
+To start a new game, use /{command_new}. 
+""").format(command_new=game.COMMAND_NEW_GAME, command_status=game.COMMAND_STATUS)
+               )
+            + GetText("\n\nSee {base_url}/#how-to for a full explanation of the bot's features.")
+            .format(base_url=self.config['web']['base_url']))]))
 
     @run_async
     def status(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
