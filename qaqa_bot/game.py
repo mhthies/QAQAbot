@@ -705,7 +705,7 @@ class GameServer:
                                     if current_game.rounds is None
                                     else current_game.rounds),
                         synchronous=GetText('yes') if current_game.is_synchronous else GetText('no'))
-            sheet_infos = self._game_sheet_infos(current_game, session)
+            sheet_infos = self._game_sheet_infos(current_game, session, eager_current_user=True)
             sheets_stats = (
                 GetText(" They have {min}–{max} (Median: {median}) entries yet.")
                 .format(min=min(si.num_entries for si in sheet_infos),
@@ -715,7 +715,6 @@ class GameServer:
             pending_sheets = [si.sheet for si in sheet_infos if si.sheet.current_user_id is not None]
             pending_users = (
                 GetText("We are currently waiting for {users} 👀\n\n")
-                # TODO optimization: access to s.current_user.name with eager loading
                 .format(users=', '.join(s.current_user.name for s in pending_sheets))
                 if current_game.is_synchronous or len(pending_sheets) <= len(sheet_infos) / 3
                 else "")
@@ -761,12 +760,15 @@ class GameServer:
     # ###########################################################################
     # Helper methods for managing sheets
 
-    def _game_sheet_infos(self, game: model.Game, session: Session) -> List[SheetProgressInfo]:
+    def _game_sheet_infos(self, game: model.Game, session: Session, eager_current_user: bool = False
+                          ) -> List[SheetProgressInfo]:
         """ Helper function to get the `SheetProgressInfo` for all sheets of a given Game.
 
         This list is required by some of the helper functions below. It is generated with an optimized SQL query and may
         be used multiple times, e.g. for checking if a game is finished by `_finish_if_complete` and
         `_finish_if_stopped_and_all_answered`.
+
+        :param eager_current_user: If True, the Sheet.current_user field is loaded eagerly (using Joined Eager Loading)
         """
         num_subquery = session.query(model.Entry.sheet_id,
                                      func.count('*').label('num_entries')) \
@@ -776,14 +778,18 @@ class GameServer:
                                          func.max(model.Entry.position).label('max_position')) \
             .group_by(model.Entry.sheet_id) \
             .subquery()
+        query = session.query(model.Sheet, num_subquery.c.num_entries, model.Entry)\
+            .outerjoin(num_subquery, model.Sheet.id == num_subquery.c.sheet_id)\
+            .outerjoin(max_pos_subquery)\
+            .outerjoin(model.Entry, and_(model.Entry.sheet_id == model.Sheet.id,
+                                         model.Entry.position == max_pos_subquery.c.max_position)) \
+            .filter(model.Sheet.game == game)
+        if eager_current_user:
+            query = query.options(joinedload(model.Sheet.current_user))
+
         return [SheetProgressInfo(sheet, num_entries if num_entries is not None else 0, last_entry)
                 for sheet, num_entries, last_entry
-                in session.query(model.Sheet, num_subquery.c.num_entries, model.Entry)
-                    .outerjoin(num_subquery, model.Sheet.id == num_subquery.c.sheet_id)
-                    .outerjoin(max_pos_subquery)
-                    .outerjoin(model.Entry, and_(model.Entry.sheet_id == model.Sheet.id,
-                                                 model.Entry.position == max_pos_subquery.c.max_position))
-                    .filter(model.Sheet.game == game)]
+                in query]
 
     def _next_sheet(self, users: Iterable[model.User], session: Session, repeat: bool = False) -> List[Message]:
         """ Helper function to check for a list of users, if they have no current sheet, pick the next sheet from their
