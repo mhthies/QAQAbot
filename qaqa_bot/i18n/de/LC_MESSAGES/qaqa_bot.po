@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version:  QAQABot\n"
 "Report-Msgid-Bugs-To: mail@mhthies.de\n"
-"POT-Creation-Date: 2020-05-27 22:26+0200\n"
+"POT-Creation-Date: 2020-06-28 22:01+0200\n"
 "PO-Revision-Date: 2020-04-22 21:32+0200\n"
 "Last-Translator: Michael Thies <mail@mhthies.de>\n"
 "Language: de\n"
@@ -18,81 +18,81 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.8.0\n"
 
-#: qaqa_bot/bot.py:162
+#: qaqa_bot/bot.py:161
 msgid "Games can only be spawned in group chats."
 msgstr "Spiele können nur in Gruppenchats erstellt werden."
 
-#: qaqa_bot/bot.py:174
+#: qaqa_bot/bot.py:173
 msgid "Games can only be started in group chats."
 msgstr "Spiele können nur in Gruppenchats gestartet werden."
 
-#: qaqa_bot/bot.py:186
+#: qaqa_bot/bot.py:185
 msgid "Games can only be joined in group chats."
 msgstr "Du kannst Spielen nur in Gruppenchats beitreten."
 
-#: qaqa_bot/bot.py:197
+#: qaqa_bot/bot.py:196
 msgid "Games can only be left in group chats."
 msgstr "Du kannst Spiele nur in den dazugehörigen Chats verlassen."
 
-#: qaqa_bot/bot.py:209
+#: qaqa_bot/bot.py:208
 msgid "Sorry, I do not understand. Please use a command to communicate with me."
 msgstr ""
 "Entschuldigung, ich verstehe nicht. Bitte benutze Kommandos, um mit mirzu"
 " kommunizieren."
 
-#: qaqa_bot/bot.py:241
+#: qaqa_bot/bot.py:240
 msgid "Games can only edited in group chats."
 msgstr "Spiele können nur in Gruppen-Chats gestartet werden."
 
-#: qaqa_bot/bot.py:250
+#: qaqa_bot/bot.py:249
 msgid "‘{arg}’ is not a number of rounds!"
 msgstr "‚{arg}‘ ist keine Rundenzahl!"
 
-#: qaqa_bot/bot.py:253
+#: qaqa_bot/bot.py:252
 msgid "Please specify the number of rounds."
 msgstr "Bitte gib eine Rundenzahl an."
 
-#: qaqa_bot/bot.py:256
+#: qaqa_bot/bot.py:255
 msgid "Don't you think these are too many parameters?"
 msgstr "Glaubst Du nicht, dass das zu viele Parameter sind?"
 
-#: qaqa_bot/bot.py:265
+#: qaqa_bot/bot.py:264
 msgid "Do you want to see the authors names in the result?"
 msgstr "Möchtet ihr die Namen der AutorInnen in den Resultaten sehen?"
 
-#: qaqa_bot/bot.py:270 qaqa_bot/bot.py:277
+#: qaqa_bot/bot.py:269 qaqa_bot/bot.py:276
 msgid "Games can only be edited in group chats."
 msgstr "Spiele können nur in Gruppenchats bearbeitet werden."
 
-#: qaqa_bot/bot.py:284 qaqa_bot/bot.py:293
+#: qaqa_bot/bot.py:283 qaqa_bot/bot.py:292
 msgid "Please choose:"
 msgstr "Bitte wähle:"
 
-#: qaqa_bot/bot.py:305
+#: qaqa_bot/bot.py:304
 msgid "Chosen language: {lang}"
 msgstr "Ausgewählte Sprache: {lang}"
 
-#: qaqa_bot/bot.py:313
+#: qaqa_bot/bot.py:312
 msgid "Oh no! 😱 There's a problem choosing a language!"
 msgstr "Oh nein! 😱 Es ist ein Fehler beim Auswählen der Sprache aufgetreten."
 
-#: qaqa_bot/bot.py:315
+#: qaqa_bot/bot.py:314
 msgid "Display the names: {state}"
 msgstr "Namen anzeigen: {state}"
 
-#: qaqa_bot/bot.py:323
+#: qaqa_bot/bot.py:322
 msgid "Oh no! 😱 There's a problem choosing a mode!"
 msgstr "Oh nein! 😱 Es ist ein Fehler beim Auswählen des Modus aufgetreten."
 
-#: qaqa_bot/bot.py:325
+#: qaqa_bot/bot.py:324
 msgid "Chosen mode: {mode}"
 msgstr "Ausgewählter Modus: {mode}"
 
-#: qaqa_bot/bot.py:328
+#: qaqa_bot/bot.py:327
 msgid "Oh no! 😱 There's a problem! I don't know this button *️⃣? "
 msgstr "Oh nein! 😱 Es gibt ein Problem! Ich kenne diesen Knopf nicht.*️⃣ "
 
-#: qaqa_bot/bot.py:335
+#: qaqa_bot/bot.py:334
 msgid ""
 "\n"
 "This bot allows playing the question-answer-question-answer party game.\n"
@@ -108,19 +108,20 @@ msgid ""
 " quite amusing to read.\n"
 msgstr ""
 "\n"
-"Dieser Bot dient dazu, das Frage-Antwort-Frage-Antwort Party-Spiel zu spielen."
-"\n\n"
+"Dieser Bot dient dazu, das Frage-Antwort-Frage-Antwort Party-Spiel zu "
+"spielen.\n"
+"\n"
 "Dazu versammeln sich mehrere Spieler in einem Gruppenchat. Jeder Spieler "
-"überlegt sich eine beliebige Frage und schickt sie privat an den Bot. Der "
-"Bot leitet sie an den nachfolgenden Spieler weiter, der auf dem gleichen Wege "
-"eine Antwort dazu einreicht. Der Bot leitet diese wiederum weiter, wobei der "
-"Bot eine Frage finden muss, die zu der Antwort passt, ohne dass er die "
-"urspngliche Frage kennt. So geht es immer weiter.\n"
+"überlegt sich eine beliebige Frage und schickt sie privat an den Bot. Der"
+" Bot leitet sie an den nachfolgenden Spieler weiter, der auf dem gleichen"
+" Wege eine Antwort dazu einreicht. Der Bot leitet diese wiederum weiter, "
+"wobei der Bot eine Frage finden muss, die zu der Antwort passt, ohne dass"
+" er die urspngliche Frage kennt. So geht es immer weiter.\n"
 "\n"
 "Am Ende wird jede der resultierenden Frage-Antwort-Folgen angezeigt, was "
 "üblicherweise sehr lustig zu lesen ist.\n"
 
-#: qaqa_bot/bot.py:345
+#: qaqa_bot/bot.py:344
 msgid ""
 "\n"
 "To start a game, <a "
@@ -131,13 +132,13 @@ msgid ""
 msgstr ""
 "\n"
 "Um ein Spiel zu starten, <a "
-"href=\"https://t.me/{bot_username}?startgroup=now\">füge diesen Bot zu einem "
-"Gruppenchat hinzu</a> und sende <code>/{command_new}</code> in den "
+"href=\"https://t.me/{bot_username}?startgroup=now\">füge diesen Bot zu "
+"einem Gruppenchat hinzu</a> und sende <code>/{command_new}</code> in den "
 "Gruppenchat.\n"
-"Verwende /{command_status}, um eine Liste deiner aktuellen Spiele und die "
-"aktuell erforderliche Aktion zu erhalten.\n"
+"Verwende /{command_status}, um eine Liste deiner aktuellen Spiele und die"
+" aktuell erforderliche Aktion zu erhalten.\n"
 
-#: qaqa_bot/bot.py:352
+#: qaqa_bot/bot.py:351
 msgid ""
 "\n"
 "Use /{command_status} check if there is a pending or running game in this"
@@ -145,11 +146,12 @@ msgid ""
 "To start a new game, use /{command_new}. \n"
 msgstr ""
 "\n"
-"Verwende /{command_status}, um herauszufinden, ob es aktuell ein wartendes "
-"oder laufendes Spiel in diesem Chat gibt und was dessen Status ist.\n"
+"Verwende /{command_status}, um herauszufinden, ob es aktuell ein "
+"wartendes oder laufendes Spiel in diesem Chat gibt und was dessen Status "
+"ist.\n"
 "Um ein neues Spiel zu starten, sende /{command_new}. \n"
 
-#: qaqa_bot/bot.py:358
+#: qaqa_bot/bot.py:357
 msgid ""
 "\n"
 "\n"
@@ -157,9 +159,10 @@ msgid ""
 msgstr ""
 "\n"
 "\n"
-"Für eine vollständige Erkärung des Bots, siehe {base_url}?lang=de/#how-to ."
+"Für eine vollständige Erkärung des Bots, siehe {base_url}?lang=de/#how-to"
+" ."
 
-#: qaqa_bot/bot.py:388
+#: qaqa_bot/bot.py:387
 msgid ""
 "Oh no! 😱 A problem occured at {time}! \n"
 " Please forward this message to {owner} for help."
@@ -167,7 +170,7 @@ msgstr ""
 "Oh nein! 😱 Um {time} ist ein Problem aufgetreten!\n"
 "Bitte leite diese Nachricht an {owner} weiter, um Hilfe zu bekommen."
 
-#: qaqa_bot/game.py:257
+#: qaqa_bot/game.py:263
 msgid ""
 "You are already registered. If you want to start a game, head over to a "
 "group chat and spawn a game with /{cmd}"
@@ -175,7 +178,7 @@ msgstr ""
 "Hallo! Du bist schon registriert. Wenn du ein Spiel starten möchtest, "
 "wechsle in einen Gruppenchat und initiiere ein neues Spiel mit /{cmd}."
 
-#: qaqa_bot/game.py:266
+#: qaqa_bot/game.py:273
 msgid ""
 "Hi! I am your friendly qaqa-bot 🤖. \n"
 "I will guide you through hopefully many games of the question-answer-"
@@ -188,39 +191,39 @@ msgstr ""
 "Gruppe, in der du das Spiel spielen möchtest, tritt dem Spiel dort bei "
 "und starte es."
 
-#: qaqa_bot/game.py:284
+#: qaqa_bot/game.py:291
 msgid "Already a running or pending game in this chat"
 msgstr "In diesem Chat gibt es bereits ein wartendes oder laufendes Spiel."
 
-#: qaqa_bot/game.py:292
+#: qaqa_bot/game.py:299
 msgid "✅ New game created. Use /{command} to join the game."
 msgstr "✅ Neues Spiel wurde erstellt. Verwende /{command}, um ihm beizutreten."
 
-#: qaqa_bot/game.py:300 qaqa_bot/game.py:332
+#: qaqa_bot/game.py:307 qaqa_bot/game.py:339
 msgid "❌ No game to configure in this chat"
 msgstr "❌ In diesem Chat gibt es kein Spiel, welches du konfigurieren könntest."
 
-#: qaqa_bot/game.py:303 qaqa_bot/game.py:320 qaqa_bot/game.py:334
+#: qaqa_bot/game.py:310 qaqa_bot/game.py:327 qaqa_bot/game.py:341
 msgid "❌ Sorry, I can only configure a game before its start. ⏳"
 msgstr "❌ Sorry, Ich kann Spiele nur vor ihrem Start konfigurieren. ⏳"
 
-#: qaqa_bot/game.py:307
+#: qaqa_bot/game.py:314
 msgid "invalid rounds number. Must be &gt;= 1"
 msgstr "Ungültige Rundenanzahl. Muss &gt;= 1 sein."
 
-#: qaqa_bot/game.py:310
+#: qaqa_bot/game.py:317
 msgid "Number of rounds set: {number_rounds}"
 msgstr "Anzahl Runden: {number_rounds}"
 
-#: qaqa_bot/game.py:318
+#: qaqa_bot/game.py:325
 msgid "No game to configure in this chat"
 msgstr "In diesem Chat gibt es kein Spiel zu konfigurieren."
 
-#: qaqa_bot/game.py:325
+#: qaqa_bot/game.py:332
 msgid "✅ Set game mode."
 msgstr "✅ Spielmodus gesetzt."
 
-#: qaqa_bot/game.py:348
+#: qaqa_bot/game.py:355
 msgid ""
 "There is currently no pending game in this group. 🙃 Use /{command} to "
 "create one."
@@ -228,7 +231,7 @@ msgstr ""
 "Aktuell gibt es in dieser Gruppe kein wartendes Spiel. 🙃 Benutze "
 "/{command}, um eines anzulegen."
 
-#: qaqa_bot/game.py:354
+#: qaqa_bot/game.py:361
 msgid ""
 "You must start a chat with the bot first. Use the following link: "
 "https://t.me/{bot_name}?{command}=now and click \"START\"\n"
@@ -239,15 +242,15 @@ msgstr ""
 "\"STARTEN\" an.\n"
 "Komme anschließend hierher zurück and benutze /{command_join} erneut."
 
-#: qaqa_bot/game.py:372
+#: qaqa_bot/game.py:379
 msgid "⏳ Oh no! The game has already started! Please join the next game."
 msgstr "⏳ Oh nein! Das Spiel läuft schon! Spiel doch in der nächstenRunde mit."
 
-#: qaqa_bot/game.py:383
+#: qaqa_bot/game.py:390
 msgid "Yay! Welcome {name} 🤗"
 msgstr "Yay! Hallo {name} 🤗"
 
-#: qaqa_bot/game.py:397
+#: qaqa_bot/game.py:404
 msgid ""
 "There is currently no pending game in this Group. Use /{command} to start"
 " one."
@@ -255,19 +258,19 @@ msgstr ""
 "Es gibt in dieser Gruppe zur Zeit kein wartendes Spiel. Verwende "
 "/{command}, um ein neues zu starten."
 
-#: qaqa_bot/game.py:402
+#: qaqa_bot/game.py:409
 msgid "The game is already running"
 msgstr "Das Spiel läuft bereits"
 
-#: qaqa_bot/game.py:405
+#: qaqa_bot/game.py:412
 msgid "No games with less than two participants permitted 🙅‍♀️"
 msgstr "Spiele mit weniger als zwei Teilnehmern sind nicht erlaubt 🙅‍♀️"
 
-#: qaqa_bot/game.py:431
+#: qaqa_bot/game.py:438
 msgid "There is currently no running or pending game in this chat."
 msgstr "In diesem Chat gibt es zur Zeit kein laufendes oder wartendes Spiel."
 
-#: qaqa_bot/game.py:440
+#: qaqa_bot/game.py:447
 msgid ""
 "You are one of the last two participants of this game. Thus, you cannot "
 "leave."
@@ -275,37 +278,37 @@ msgstr ""
 "Außer dir ist nur noch eine oder weniger Personen im Spiel! Lass sie "
 "nicht allein."
 
-#: qaqa_bot/game.py:450
+#: qaqa_bot/game.py:457
 msgid "You didn't participate in this game."
 msgstr "Du hast an diesem Spiel nicht teilgenommen."
 
-#: qaqa_bot/game.py:453
+#: qaqa_bot/game.py:460
 msgid "👋 Bye!"
 msgstr "👋 Tschüss!"
 
-#: qaqa_bot/game.py:459
+#: qaqa_bot/game.py:466
 msgid "You left the game. No answer required anymore."
 msgstr "Du hast das Spiel verlassen. Deshalb brauchst Du nicht mehr zu antworten."
 
-#: qaqa_bot/game.py:484 qaqa_bot/game.py:528
+#: qaqa_bot/game.py:491 qaqa_bot/game.py:535
 msgid "There is currently no running game in this group."
 msgstr "Aktuell gibt es in dieser Gruppe kein laufendes Spiel."
 
-#: qaqa_bot/game.py:510
+#: qaqa_bot/game.py:517
 msgid "Game will be stopped. No new question required anymore."
 msgstr "Das Spiel wird gestoppt. Du brauchst nicht mehr zu antworten."
 
-#: qaqa_bot/game.py:550
+#: qaqa_bot/game.py:557
 msgid "Unexpected message. Please use /{command} to register with the bot."
 msgstr ""
 "Unerwartete Nachricht. Benutze bitte /{command}, um dich bei diesem Bot "
 "zu registrieren."
 
-#: qaqa_bot/game.py:556
+#: qaqa_bot/game.py:563
 msgid "Unexpected message."
 msgstr "Unerwartete Nachricht."
 
-#: qaqa_bot/game.py:612
+#: qaqa_bot/game.py:619
 msgid ""
 "Changing message “{old_text}” is not accepted, because the relevant game "
 "is already finished."
@@ -313,7 +316,7 @@ msgstr ""
 "Die Veränderung der Nachricht „{old_text}“ wurde nicht akzeptiert, da das"
 " zugehörige Spiel bereits beendet ist."
 
-#: qaqa_bot/game.py:621
+#: qaqa_bot/game.py:628
 msgid ""
 "Changing message “{old_text}” is not accepted, because the next player "
 "already responded to that entry."
@@ -321,23 +324,23 @@ msgstr ""
 "Die Veränderung der Nachricht „{old_text}“ wurde nicht akzeptiert, da der"
 " nächste Spieler bereits auf diesen Eintrag geantwortet hat."
 
-#: qaqa_bot/game.py:625
+#: qaqa_bot/game.py:632
 msgid "🆗 Change to message “{old_text}” was accepted."
 msgstr "🆗 Die Veränderung an “{old_text}” wurde akzeptiert."
 
-#: qaqa_bot/game.py:633
+#: qaqa_bot/game.py:640
 msgid "The {type} has been updated by its author:"
 msgstr "Die {type} wurde von ihrem Autor aktualisiert:"
 
-#: qaqa_bot/game.py:634
+#: qaqa_bot/game.py:641
 msgid "question"
 msgstr "Frage"
 
-#: qaqa_bot/game.py:636
+#: qaqa_bot/game.py:643
 msgid "answer"
 msgstr "Antwort"
 
-#: qaqa_bot/game.py:652
+#: qaqa_bot/game.py:659
 msgid ""
 "You are currently not registered for using this bot. Please use "
 "/{command} to register with the bot."
@@ -345,29 +348,29 @@ msgstr ""
 "Du bist aktuell nicht bei diesem Bot registriert. Benutze bitte "
 "/{command}, um dich zu registrieren."
 
-#: qaqa_bot/game.py:662
+#: qaqa_bot/game.py:669
 msgid "You are currently participating in the following games: {games}"
 msgstr "Du nimmst aktuell an folgenden Spielen teil: {games}"
 
-#: qaqa_bot/game.py:663 qaqa_bot/game.py:666
+#: qaqa_bot/game.py:670 qaqa_bot/game.py:673
 msgid ", "
 msgstr ", "
 
-#: qaqa_bot/game.py:665
+#: qaqa_bot/game.py:672
 msgid "Additionally, you will be participating in {games}, as soon as they start."
 msgstr "Zusätzlich wirst du an {games} teilnehmen, sobald sie starten."
 
-#: qaqa_bot/game.py:668
+#: qaqa_bot/game.py:675
 msgid ""
 "You will be participating in the follwing games, as soon as they start: "
 "{games}"
 msgstr "Du wirst an den folgenden Spielen teilnehmen, sobald sie starten: {games}"
 
-#: qaqa_bot/game.py:671
+#: qaqa_bot/game.py:678
 msgid "You are currently not participating in any QAQA game."
 msgstr "Du nimmst aktuell an keinem QAQA-Spiel teil."
 
-#: qaqa_bot/game.py:677
+#: qaqa_bot/game.py:684
 msgid ""
 "\n"
 "You have currently {num_sheets} pending sheets to ask or answer "
@@ -377,13 +380,13 @@ msgstr ""
 "Du hast aktuell {num_sheets} zu bearbeitende Blätter, das aktuelle mit "
 "eingerechnet."
 
-#: qaqa_bot/game.py:681
+#: qaqa_bot/game.py:688
 msgid ""
 "\n"
 "You have currently no pending sheets ✨"
 msgstr "Du hast gerade keine zu bearbeitenden Blätter ✨"
 
-#: qaqa_bot/game.py:697
+#: qaqa_bot/game.py:704
 msgid ""
 "There is currently no QAQA-game in this group. Use /{command} to start "
 "one."
@@ -391,11 +394,11 @@ msgstr ""
 "Aktuell gibt es QAQA-Spiel in dieser Gruppe. Benutze /{command}, um eines"
 " zu starten."
 
-#: qaqa_bot/game.py:702
+#: qaqa_bot/game.py:710
 msgid "– none –"
 msgstr "– keine –"
 
-#: qaqa_bot/game.py:703
+#: qaqa_bot/game.py:711
 msgid ""
 "Rounds: {num_rounds}\n"
 "Synchronous: {synchronous}"
@@ -403,23 +406,23 @@ msgstr ""
 "Runden: {num_rounds}\n"
 "Synchron: {synchronous}"
 
-#: qaqa_bot/game.py:704
-msgid "– number of players –"
-msgstr "– Anzahl der Spieler –"
+#: qaqa_bot/game.py:712
+msgid "{number} (based on no. of players)"
+msgstr "{number} (basierend auf Spielerzahl)"
 
-#: qaqa_bot/game.py:707
+#: qaqa_bot/game.py:716
 msgid "yes"
 msgstr "ja"
 
-#: qaqa_bot/game.py:707
+#: qaqa_bot/game.py:716
 msgid "no"
 msgstr "nein"
 
-#: qaqa_bot/game.py:710
+#: qaqa_bot/game.py:719
 msgid " They have {min}–{max} (Median: {median}) entries yet."
 msgstr " Sie haben bislang {min}–{max} (Median: {median}) Einträge."
 
-#: qaqa_bot/game.py:717
+#: qaqa_bot/game.py:726
 msgid ""
 "We are currently waiting for {users} 👀\n"
 "\n"
@@ -427,7 +430,7 @@ msgstr ""
 "Aktuell warten wir auf {users} 👀\n"
 "\n"
 
-#: qaqa_bot/game.py:723
+#: qaqa_bot/game.py:731
 msgid ""
 "The game is on! 👾\n"
 "\n"
@@ -449,25 +452,25 @@ msgstr ""
 "Spiel-Konfiguration:\n"
 "{configuration}"
 
-#: qaqa_bot/game.py:729
+#: qaqa_bot/game.py:737
 msgid "One sheet is"
 msgid_plural "{n} sheets are"
 msgstr[0] "Ein Blatt ist"
 msgstr[1] "{n} Blätter sind"
 
-#: qaqa_bot/game.py:733
+#: qaqa_bot/game.py:741 qaqa_bot/game.py:752
 #, fuzzy
 msgid "Registered player"
-msgid_plural "Registered players"
+msgid_plural "Registered players ({number})"
 msgstr[0] "Registrierter Spieler"
-msgstr[1] "Registrierte Spieler"
+msgstr[1] "Registrierte Spieler ({number})"
 
-#: qaqa_bot/game.py:736
+#: qaqa_bot/game.py:745
 msgid ""
 "The game has been created and waits to be started. 🕰\n"
 "Use /{command} to start the game.\n"
 "\n"
-"Registered players:\n"
+"{trans_reg_players}:\n"
 "{players}\n"
 "\n"
 "Game configuration:\n"
@@ -476,19 +479,19 @@ msgstr ""
 "Das Spiel wurde erstellt und wartet auf den Start.\n"
 "Benutze /{command}, um das Spiel zu starten.\n"
 "\n"
-"Registrierte Spieler:\n"
+"{trans_reg_players}:\n"
 "{players}\n"
 "\n"
 "Spiel-Konfiguration:\n"
 "{configuration}"
 
-#: qaqa_bot/game.py:843
+#: qaqa_bot/game.py:862
 msgid "Please ask a question to begin a new sheet for game <i>{game_name}</i>."
 msgstr ""
 "Bitte stelle eine Frage, um eine neues Blatt für das Spiel "
 "<i>{game_name}</i> zu beginnen."
 
-#: qaqa_bot/game.py:848
+#: qaqa_bot/game.py:867
 msgid ""
 "Please ask a question that may be answered with:\n"
 "“{text}”"
@@ -497,7 +500,7 @@ msgstr ""
 "\n"
 "„{text}“"
 
-#: qaqa_bot/game.py:851
+#: qaqa_bot/game.py:870
 msgid ""
 "Please answer the following question:\n"
 "“{text}”"
@@ -505,11 +508,11 @@ msgstr ""
 "Bitte beantworte die folgende Frage:\n"
 "„{text}“"
 
-#: qaqa_bot/game.py:942
+#: qaqa_bot/game.py:963
 msgid "Game was ended. No answer required anymore."
 msgstr "Das Spiel wurde beendet. Du brauchst deshalb nicht mehr zu antworten."
 
-#: qaqa_bot/game.py:952
+#: qaqa_bot/game.py:973
 msgid "Game finished. View results at <a href=\"{url}\">{url}</a>."
 msgstr ""
 "Das Spiel ist zu Ende. Schaut euch die Resultate unter <a "
@@ -559,18 +562,15 @@ msgid ""
 "question—without knowing the previous questions and answers."
 msgstr ""
 "Jeder Spieler erhält ein Blatt Papier und schreibt eine beliebige Frage "
-"darauf. "
-"Dann gibt er das Blatt an den nächsten Spieler weiter, der eine Antwort auf "
-"die Frage hinzufügt und das Blatt faltet, sodass die Frage nicht mehr "
-"sichtbar ist. "
-"Das Blatt wird an den nächsten Spieler weitergeben, der die Aufgabe hat, eine "
-"Frage zu finden, die von der gegebenen Antwort beantwortet wird. "
-"Es kann sein, dass er die urpsüngliche Frage errät oder auch nicht. "
-"Meistens liegt er sehr weit daneben – was aber bis zum Ende des Spiels "
-"niemand weiß. "
-"Das Blatt wird wieder gefaltet und der nächste Spieler muss wieder die "
-"aktuelle Frage beantworten – ohne die vorherigen Fragen und Antworten zu "
-"kennen."
+"darauf. Dann gibt er das Blatt an den nächsten Spieler weiter, der eine "
+"Antwort auf die Frage hinzufügt und das Blatt faltet, sodass die Frage "
+"nicht mehr sichtbar ist. Das Blatt wird an den nächsten Spieler "
+"weitergeben, der die Aufgabe hat, eine Frage zu finden, die von der "
+"gegebenen Antwort beantwortet wird. Es kann sein, dass er die "
+"urpsüngliche Frage errät oder auch nicht. Meistens liegt er sehr weit "
+"daneben – was aber bis zum Ende des Spiels niemand weiß. Das Blatt wird "
+"wieder gefaltet und der nächste Spieler muss wieder die aktuelle Frage "
+"beantworten – ohne die vorherigen Fragen und Antworten zu kennen."
 
 #: qaqa_bot/templates/index.mako.html:24
 msgid ""
@@ -580,11 +580,11 @@ msgid ""
 "    Then, the folding opened up, so everyone can enjoy the amusing chains"
 " of questions and answers."
 msgstr ""
-"Sobald eines der Blätter voll mit Fragen und Antworten ist oder die Spieler "
-"nicht mehr weitermachen möchten, wird sichergestellt, dass alle Blätter mit "
-"einer finalen Antwort enden."
-"Dann werden die Blätter auseinandergefaltet, sodass jeder sich über die "
-"witzigen Folgen von Fragen und Antworten freuen kann. "
+"Sobald eines der Blätter voll mit Fragen und Antworten ist oder die "
+"Spieler nicht mehr weitermachen möchten, wird sichergestellt, dass alle "
+"Blätter mit einer finalen Antwort enden.Dann werden die Blätter "
+"auseinandergefaltet, sodass jeder sich über die witzigen Folgen von "
+"Fragen und Antworten freuen kann. "
 
 #: qaqa_bot/templates/index.mako.html:28
 msgid "How To"
@@ -637,13 +637,13 @@ msgid ""
 msgstr ""
 "Um ein Spiel zu starten, <a "
 "href=\"https://t.me/{bot_username}?startgroup=now\">füge diesen Bot "
-"zunächst zu einem Telegram-Gruppenchat hinzu</a>. "
-"Benutze dann <code>/{command_new}</code>, um ein neues Spiel zu erstellen. "
-"Um dem Spiel beizutreten, muss jeder Mitspieler zunächst <a "
-"href=\"https://t.me/{bot_username}?start=now\">einen privaten Chat mit dem "
-"Bot starten</a> und anschließend das <code>/{command_join}</code>-Kommando an "
-"den Gruppenchat senden. "
-"Wenn alle Spieler dem Spiel beigetreten sind, kann es mit dem Kommando "
+"zunächst zu einem Telegram-Gruppenchat hinzu</a>. Benutze dann "
+"<code>/{command_new}</code>, um ein neues Spiel zu erstellen. Um dem "
+"Spiel beizutreten, muss jeder Mitspieler zunächst <a "
+"href=\"https://t.me/{bot_username}?start=now\">einen privaten Chat mit "
+"dem Bot starten</a> und anschließend das "
+"<code>/{command_join}</code>-Kommando an den Gruppenchat senden. Wenn "
+"alle Spieler dem Spiel beigetreten sind, kann es mit dem Kommando "
 "<code>/{command_start}</code> im Gruppenchat gestartet werden."
 
 #: qaqa_bot/templates/index.mako.html:49
@@ -656,15 +656,15 @@ msgstr "Aktiviert (default) oder deaktiviert den synchronen Spielmodus"
 
 #: qaqa_bot/templates/index.mako.html:53
 msgid "Set the number of rounds to be played to <code>&lt;number&gt;</code>"
-msgstr ""
-"Stellt die Anzahl der zu spielenden Runden auf <code>&lt;number&gt;</code>"
+msgstr "Stellt die Anzahl der zu spielenden Runden auf <code>&lt;number&gt;</code>"
 
 #: qaqa_bot/templates/index.mako.html:54
 msgid ""
 "Enable or disable (default) displaying of each entry's author on the "
 "result page."
-msgstr "Aktiviert oder deaktiviert (default) die Anzeige des Autors von jedem "
-"Eintrag auf der Ergebnisseite.""
+msgstr ""
+"Aktiviert oder deaktiviert (default) die Anzeige des Autors von jedem "
+"Eintrag auf der Ergebnisseite."
 
 #: qaqa_bot/templates/index.mako.html:57
 msgid "Playing"
@@ -683,16 +683,15 @@ msgid ""
 "    This way, a player may also play several games in parallel—they are "
 "still always asked for one sheet at a time."
 msgstr ""
-"Wenn das Spiel gestartet wird, fragt der Bot jeden Spieler privat nach einer "
-"Frage. "
-"Die Spieler reichen ihre Fragen ein, indem sie diese einfach als private "
-"Nachricht an den Bot schicken. "
-"Der Bot leitet die Fragen privat an den jeweils nächsten Spieler weiter. "
-"Wenn der Spieler noch mit dem vorherigen Blatt beschäftigt ist, werden alle "
-"Fragen/Antworten für ihn in eine Warteschlange eingereiht und werden ihm "
-"nacheinander angezeigt. "
-"Auf diese Weise kann ein Spieler auch in mehreren Spielen parallel "
-"teilnehmen. Er erhält dennoch stets nur eine Frage/Antwort gleichzeitig."
+"Wenn das Spiel gestartet wird, fragt der Bot jeden Spieler privat nach "
+"einer Frage. Die Spieler reichen ihre Fragen ein, indem sie diese einfach"
+" als private Nachricht an den Bot schicken. Der Bot leitet die Fragen "
+"privat an den jeweils nächsten Spieler weiter. Wenn der Spieler noch mit "
+"dem vorherigen Blatt beschäftigt ist, werden alle Fragen/Antworten für "
+"ihn in eine Warteschlange eingereiht und werden ihm nacheinander "
+"angezeigt. Auf diese Weise kann ein Spieler auch in mehreren Spielen "
+"parallel teilnehmen. Er erhält dennoch stets nur eine Frage/Antwort "
+"gleichzeitig."
 
 #: qaqa_bot/templates/index.mako.html:66
 msgid ""
@@ -700,8 +699,8 @@ msgid ""
 "passed to next player if each player submitted their question."
 msgstr ""
 "Wenn das Spiel im <i>synchronen</i> Spielmodus gespielt wird, wird jede "
-"Frage/Antwort erst an den nächsten Spieler weitergegeben, wenn jeder Spieler "
-"seine Frage/Antwort eingereicht hat."
+"Frage/Antwort erst an den nächsten Spieler weitergegeben, wenn jeder "
+"Spieler seine Frage/Antwort eingereicht hat."
 
 #: qaqa_bot/templates/index.mako.html:69
 msgid ""
@@ -715,13 +714,11 @@ msgid ""
 msgstr ""
 "Eine eingereichte Frage oder Antwort kann bearbeitet werden, solange der "
 "nächste Spieler noch keine darauffolgende Antwort/Frage formuliert hat. "
-"Um den Text zu ändern, bearbeite einfach die entsprechende "
-"Telegram-Nachricht. "
-"Der Bot gibt zurück, ob die Bearbeitung akzeptiert wurde oder zu spät "
-"stattfand."
-"Wenn die Frage/Antwort bereits an den nächsten Spieler weitergegeben wurde,
-"wird dieser mit einer weiteren Nachricht des Bots über den aktualisierten "
-"Text informiert."
+"Um den Text zu ändern, bearbeite einfach die entsprechende Telegram-"
+"Nachricht. Der Bot gibt zurück, ob die Bearbeitung akzeptiert wurde oder "
+"zu spät stattfand.Wenn die Frage/Antwort bereits an den nächsten Spieler "
+"weitergegeben wurde,wird dieser mit einer weiteren Nachricht des Bots "
+"über den aktualisierten Text informiert."
 
 #: qaqa_bot/templates/index.mako.html:75
 msgid "Game End"
@@ -744,8 +741,8 @@ msgid ""
 "<code>/{command_stop}</code> has been sent to the group chat and each "
 "sheet ends with an answer"
 msgstr ""
-"<code>/{command_stop}</code> wurde an die Gruppe gesendet und jedes Blatt "
-"endet mit einer Antwort"
+"<code>/{command_stop}</code> wurde an die Gruppe gesendet und jedes Blatt"
+" endet mit einer Antwort"
 
 #: qaqa_bot/templates/index.mako.html:81
 msgid "<code>/{command_stop_immediately}</code> is sent to the group chat"
@@ -756,9 +753,9 @@ msgid ""
 "When the game ends, the bot sends a link to the group chat to view the "
 "complete sheets with all questions and answers."
 msgstr ""
-"Wenn das Spiel endet, sendet der Bot einen Link an den Gruppenchat, über den "
-"die vollständigen Blätter mit allen Fragen und Antworten angesehen werden "
-"können."
+"Wenn das Spiel endet, sendet der Bot einen Link an den Gruppenchat, über "
+"den die vollständigen Blätter mit allen Fragen und Antworten angesehen "
+"werden können."
 
 #: qaqa_bot/templates/sheet_result.mako.html:5
 msgid "Sheet from {game_name} on {date}"
@@ -846,3 +843,23 @@ msgstr "Permalink"
 #~ "Du musst zuerst einen Chat mit dem"
 #~ " Bot starten. Verwende dazu den "
 #~ "folgenden Link: https://t.me/{bot_name}?{command}=now"
+
+#~ msgid ""
+#~ "The game has been created and waits to be started. 🕰\n"
+#~ "Use /{command} to start the game.\n"
+#~ "\n"
+#~ "{trans_reg_players}\n"
+#~ "{players}\n"
+#~ "\n"
+#~ "Game configuration:\n"
+#~ "{configuration}"
+#~ msgstr ""
+#~ "Das Spiel wurde erstellt und wartet auf den Start.\n"
+#~ "Benutze /{command}, um das Spiel zu starten.\n"
+#~ "\n"
+#~ "{trans_reg_players}\n"
+#~ "{players}\n"
+#~ "\n"
+#~ "Spiel-Konfiguration:\n"
+#~ "{configuration}"
+

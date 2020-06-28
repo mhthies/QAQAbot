@@ -419,7 +419,7 @@ class GameServer:
 
         # Set number of rounds if unset
         if game.rounds is None:
-            game.rounds = max(6, math.floor(len(game.participants)/2)*2)
+            game.rounds = calculate_preset_rounds(len(game.participants))
             logger.debug("Setting game %s's rounds automatically to %s", game.id, game.rounds)
 
         logger.info("Starting game %s", game.id)
@@ -709,7 +709,8 @@ class GameServer:
                             if current_game.participants
                             else GetText("– none –"))
             configuration = GetText("Rounds: {num_rounds}\nSynchronous: {synchronous}")\
-                .format(num_rounds=(GetText('– number of players –')
+                .format(num_rounds=(GetText('{number} (based on no. of players)')
+                                    .format(number=calculate_preset_rounds(len(players)))
                                     if current_game.rounds is None
                                     else current_game.rounds),
                         synchronous=GetText('yes') if current_game.is_synchronous else GetText('no'))
@@ -736,16 +737,20 @@ class GameServer:
                     .format(trans_num_sheets=NGetText('One sheet is', '{n} sheets are', len(sheet_infos))
                             .format(n=len(sheet_infos)),
                             sheets_stats=sheets_stats, pending_users=pending_users,
-                            trans_reg_players=NGetText('Registered player', 'Registered players',
-                                                       len(current_game.participants)),
+                            trans_reg_players=NGetText('Registered player', 'Registered players ({number})',
+                                                       len(players))
+                                              .format(number=len(players)),
                             players=players_text, configuration=configuration)
             else:
                 status = GetText("The game has been created and waits to be started. 🕰\n"
                                  "Use /{command} to start the game.\n\n"
-                                 "Registered players:\n"
+                                 "{trans_reg_players}:\n"
                                  "{players}\n\n"
                                  "Game configuration:\n{configuration}")\
-                    .format(command=COMMAND_START_GAME, players=players_text, configuration=configuration)
+                    .format(command=COMMAND_START_GAME, players=players_text, configuration=configuration,
+                            trans_reg_players=NGetText('Registered player', 'Registered players ({number})',
+                                                       len(players))
+                                              .format(number=len(players)))
         return self._get_translations([Message(chat_id, status)], session)
 
     # ###########################################################################
@@ -1004,3 +1009,13 @@ def truncate_string(s, length=200, end="…"):
         return s
     result = s[: length - len(end)].rsplit(" ", 1)[0]
     return result + end
+
+
+def calculate_preset_rounds(player_number):
+    """
+    Calculation function for the number of rounds preset, based on the number of players
+
+    :param player_number: Number of players in the game
+    :return: Preset number of rounds of the game
+    """
+    return max(6, math.floor(player_number / 2) * 2)
