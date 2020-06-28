@@ -771,7 +771,7 @@ class GameServer:
         :param eager_current_user: If True, the Sheet.current_user field is loaded eagerly (using Joined Eager Loading)
         """
         num_subquery = session.query(model.Entry.sheet_id,
-                                     func.count('*').label('num_entries')) \
+                                     func.count().label('num_entries')) \
             .group_by(model.Entry.sheet_id) \
             .subquery()
         max_pos_subquery = session.query(model.Entry.sheet_id,
@@ -805,7 +805,7 @@ class GameServer:
             .group_by(model.Sheet.current_user_id) \
             .subquery()
         num_subquery = session.query(model.Entry.sheet_id,
-                                     func.count('*').label('num_entries')) \
+                                     func.count().label('num_entries')) \
             .group_by(model.Entry.sheet_id) \
             .subquery()
         max_pos_subquery = session.query(model.Entry.sheet_id,
