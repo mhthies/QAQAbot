@@ -50,7 +50,11 @@ The web frontend is built with the CherryPy web framework and its included WSGI 
 In the `qaqa_bot.web` module, the Controller classes with endpoint handlers are defined.
 The HTML templates are rendered with *Mako* and are located in `qaqa_bot/templates/`.
 
-Incoming updates from the Telegram API (esp. incoming messages) are handled either by the Frontend on its own or with help of the GameServer: Typically, response messages that do not require interaction with the database, are sent by the Frontend immediately. In the other case, the Frontend's handler method identifies the correct game action, determines the action's arguments from the update data, and calls the respective method of the GameServer. The response message/s are sent by the GameServer.
+Incoming updates from the Telegram API (esp. incoming messages) are handled either by the Frontend on its own or with help of the GameServer:
+Typically, response messages that do not require interaction with the database, are sent by the Frontend immediately.
+(It may use the GameServer's `get_translations()` or `translate_string()` methods to get the correct translation according to the chat's preferred language.) 
+In the other case, the Frontend's handler method identifies the correct game action, determines the action's arguments from the update data, and calls the respective method of the GameServer.
+The response message/s are sent by the GameServer.
 
 We use Alembic to manage database migrations.
 To allow easy packaging and automatic migrations (see *Deployment* instructions below), the database versions are stored in `qaqa_bot/database_versions/`.
