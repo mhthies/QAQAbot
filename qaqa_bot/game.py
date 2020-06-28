@@ -195,6 +195,8 @@ class GameServer:
         game = session.query(model.Game)\
             .filter(model.Game.id == game_id, model.Game.finished != None)\
             .options(raiseload('*'),
+                     selectinload(model.Game.participants)
+                     .joinedload(model.Participant.user),
                      selectinload(model.Game.sheets)
                      .selectinload(model.Sheet.entries)
                      .joinedload(model.Entry.user))\
@@ -235,7 +237,8 @@ class GameServer:
             session.add(l)
 
     @with_session
-    def register_user(self, session: Session, chat_id: int, user_id: int, user_name: str) -> List[TranslatedMessage]:
+    def register_user(self, session: Session, chat_id: int, user_id: int, first_name: str, last_name: str,
+                      username: str) -> List[TranslatedMessage]:
         """
         Register a new user and its private chat_id in the database, when they begin a private chat with the
         COMMAND_REGISTER.
@@ -246,23 +249,27 @@ class GameServer:
 
         :param chat_id: The user's private chat id
         :param user_id: The user's Telegram API id
-        :param user_name: The user's name: Either the Telegram username (including an '@' prefix) or otherwise their
-            first name
+        :param first_name: The Telegram user's first name
+        :param last_name: The Telegram user's last name
+        :param username: The user's Telegram username, without the leading @ character
         """
         existing_user = session.query(model.User).filter(model.User.api_id == user_id).one_or_none()
         if existing_user is not None:
             existing_user.chat_id = chat_id
-            existing_user.name = user_name
-            logger.info("Updating user %s (%s)", existing_user.id, user_name)
+            existing_user.first_name = first_name
+            existing_user.last_name = last_name
+            existing_user.username = username
+            logger.info("Updating user %s (%s %s / @%s)", existing_user.id, first_name, last_name, username)  # TODO if username is empty
             return self._get_translations([Message(chat_id, GetText(
                 "You are already registered. If you want to start a game, head over to a group chat and spawn a game "
                 "with /{cmd}").format(cmd=COMMAND_NEW_GAME))]
                                 + self._next_sheet([existing_user], session, repeat=True), session)
         else:
-            user = model.User(api_id=user_id, chat_id=chat_id, name=user_name)
+            user = model.User(api_id=user_id, chat_id=chat_id, first_name=first_name, last_name=last_name,
+                              username=username)
             session.add(user)
             session.flush()
-            logger.info("Created new user %s (%s)", user.id, user_name)
+            logger.info("Created new user %s (%s %s / @%s)", user.id, first_name, last_name, username)  # TODO if username is empty
             return self._get_translations([Message(chat_id, GetText(
                 "Hi! I am your friendly qaqa-bot 🤖. \n"
                 "I will guide you through hopefully many games of the question-answer-question-answer party game. "
@@ -380,7 +387,7 @@ class GameServer:
         else:
             logger.info("User %s joins to game %s", user.id, game.id)
         game.participants.append(model.Participant(user=user))
-        messages = [Message(chat_id, GetText("Yay! Welcome {name} 🤗").format(name=user.name))]
+        messages = [Message(chat_id, GetText("Yay! Welcome {name} 🤗").format(name=user.first_name))]
 
         if new_sheet:
             user.pending_sheets.append(model.Sheet(game=game))
@@ -697,9 +704,10 @@ class GameServer:
             status = GetText("There is currently no QAQA-game in this group. Use /{command} to start one.")\
                 .format(command=COMMAND_NEW_GAME)
         else:
-            players = (GetNoText("• ") + GetNoText('\n• ').join(p.user.name for p in current_game.participants)
-                       if current_game.participants
-                       else GetText("– none –"))
+            players = [p.user for p in current_game.participants]
+            players_text = (GetNoText("• ") + GetNoText('\n• ').join(u.format_name() for u in players)
+                            if current_game.participants
+                            else GetText("– none –"))
             configuration = GetText("Rounds: {num_rounds}\nSynchronous: {synchronous}")\
                 .format(num_rounds=(GetText('– number of players –')
                                     if current_game.rounds is None
@@ -715,7 +723,7 @@ class GameServer:
             pending_sheets = [si.sheet for si in sheet_infos if si.sheet.current_user_id is not None]
             pending_users = (
                 GetText("We are currently waiting for {users} 👀\n\n")
-                .format(users=', '.join(s.current_user.name for s in pending_sheets))
+                .format(users=', '.join(s.current_user.format_name(True, players) for s in pending_sheets))
                 if current_game.is_synchronous or len(pending_sheets) <= len(sheet_infos) / 3
                 else "")
             if current_game.started is not None:
@@ -730,14 +738,14 @@ class GameServer:
                             sheets_stats=sheets_stats, pending_users=pending_users,
                             trans_reg_players=NGetText('Registered player', 'Registered players',
                                                        len(current_game.participants)),
-                            players=players, configuration=configuration)
+                            players=players_text, configuration=configuration)
             else:
                 status = GetText("The game has been created and waits to be started. 🕰\n"
                                  "Use /{command} to start the game.\n\n"
                                  "Registered players:\n"
                                  "{players}\n\n"
                                  "Game configuration:\n{configuration}")\
-                    .format(command=COMMAND_START_GAME, players=players, configuration=configuration)
+                    .format(command=COMMAND_START_GAME, players=players_text, configuration=configuration)
         return self._get_translations([Message(chat_id, status)], session)
 
     # ###########################################################################
@@ -969,7 +977,7 @@ class GameServer:
 
     def _entry_to_string(self, game: model.Game, entry: model.Entry) -> str:
         if game.is_showing_result_names:
-            return f"\n{entry.user.name}: {entry.text}"
+            return f"\n{entry.user.format_name(True, (p.user for p in game.participants))}: {entry.text}"
         else:
             return "\n" + entry.text
 

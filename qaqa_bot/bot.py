@@ -141,14 +141,13 @@ class Frontend:
         """Send a friendly welcome message with language set to locale."""
         chat_id: int = update.effective_chat.id
         logger.debug("Received /%s command in chat %s", game.COMMAND_REGISTER, chat_id)
-        lang = update.message.from_user.language_code
+        user = update.message.from_user
+        lang = user.language_code
         if lang is not None:
-            self.gs.set_chat_locale(chat_id, update.message.from_user.language_code)
+            self.gs.set_chat_locale(chat_id, lang)
         if update.message.chat.type == telegram.Chat.PRIVATE:
-            name = (f"@{update.message.from_user.username}"
-                    if update.message.from_user.username is not None
-                    else update.message.from_user.first_name)
-            self.send_messages(self.gs.register_user(update.message.chat.id, update.message.from_user.id, name))
+            self.send_messages(self.gs.register_user(update.message.chat.id, user.id, user.first_name, user.last_name,
+                                                     user.username))
 
     @run_async
     def new_game(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:

@@ -18,7 +18,7 @@
                 ${entry.text |n,br}
 % if show_authors:
                 <div class="meta">
-                    von ${entry.user.name}
+                    von ${entry.user.format_name(True, (p.user for p in game.participants))}
                 </div>
 % endif
             </li>

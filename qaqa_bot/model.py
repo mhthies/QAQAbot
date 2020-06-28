@@ -35,6 +35,7 @@ directory. Use `alembic upgrade head` on the CLI or `util.run_migrations()`.
 """
 
 import enum
+from typing import Iterable
 
 from sqlalchemy import Column, Integer, BigInteger, String, Boolean, Enum, ForeignKey, DateTime, Index, Unicode
 from sqlalchemy.orm import relationship
@@ -69,7 +70,9 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     api_id = Column(Integer, nullable=False)
     chat_id = Column(BigInteger, nullable=False, unique=True, index=True)
-    name = Column(Unicode(512), nullable=False)
+    first_name = Column(Unicode(512), nullable=False)
+    last_name = Column(Unicode(512))
+    username = Column(Unicode(512))  # Telegram username without the leading '@' character
     # The sheet on which the user is currently working, i.e. which they were requested to add an entry to. Or NULL, if
     # they are not currently working on a sheet. If not NULL, this should always correspond the first entry of
     # `User.pending_sheets`.
@@ -79,6 +82,33 @@ class User(Base):
     pending_sheets = relationship('Sheet', back_populates='current_user', foreign_keys="Sheet.current_user_id",
                                   order_by='Sheet.pending_position', collection_class=ordering_list('pending_position'))
     current_sheet = relationship('Sheet', foreign_keys=current_sheet_id, post_update=True)
+
+    def format_name(self, short=False, make_unambiuous_in: Iterable["User"] = ()) -> str:
+        """
+        Format the user's name into a single string including first_name, last_name and username.
+
+        By default, the format is "{first_name} {last_name} ({username})". It can be configured using the `short`.
+
+        :param short: If True, only the first_name is shown
+        :param make_unambiuous_in: If not empty and `short` is True, the given list of users is checked for multiple
+            occurances of the first name. In case of ambiguity, the last_name's first letter (if available) or the
+            username is shown in addition to the first_name.
+        :return: The user's combined name
+        """
+        ambiguous = sum(1 for u in make_unambiuous_in if u.first_name == self.first_name) > 1
+        # TODO make multiple last_names that start with the same letters unambiguous
+        result = self.first_name
+        if not short:
+            if self.last_name:
+                result += " " + self.last_name
+            if self.username:
+                result += " (@" + self.username + ")"
+        elif ambiguous:
+            if self.last_name:
+                result += " " + self.last_name[0] + "."
+            elif self.username:
+                result += " (@" + self.username + ")"
+        return result
 
 
 class Participant(Base):

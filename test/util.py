@@ -22,10 +22,10 @@ CONFIG = toml.load(os.path.join(os.path.dirname(__file__), "test_config.toml"))
 
 
 def create_sample_users(engine):
-    users = [model.User(api_id=1, chat_id=11, name="Michael"),
-             model.User(api_id=2, chat_id=12, name="Jenny"),
-             model.User(api_id=3, chat_id=13, name="Lukas"),
-             model.User(api_id=4, chat_id=14, name="Jannik")]
+    users = [model.User(api_id=1, chat_id=11, first_name="Michael"),
+             model.User(api_id=2, chat_id=12, first_name="Jenny"),
+             model.User(api_id=3, chat_id=13, first_name="Lukas"),
+             model.User(api_id=4, chat_id=14, first_name="Jannik")]
     Session = sqlalchemy.orm.sessionmaker(bind=engine)
     with session_scope(Session) as session:
         for user in users:
