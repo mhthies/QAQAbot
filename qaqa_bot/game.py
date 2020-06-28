@@ -256,7 +256,7 @@ class GameServer:
             logger.info("Updating user %s (%s)", existing_user.id, user_name)
             return self._get_translations([Message(chat_id, GetText(
                 "You are already registered. If you want to start a game, head over to a group chat and spawn a game "
-                "with /{cmd}").format(cmd=COMMAND_NEW_GAME))]  # TODO UX
+                "with /{cmd}").format(cmd=COMMAND_NEW_GAME))]
                                 + self._next_sheet([existing_user], session, repeat=True), session)
         else:
             user = model.User(api_id=user_id, chat_id=chat_id, name=user_name)
@@ -267,7 +267,7 @@ class GameServer:
                 "Hi! I am your friendly qaqa-bot 🤖. \n"
                 "I will guide you through hopefully many games of the question-answer-question-answer party game. "
                 "Thanks for joining! Now head to the group you want to play the game with and spawn, join and "
-                "start a game."))], session)  # TODO UX: return explanation
+                "start a game."))], session)
 
     @with_session
     def new_game(self, session: Session, chat_id: int, name: str) -> List[TranslatedMessage]:
@@ -308,7 +308,7 @@ class GameServer:
         logger.info("Setting rounds of game %s to %s", game.id, rounds)
         game.rounds = rounds
         return self._get_translations([Message(chat_id, GetText(
-            "Number of rounds set: {number_rounds}").format(number_rounds=game.rounds))], session)  # TODO UX
+            "Number of rounds set: {number_rounds}").format(number_rounds=game.rounds))], session)
 
     @with_session
     def set_synchronous(self, session: Session, chat_id: int, state: bool) -> List[TranslatedMessage]:
@@ -318,7 +318,7 @@ class GameServer:
             return self._get_translations([Message(chat_id, GetText("No game to configure in this chat"))], session)  # TODO UX
         if game.started is not None:
             return self._get_translations([Message(chat_id, GetText(
-                "❌ Sorry, I can only configure a game before its start. ⏳"))], session)  # TODO UX
+                "❌ Sorry, I can only configure a game before its start. ⏳"))], session)
             # TODO allow mode change for running games (requires passing of waiting sheets for sync → unsync)
         logger.info("Setting game %s to %s", game.id, "synchronous" if state else "asynchronous")
         game.is_synchronous = state
@@ -332,11 +332,11 @@ class GameServer:
             return self._get_translations([Message(chat_id, GetText("❌ No game to configure in this chat"))], session)  # TODO UX
         if game.started is not None:
             return self._get_translations([Message(chat_id, GetText(
-                "❌ Sorry, I can only configure a game before its start. ⏳"))], session)  # TODO UX
+                "❌ Sorry, I can only configure a game before its start. ⏳"))], session)
             # TODO should this be possible?
         logger.info("Setting game %s to %s", game.id, "show result names" if state else "not show result names")
         game.is_showing_result_names = state
-        return self._get_translations([Message(chat_id, GetNoText("✅"))], session)  # TODO UX
+        return self._get_translations([Message(chat_id, GetNoText("✅"))], session)
 
     @with_session
     def join_game(self, session: Session, chat_id: int, user_id: int) -> List[TranslatedMessage]:
@@ -385,7 +385,7 @@ class GameServer:
         if new_sheet:
             user.pending_sheets.append(model.Sheet(game=game))
             messages.extend(self._next_sheet([user], session))
-        return self._get_translations(messages, session)  # TODO UX
+        return self._get_translations(messages, session)
 
     @with_session
     def start_game(self, session: Session, chat_id: int) -> List[TranslatedMessage]:
@@ -399,7 +399,7 @@ class GameServer:
                                                    .format(command=COMMAND_NEW_GAME))],
                                           session)
         elif game.started is not None:
-            return self._get_translations([Message(chat_id, GetText("The game is already running"))], session)  # TODO Create status command, refer to it.
+            return self._get_translations([Message(chat_id, GetText("The game is already running"))], session)  # TODO refer to /status command
         elif len(game.participants) < 2:
             logger.debug("Game %s has not enough participants to be started", game.id)
             return self._get_translations([Message(chat_id, GetText(
@@ -450,7 +450,7 @@ class GameServer:
             return self._get_translations([Message(chat_id, GetText("You didn't participate in this game."))], session)
         session.delete(participation)
 
-        result = [Message(chat_id, GetText("👋 Bye!"))]  # TODO
+        result = [Message(chat_id, GetText("👋 Bye!"))]
         logger.info("User %s leaves %sgame %s.", user.id, "running " if game.started is not None else "", game.id)
 
         # Pass on pending sheets
