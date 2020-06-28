@@ -486,7 +486,7 @@ class GameServer:
 
         logger.info("Marking game %s to stop at next opportunity.", game.id)
         game.is_waiting_for_finish = True
-        sheet_infos = list(self._game_sheet_infos(game, session))
+        sheet_infos = list(self._game_sheet_infos(game, session, eager_current_user=True))
 
         messages = self._finish_if_stopped_and_all_answered(game, sheet_infos, session)
 
@@ -497,7 +497,7 @@ class GameServer:
             users_to_update = set()
             for sheet_info in sheet_infos:
                 if not sheet_info.num_entries or sheet_info.last_entry.type == model.EntryType.ANSWER:
-                    sheet_user: Optional[model.User] = sheet_info.sheet.current_user   # TODO optimize?
+                    sheet_user: Optional[model.User] = sheet_info.sheet.current_user
                     if sheet_user is not None:
                         logger.debug("Removing sheet %s from user %s's queue due to game stop.",
                                      sheet_info.sheet.id, sheet_user.id)
@@ -930,6 +930,8 @@ class GameServer:
         logger.info("Finalizing game %s ...", game.id)
         messages = []
         # Requery sheets with optimized loading of current_user
+        # TODO this is only required when called via `.stop_game_immediately()`. In all other cases, the sheets have
+        #  already been called with a joinedload of the Sheet.current_user.
         sheets: List[model.Sheet] = session.query(model.Sheet)\
             .filter(model.Sheet.game == game)\
             .populate_existing()\
