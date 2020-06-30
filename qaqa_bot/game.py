@@ -364,6 +364,12 @@ class GameServer:
                         .format(bot_name=self.config['bot']['username'], command=COMMAND_REGISTER,
                                 command_join=COMMAND_JOIN_GAME))],
                 session)
+        existing_participations = session.query(model.Participant)\
+            .filter(model.Participant.game == game, model.Participant.user == user)\
+            .count()
+        if existing_participations:
+            logger.info("User %s has already joined game %s before", user.id, game.id)
+            return []
 
         new_sheet = False
         if game.started is not None:
