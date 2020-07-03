@@ -26,6 +26,7 @@ import datetime
 import functools
 import gettext
 import math
+import random
 import statistics
 import os.path
 import logging
@@ -758,6 +759,23 @@ class GameServer:
                                                        len(players))
                                               .format(number=len(players)))
         return self._get_translations([Message(chat_id, status)], session)
+
+    @with_session
+    def shuffle_players(self, session: Session, chat_id: int) -> List[TranslatedMessage]:
+        game = session.query(model.Game).filter(model.Game.chat_id == chat_id,
+                                                model.Game.finished == None).one_or_none()
+        if game is None:
+            return self._get_translations(
+                [Message(chat_id, GetText("There is currently no running game in this group."))], session)
+        if not game.participants:
+            return self._get_translations(
+                [Message(chat_id, GetText("There are currently no players to shuffle."))], session)
+
+        random.shuffle(game.participants)
+
+        players_text = GetNoText("• ") + GetNoText('\n• ').join(p.user.format_name() for p in game.participants)
+        return self._get_translations(
+            [Message(chat_id, GetText("🆗 New player order is:\n{players}").format(players=players_text))], session)
 
     # ###########################################################################
     # Helper methods for translating messages

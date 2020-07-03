@@ -246,6 +246,23 @@ class FullGameTests(unittest.TestCase):
                                           13: re.compile(r"(?s)ask.*?Answer A2|"
                                                          + self.TEXT_SUBMIT_RESPONSE)})
 
+    def test_shuffle_players(self) -> None:
+        self.game_server.new_game(21, "Funny Group")
+        # Let all users join
+        self.game_server.join_game(21, 1)
+        self.game_server.join_game(21, 2)
+        self.game_server.join_game(21, 3)
+        self.game_server.join_game(21, 4)
+        # Player order should be order of joining
+        msgs = self.game_server.get_group_status(21)
+        self.assertMessagesCorrect(msgs, {21: re.compile(r"(?s)Michael.*Jenny.*Lukas.*Jannik")})
+        # After shuffling ...
+        msgs = self.game_server.shuffle_players(21)
+        self.assertMessagesCorrect(msgs, {21: re.compile(r"🆗")})
+        # ... player order should not be the same.
+        msgs = self.game_server.get_group_status(21)
+        self.assertMessagesCorrect(msgs, {21: re.compile(r"(?s)Michael(?!.*Jenny.*Lukas.*Jannik)")})
+
     def assertMessagesCorrect(self, messages: List[game.TranslatedMessage], expected: Dict[int, Pattern]) -> None:
         for message in messages:
             self.assertIn(message.chat_id, expected, f"Message \"{message.text}\" to chat id {message.chat_id}")
