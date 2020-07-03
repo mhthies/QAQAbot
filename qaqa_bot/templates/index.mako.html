@@ -2,7 +2,16 @@
 <%inherit file="base.mako.html" />
 <%!
     import qaqa_bot.game
+    import qaqa_bot.bot
 %>
+
+<div id="language-links">
+% for lang_button, lang_icon in qaqa_bot.bot.LANGUAGES.items():
+% if lang_button[4:] != lang:
+    <a href="?lang=${lang_button[4:]}">${lang_icon}</a>
+% endif
+% endfor
+</div>
 <h1>${gettext("The QAQA Game Bot")}</h1>
 <p>
     ${gettext("This bot allows playing the question-answer-question-answer party game.")}
