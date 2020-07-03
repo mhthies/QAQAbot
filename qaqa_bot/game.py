@@ -212,7 +212,9 @@ class GameServer:
         sheet = session.query(model.Sheet)\
             .filter(model.Sheet.id == sheet_id, model.Game.finished != None)\
             .options(raiseload('*'),
-                     joinedload(model.Sheet.game),
+                     joinedload(model.Sheet.game)
+                     .selectinload(model.Game.participants)
+                     .joinedload(model.Participant.user),
                      selectinload(model.Sheet.entries)
                      .joinedload(model.Entry.user))\
             .one_or_none()
