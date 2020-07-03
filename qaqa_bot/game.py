@@ -59,6 +59,7 @@ COMMAND_SET_ROUNDS = "set_rounds"
 COMMAND_SET_LANGUAGE = "set_lang"
 COMMAND_SET_DISPLAY_NAME = "set_show_name"
 COMMAND_SET_SYNC = "set_sync"
+COMMAND_SHUFFLE = "shuffle"
 
 LOCALE_DIR = os.path.join(os.path.dirname(__file__), 'i18n')
 MAX_TRANSACTION_TRYS = 30

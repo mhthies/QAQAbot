@@ -65,6 +65,8 @@ class Frontend:
                                            filters=~Filters.update.edited_message)
         stop_game_immediately_handler = CommandHandler(game.COMMAND_STOP_GAME_IMMEDIATELY, self.stop_game_immediately,
                                                        filters=~Filters.update.edited_message)
+        shuffle_handler = CommandHandler(game.COMMAND_SET_SYNC, self.shuffle_players,
+                                         filters=~Filters.update.edited_message)
         set_rounds_handler = CommandHandler(game.COMMAND_SET_ROUNDS, self.set_rounds, pass_args=True,
                                             filters=~Filters.update.edited_message)
         set_synchronous_handler = CommandHandler(game.COMMAND_SET_SYNC, self.set_sync,
@@ -77,6 +79,7 @@ class Frontend:
         self.dispatcher.add_handler(leave_game_handler)
         self.dispatcher.add_handler(stop_game_handler)
         self.dispatcher.add_handler(stop_game_immediately_handler)
+        self.dispatcher.add_handler(shuffle_handler)
         self.dispatcher.add_handler(set_rounds_handler)
         self.dispatcher.add_handler(set_synchronous_handler)
         self.dispatcher.add_handler(set_display_name_handler)
@@ -123,7 +126,9 @@ class Frontend:
                                                   f"{', '.join(flag for code, flag in LANGUAGES.items())}."),
             BotCommand(game.COMMAND_STOP_GAME, "Stops the game after the current round."),
             BotCommand(game.COMMAND_STOP_GAME_IMMEDIATELY,
-                       "Stops the game without waiting for the round to be finished.")]
+                       "Stops the game without waiting for the round to be finished."),
+            BotCommand(game.COMMAND_SHUFFLE, "Shuffle the order of players in the game."),
+        ]
         self.updater.bot.set_my_commands(commands)
 
     def run_bot(self):
@@ -228,6 +233,12 @@ class Frontend:
         """Stop the game without awaiting the end of the current round."""
         logger.debug("Received /%s command in chat %s ", game.COMMAND_STOP_GAME_IMMEDIATELY, update.effective_chat.id)
         self.send_messages(self.gs.immediately_stop_game(chat_id=update.message.chat.id))
+
+    @run_async
+    def shuffle_players(self, update: telegram.Update, _context: telegram.ext.CallbackContext) -> None:
+        """Shuffle the order of players in the game."""
+        logger.debug("Received /%s command in chat %s ", game.COMMAND_SHUFFLE, update.effective_chat.id)
+        self.send_messages(self.gs.shuffle_players(chat_id=update.message.chat.id))
 
     @run_async
     def set_rounds(self, update: telegram.Update, context: telegram.ext.CallbackContext) -> None:

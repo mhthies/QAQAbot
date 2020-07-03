@@ -71,6 +71,12 @@
     The bot will give feedback if the edit is accepted or if it has been too late.
     If the question/answer has already been passed to the next player, they are noticed about the updated text with a new message.""")}
 </p>
+<p>
+    ${gettext("""The sequence of players is fixed:
+    Each sheet is passed to the next player according to the list shown by the <code>/{command_status}</code> command.
+    For more variety in the game, the player order can be shuffled any time before or during the game, using <code>/{command_shuffle}</code>.""")\
+      .format(command_status=qaqa_bot.game.COMMAND_STATUS, command_shuffle=qaqa_bot.game.COMMAND_SHUFFLE)}
+</p>
 
 <h3>${gettext("Game End")}</h3>
 <p>${gettext("The Game ends if one of the following conditions is met:")}</p>
