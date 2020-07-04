@@ -65,7 +65,7 @@ class Frontend:
                                            filters=~Filters.update.edited_message)
         stop_game_immediately_handler = CommandHandler(game.COMMAND_STOP_GAME_IMMEDIATELY, self.stop_game_immediately,
                                                        filters=~Filters.update.edited_message)
-        shuffle_handler = CommandHandler(game.COMMAND_SET_SYNC, self.shuffle_players,
+        shuffle_handler = CommandHandler(game.COMMAND_SHUFFLE, self.shuffle_players,
                                          filters=~Filters.update.edited_message)
         set_rounds_handler = CommandHandler(game.COMMAND_SET_ROUNDS, self.set_rounds, pass_args=True,
                                             filters=~Filters.update.edited_message)
