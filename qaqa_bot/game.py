@@ -164,7 +164,8 @@ class GameServer:
         # database_engine may be given (e.g. for testing purposes). Otherwise, we construct one from the configuration
         if database_engine is None:
             self.database_engine = sqlalchemy.create_engine(config['database']['connection'],
-                                                            isolation_level='SERIALIZABLE')
+                                                            isolation_level='SERIALIZABLE',
+                                                            pool_recycle=config['database'].get('pool_recycle', -1))
         else:
             self.database_engine = database_engine
 
