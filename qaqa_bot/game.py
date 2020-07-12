@@ -201,8 +201,11 @@ class GameServer:
                      selectinload(model.Game.participants)
                      .joinedload(model.Participant.user),
                      selectinload(model.Game.sheets)
-                     .selectinload(model.Sheet.entries)
-                     .joinedload(model.Entry.user))\
+                     .options(
+                         selectinload(model.Sheet.game),
+                         selectinload(model.Sheet.entries)
+                         .joinedload(model.Entry.user)
+                     ))\
             .one_or_none()
 
         session.expunge_all()
