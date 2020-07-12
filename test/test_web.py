@@ -40,8 +40,9 @@ class TestWeb(unittest.TestCase):
     def tearDown(self) -> None:
         cherrypy.engine.exit()
 
-    def _simple_sample_game(self) -> List[game.TranslatedMessage]:
+    def _simple_sample_game(self, with_authors: bool = False) -> List[game.TranslatedMessage]:
         self.game_server.new_game(21, "Funny Group")
+        self.game_server.set_show_result_names(21, with_authors)
         self.game_server.join_game(21, 1)
         self.game_server.join_game(21, 2)
         self.game_server.join_game(21, 3)
@@ -77,3 +78,16 @@ class TestWeb(unittest.TestCase):
         resp = resp.click(href=re.compile(r'/sheet/'), index=0)
         self.assertEqual(200, resp.status_int)
         self.assertRegex(resp.text, r".*Question [1-3].*")
+
+    def test_result_with_authors(self) -> None:
+        finalize_messages = self._simple_sample_game(with_authors=True)
+        result_path = self._find_result_url(finalize_messages, 21)
+        self.assertIsNotNone(result_path)
+
+        resp = self.app.get(result_path)
+        self.assertEqual(200, resp.status_int)
+        resp.mustcontain("Question 1")
+        resp.mustcontain("Michael")
+        resp = resp.click(href=re.compile(r'/game/(?!.*authors=1)'), index=0)
+        resp.mustcontain("Question 1")
+        resp.mustcontain(no=["Michael"])
