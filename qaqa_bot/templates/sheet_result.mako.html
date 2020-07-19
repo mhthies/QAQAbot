@@ -7,10 +7,8 @@
                                date=format_date(sheet.game.finished, locale=lang))}
     | QAQA Game Bot</%block>
 
-
-## TODO add date
 <h1>${gettext("Sheet from {game_name}").format(game_name=sheet.game.name)}</h1>
-<div class="subtitle">${format_datetime(sheet.game.finished, locale=lang)}</div>
+<div class="subtitle">${format_datetime(sheet.game.started, locale=lang)} – ${format_datetime(sheet.game.finished, locale=lang)} (UTC)</div>
 
 ${util.print_sheet(sheet=sheet)}
 

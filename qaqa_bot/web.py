@@ -26,6 +26,8 @@ methods (esp. the GameServer object as a backend, the config and the template re
 To simplify setup of the cherrypy engine (including the WebRoot Controller, HTTP server config, no autoreload and custom
 error page), the `setup_cherrypy_engine()` function is provided.
 """
+import datetime
+import functools
 import gettext
 import os
 from typing import Dict, Any, Optional
@@ -93,7 +95,7 @@ class WebEnvironment:
             'static_url': lambda file_name: "{}/static/{}".format(config['web']['base_url'], file_name),  # TODO add version to control caching
             'encode_id': lambda realm, val: encode_secure_id(val, config['secret'], realm),
             'format_date': babel.dates.format_date,
-            'format_datetime': babel.dates.format_datetime,
+            'format_datetime': functools.partial(babel.dates.format_datetime, tzinfo=datetime.timezone.utc),
         }
 
     def render_template(self, template_name: str, params: Dict[str, Any], locale: Optional[str] = None) -> str:
