@@ -55,7 +55,7 @@ def run_migrations(engine: sqlalchemy.engine.Engine):
     config.set_main_option('version_locations', os.path.join(os.path.dirname(__file__), 'database_versions'))
     # Create ScriptDirectory and EnvironmentContext objects
     script_directory = alembic.script.ScriptDirectory.from_config(config)
-    context = alembic.environment.EnvironmentContext(config, script_directory)
+    context = alembic.runtime.environment.EnvironmentContext(config, script_directory)
 
     # Function to run migrations for (upgrade to head)
     def do_upgrade(revision, _context):
