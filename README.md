@@ -122,6 +122,25 @@ Run the following command in the repository directory:
 venv/bin/python -m qaqa_bot
 ```
 
+The following systemd unit can be used to start this as a service:
+```
+[Unit]
+Description=QAQA Game Telegram bot
+After=network.target mariadb.service
+Requires=network.target mariadb.service
+
+[Service]
+Type=simple
+User=THEUSER
+Group=THEGROUP
+ExecStart=/PATH/TO/QAQAbot/venv/bin/python3 -m qaqa_bot -v
+WorkingDirectory=/PATH/TO/QAQAbot/
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
 At startup, the database will be initialized or upgraded automatically.
 Additionally, the Telegram bot will be configured using the Telegram API.
 To avoid this behaviour, add `--no-init` to the run command.
